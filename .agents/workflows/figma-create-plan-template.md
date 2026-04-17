@@ -12,19 +12,21 @@ description: Phan tich thiet ke Figma va tao plan trien khai vao Bricks Builder.
 ## Output
 
 - File `[slug].md` lưu tại: `.agents/plans/[slug].md`
-- Nội dung: page info, số sections, cấu trúc + variables từng section, trạng thái images, Bricks widget mapping
+- Nội dung: page info, design variables, cấu trúc sections, widget mapping, behavior analysis, danh sách widget cần dùng
 
 ## Quy tắc cố định
 
 > **Header và Footer luôn bỏ qua** — đánh dấu `[SKIP – Global Template]`, không phân tích chi tiết.
 > **Images Figma** có URL dạng `localhost:3845/assets/[hash]` — WP không fetch được trực tiếp. Chiến lược: download về `.agents/images/[slug]/` rồi upload WP qua browser.
-> **Không dùng Dangerous Actions** — mọi styling phải qua element settings hoặc `html` element với inline style.
+> **Native-first**: Luôn ưu tiên native Bricks widget. Dùng `_cssCustom` cho style phức tạp. Dùng `html` element chỉ khi markup không thể thực hiện bằng native widget.
 
 ---
 
-## GIAI ĐOẠN 1: Thu thập dữ liệu
+## GIAI ĐOẠN 1: Thu thập dữ liệu Figma
 
 ### Bước 1.1 — Đọc Figma (song song)
+
+Gọi đồng thời:
 
 ```
 mcp_figma_get_design_context(
@@ -35,6 +37,14 @@ mcp_figma_get_design_context(
 )
 mcp_figma_get_screenshot(nodeId: "[node-id]")
 ```
+
+**Nếu gặp lỗi hoặc không lấy được dữ liệu:**
+- Thử lại tối đa 2 lần với cùng node-id
+- Nếu vẫn lỗi: báo cáo lỗi cụ thể, yêu cầu user cung cấp node-id khác hoặc kiểm tra Figma MCP
+
+**Verify screenshot:**
+- Nếu screenshot trả về → ghi nhận ✅ có ảnh xem trước
+- Nếu screenshot lỗi/null → ghi nhận ⚠️ không có ảnh, tiếp tục bằng design context
 
 Từ output ghi lại:
 
@@ -48,7 +58,24 @@ Từ output ghi lại:
   - Spacing: padding, gap, border-radius
 - **Images**: mỗi `<img src="localhost:3845/assets/...">` → đánh dấu ✅ lấy được. Ghi URL + tên mô tả.
 
-### Bước 1.2 — Đọc thông tin site
+### Bước 1.2 — Kiểm tra độ phức tạp
+
+Sau khi đọc Figma xong, đánh giá từng section theo tiêu chí:
+
+| Tiêu chí | Đơn giản | Trung bình | Phức tạp |
+|----------|----------|------------|----------|
+| Layout | 1 col, linear | 2-3 cols, flex | Grid không đều, overlap, absolute |
+| Animation/Interaction | Không | Hover state | Scroll animation, dynamic JS |
+| Dynamic data | Không | WP fields cơ bản | Query Loop, Custom Fields, Filter |
+| Custom markup | Không | `_cssCustom` | `html` element bắt buộc |
+| Images phức tạp | Không | Background image | Mask, clip-path, blend-mode |
+
+**Ghi mức độ cho từng section:**
+- `[SIMPLE]` — Build trực tiếp bằng native widgets
+- `[MEDIUM]` — Native + `_cssCustom` styling
+- `[COMPLEX]` — Cần phân tích kỹ, có thể cần `html` element hoặc JS
+
+### Bước 1.3 — Đọc thông tin site (song song với 1.1)
 
 ```
 mcp_bricks-mcp_get_site_info(action: "info")
@@ -56,52 +83,77 @@ mcp_bricks-mcp_get_site_info(action: "info")
 
 Ghi: site URL, Bricks version.
 
-### Bước 1.3 — Lấy Bricks elements catalog
-
-```
-mcp_bricks-mcp_bricks(action: "get_element_schemas", catalog_only: true)
-```
-
-Dùng ở Giai đoạn 2.
-
 ---
 
 ## GIAI ĐOẠN 2: Mapping Bricks Widgets
 
-Với mỗi section, đối chiếu catalog để chọn element phù hợp:
+### Bước 2.1 — Đọc Widget Library
 
-### Bảng mapping tham khảo
+**BẮT BUỘC** đọc từ thư mục widget library trước khi mapping:
 
-| Nhu cầu design         | Bricks element                                 |
-| ---------------------- | ---------------------------------------------- |
-| Wrapper/section chính  | `section` / `container` / `div`                |
-| Row / flex columns     | `block` hoặc `div`                             |
-| Tiêu đề H1–H6          | `heading`                                      |
-| Rich text / paragraphs | `text`                                         |
-| Text đơn giản          | `text-basic`                                   |
-| Ảnh                    | `image`                                        |
-| SVG                    | `svg`                                          |
-| Icon (Font Awesome)    | `icon`                                         |
-| Nút / CTA              | `button`                                       |
-| Link text              | `text-link`                                    |
-| Icon + title + desc    | `icon-box`                                     |
-| Danh sách bài viết WP  | `vnx-custom-posts-list-v2` hoặc `vnx-posts`    |
-| Bài viết có filter     | `vnx-posts-filter` hoặc `vnx-posts-fillter-v2` |
-| Navigation menu        | `nav-menu` hoặc `nav-nested`                   |
-| Slider / carousel      | `slider-nested` hoặc `carousel`                |
-| HTML tùy chỉnh         | `html`                                         |
+```
+Đọc: /Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/README.md
+```
 
-### Quy tắc chọn widget
+Sau đó đọc file chi tiết của từng widget **cần dùng** trong thiết kế:
 
-1. Layout → chọn container element
-2. Elements con → map từng cái theo bảng trên
-3. Không có element phù hợp → dùng `div` + `html` + ghi chú Custom CSS
-4. Danh sách bài thật từ WP → ưu tiên `vnx-custom-posts-list-v2`
-5. Ghi rõ phần nào cần Custom CSS thêm (gradient bg, inset shadow, clip-path, absolute positioning...)
+```
+Đường dẫn: /Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/[tên-file].md
+
+Ví dụ:
+- layout-container.md → thông tin container widget
+- basic-heading.md → thông tin heading widget
+- general-accordion-nested.md → thông tin accordion
+- query-filter-system.md → thông tin toàn bộ filter widgets
+```
+
+> **Lý do:** Widget library chứa settings keys chính xác, CSS selectors, và JSON examples đã verified từ PHP source. Không dùng bảng tham khảo cũ.
+
+### Bước 2.2 — Map widgets cho từng section
+
+Với mỗi element trong design, đối chiếu widget library để chọn widget phù hợp:
+
+**Nguyên tắc chọn:**
+1. **Native-first** — Luôn kiểm tra widget library trước
+2. Nếu widget có settings đáp ứng được → dùng settings đó, ghi rõ key và value
+3. Nếu cần style nâng cao (gradient, pseudo, hover) → dùng `_cssCustom` trên chính widget đó
+4. Chỉ dùng `html` element khi markup structure không thể thực hiện bằng native widget
+
+**Ghi chú kỹ thuật cho mỗi widget:**
+- Widget name (chính xác theo library)
+- Settings keys sẽ dùng
+- `_cssCustom` nếu cần (ghi rõ CSS)
+- Lý do nếu phải dùng `html` element
 
 ---
 
-## GIAI ĐOẠN 3: Ghi file plan
+## GIAI ĐOẠN 3: Phân tích Behavior
+
+Dựa trên thông tin Figma + widget library đã đọc, phân tích từng section:
+
+### Bước 3.1 — Behavior analysis
+
+Với mỗi section [MEDIUM] và [COMPLEX]:
+
+- **Hover states:** Element nào có hover? → Map sang `_cssCustom` `%root%:hover { ... }`
+- **Animations:** Entrance animation? → Dùng Bricks interactions hoặc CSS animation
+- **Dynamic data:** Có dynamic tags không? → Ghi rõ `{post_title}`, `{featured_image}`, etc.
+- **Interactivity:** Toggle, accordion, slider, filter? → Chọn đúng widget nestable/interactive
+- **Responsive:** Mobile break khác desktop không? → Ghi breakpoint rules
+
+### Bước 3.2 — Xác định giải pháp kỹ thuật
+
+Với mỗi vấn đề phức tạp, ghi rõ:
+
+```
+Vấn đề: [mô tả]
+Giải pháp: [native widget / _cssCustom / html element]
+Settings: [key: value pairs]
+```
+
+---
+
+## GIAI ĐOẠN 4: Ghi file plan
 
 Ghi file ra:
 
@@ -117,6 +169,7 @@ Ghi file ra:
 **Figma Node:** [node-id]
 **Figma Link:** [URL]
 **Site:** [URL] | Bricks [version]
+**Screenshot:** ✅ / ⚠️ không lấy được
 **Ngày tạo:** [YYYY-MM-DD]
 
 ---
@@ -126,6 +179,7 @@ Ghi file ra:
 - Loại trang: ...
 - Viewport: Desktop | max-width: ...px
 - Tổng số sections: N
+- Độ phức tạp tổng thể: Simple / Medium / Complex
 
 ---
 
@@ -150,31 +204,28 @@ Ghi file ra:
 
 ## 3. Sections
 
-### Section N: [Tên] | Node: [ID]
+### Section N: [Tên] | Node: [ID] | [SIMPLE/MEDIUM/COMPLEX]
 
 **Layout:** [2 cols / grid 3x2 / 1 col / ...]
+
+**Complexity notes:** [lý do đánh giá mức độ phức tạp]
 
 **Variables của section này:**
 | Loại | Value | Ghi chú |
 |------|-------|---------|
 | Background | ... | ... |
 | Border | ... | ... |
-| Shadow | ... | Cần Custom CSS |
-| Gap | ... | ... |
-| Border-radius | ... | ... |
 
 **Cấu trúc elements:**
 ```
-
 Section wrapper
 ├── Row (flex, gap: Xpx)
-│ ├── Col left
-│ │ ├── Heading: "..."
-│ │ └── Text: "..."
-│ └── Col right
-│ └── Image: [tên ảnh]
-
-````
+│   ├── Col left
+│   │   ├── Heading: "..."
+│   │   └── Text: "..."
+│   └── Col right
+│       └── Image: [tên ảnh]
+```
 
 **Images trong section này:**
 | Tên mô tả | URL Figma | Lấy được? |
@@ -182,51 +233,80 @@ Section wrapper
 | ... | localhost:3845/assets/[hash].png | ✅ |
 
 **Bricks Widgets:**
-| Element trong design | Bricks widget | Ghi chú kỹ thuật |
-|---------------------|--------------|-----------------|
-| Section wrapper | `section` | padding: 40px |
-| Row 2 cột | `block` | display: flex, gap: 24px |
-| Tiêu đề | `heading` | H4, 36px/600 Inter |
-| Text content | `text` | Rich Text, 18px/400 |
-| Button | `button` | bg: #007cfc, border-radius: 12px |
-| Ảnh | `image` | object-fit: cover |
+| Element trong design | Bricks widget | Settings key | Ghi chú kỹ thuật |
+|---------------------|--------------|-------------|-----------------|
+| Section wrapper | `section` | `_padding: {top:40px...}` | — |
+| Row 2 cột | `block` | `_direction: row`, `_gap: 24px` | — |
+| Tiêu đề | `heading` | `tag: h2`, `text: "..."` | — |
+| Text content | `text` | `text: "..."` | Rich Text |
+| Button | `button` | `text`, `style: primary` | `_cssCustom`: border-radius nếu cần |
+| Ảnh | `image` | `image.url`, `size: full` | — |
 
-**Styling phức tạp (không qua Bricks settings):**
+**Behavior analysis:**
+| Behavior | Giải pháp |
+|----------|-----------|
+| Hover card | `_cssCustom`: `%root%:hover { transform: translateY(-4px); }` |
+| Dynamic title | Dynamic tag: `{post_title}` trong `heading.text` |
 
-> ❌ **Không dùng Custom CSS** (Dangerous Actions disabled)
-> ✅ **Dùng `html` element với inline style** cho các layout cần: absolute positioning, gradient bg, inset shadow, clip-path
-
-Ví dụ:
-```html
-<div style="position:relative; background:linear-gradient(...); border-radius:24px; overflow:hidden;">
-  ...
-</div>
-````
+**Styling phức tạp (`_cssCustom`):**
+```css
+/* Ví dụ _cssCustom trên section wrapper */
+%root% {
+  background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
+}
+%root%::before {
+  content: '';
+  /* overlay */
+}
+```
 
 ---
 
 ## [Lặp lại block Section cho mỗi section]
 
-## 4. Tổng hợp Images cần Download & Upload
+---
+
+## 4. Tổng hợp Widgets cần dùng
+
+> Danh sách tất cả Bricks widgets sẽ được sử dụng trong template này.
+> AI cần đọc file tương ứng trong `/widgets/` trước khi build.
+
+| Widget | File tham khảo | Sections dùng | Ghi chú |
+|--------|---------------|---------------|---------|
+| `section` | `layout-section.md` | Tất cả | Root wrapper |
+| `container` | `layout-container.md` | S1, S2, S3 | Max-width wrapper |
+| `heading` | `basic-heading.md` | S1, S3, S5 | H1, H2, H3 |
+| `text` | `basic-text.md` | S2, S4 | Rich text |
+| `button` | `basic-button.md` | S1, S6 | CTA |
+| `image` | `basic-image.md` | S2, S4 | Feature images |
+| `icon-box` | `basic-icon-box.md` | S3 | Feature items |
+
+---
+
+## 5. Tổng hợp Images cần Download & Upload
 
 | Tên mô tả | URL Figma (localhost:3845) | File local (.agents/images/[slug]/) | Dùng trong Section |
 | --------- | -------------------------- | ----------------------------------- | ------------------ |
 
-> **Chiến lược upload:** Download ảnh về `.agents/images/[slug]/` bằng curl → Upload thủ công lên WP Media Library qua browser → Lấy `attachment_id` → Dùng trong `image` element settings.
+> **Chiến lược upload:** Download ảnh về `.agents/images/[slug]/` → Upload WP Media Library qua browser → Lấy `attachment_id`.
 
-## 5. Câu hỏi còn lại
+---
+
+## 6. Câu hỏi còn lại
 
 - [ ] Mobile layout có cần không?
 - [ ] Danh sách bài: static hay dynamic Query Loop?
 - [ ] ...
 
-## 6. Pre-build Checklist (kiểm tra trước khi chạy `/bricks-create-template`)
+---
 
+## 7. Pre-build Checklist (kiểm tra trước khi chạy `/bricks-create-template`)
+
+- [ ] Đã đọc file widget library cho tất cả widgets trong Section 4 chưa?
 - [ ] Đã tải tất cả images về `.agents/images/[slug]/` chưa?
 - [ ] Đã upload images lên WP Media Library và có `attachment_id` chưa?
-- [ ] Đã xác nhận `working_example` của từng Bricks element sẽ dùng chưa?
-- [ ] Layout phức tạp đã chuẩn bị fallback bằng `html` element inline style chưa?
-
+- [ ] Sections [COMPLEX] đã có giải pháp kỹ thuật rõ ràng chưa?
+- [ ] `_cssCustom` đã được chuẩn bị cho các styling ngoài settings chưa?
 ```
 
 ---
@@ -234,17 +314,23 @@ Ví dụ:
 ## Ví dụ gọi workflow
 
 ```
-
 User: "/figma-create-plan-template https://figma.com/design/ABC/Blog?node-id=3641-1142"
 
 AI thực hiện:
-[Giai đoạn 1] get_design_context + get_screenshot (song song)
-get_site_info + get_element_schemas (song song)
-[Giai đoạn 2] Map sections → Bricks widgets
-[Giai đoạn 3] Ghi file .agents/plans/blog-author-profile.md
+[Giai đoạn 1 - song song]
+  get_design_context + get_screenshot → verify ảnh → đánh giá complexity
+  get_site_info
+[Giai đoạn 2]
+  Đọc /widgets/README.md
+  Đọc file widget cụ thể theo nhu cầu design
+  Map sections → Bricks widgets (từ library, không dùng bảng cũ)
+[Giai đoạn 3]
+  Phân tích behavior, hover, dynamic data
+  Xác định _cssCustom cần thiết
+[Giai đoạn 4]
+  Ghi file .agents/plans/blog-author-profile.md
 
 Kết quả: "Đã tạo plan: .agents/plans/blog-author-profile.md"
-
-```
-
+         "Widgets cần dùng: heading, text, button, image, icon-box, container"
+         "Sections phức tạp: Section 3 [COMPLEX] — cần _cssCustom cho gradient overlay"
 ```

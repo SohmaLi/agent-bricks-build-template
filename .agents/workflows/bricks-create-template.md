@@ -1,10 +1,8 @@
 ---
-description: Doc file plan tu figma-create-plan-template va tao Bricks templates cho tung section. Moi section = 1 template trong Bricks. Ghi ket qua vao Notes.
+description: Doc file plan tu figma-create-plan-template va tao Bricks templates cho tung section. Moi section = 1 template trong Bricks. Build tung section mot, bao user xem lai truoc khi tiep tuc.
 ---
 
 # Workflow: Bricks Create Template
-
-> **Reference bắt buộc:** Đọc `.agents/notes/bricks-mcp-reference.md` trước khi build bất kỳ template nào.
 
 ## Input
 - Tên slug của plan file (ví dụ: `blog-author-hero`)
@@ -17,81 +15,93 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 ---
 
-## ⚠️ Quy tắc TUYỆT ĐỐI – Vi phạm sẽ sinh ra template lỗi
+## ⚠️ Quy tắc TUYỆT ĐỐI
 
 | Rule | Đúng | SAI |
 |------|------|-----|
-| Layout engine | Dùng `section`, `container`, `block`, `div` native | ❌ Dùng `html` element cho layout |
-| CSS injection | Dùng settings keys đã verified | ❌ Dùng `_cssCustom`, `set_page_css` |
-| Element nesting | `section → container → block → [widgets]` | ❌ `html` bao hết |
-| Settings keys | Chỉ dùng keys từ reference doc hoặc real templates | ❌ Tự đặt key không verified |
-| Browser agent | KHÔNG dùng browser agent để build template | ❌ Browser agent cho Bricks UI |
-| Image placeholder | Luôn có attachment_id trước khi build image element | ❌ src="" rỗng |
+| Layout engine | `section → container → block → [widgets]` | ❌ `html` cho layout |
+| Settings keys | Đọc từ `/widgets/[widget].md` | ❌ Tự đặt key từ trí nhớ |
+| CSS nâng cao | `_cssCustom` với `%root%` | ❌ `set_page_css` |
+| HTML element | Chỉ khi markup không thể native | ❌ Dùng thay thế layout |
+| Browser agent | KHÔNG dùng để build | ❌ Browser agent cho Bricks UI |
+| Image (build) | Dùng `image.url` với Figma `localhost:3845` URL — `id: 0` | ❌ `src=""` rỗng |
+| Image (production) | Upload WP → lấy `attachment_id` thật | ❌ Giữ localhost URL trên production |
+| Build flow | Từng section → báo user → chờ xác nhận | ❌ Build song song |
 
 ---
 
-## GIAI ĐOẠN 1: Đọc & Phân tích Plan
+## GIAI ĐOẠN 1: Đọc & Chuẩn bị
 
 ### Bước 1.1 — Đọc plan file
-Đọc: `.agents/plans/[slug].md`
+
+Đọc toàn bộ: `.agents/plans/[slug].md`
 
 Ghi lại:
 - Site URL, Bricks version
-- Danh sách sections cần build (bỏ nhãn `[SKIP]`)
-- Variables từng section (bg, spacing, colors, radius)
-- Danh sách images từ mục "Images trong section này"
+- Danh sách sections (bỏ nhãn `[SKIP]`)
+- Mức độ phức tạp từng section (`[SIMPLE]` / `[MEDIUM]` / `[COMPLEX]`)
+- **Danh sách widgets cần dùng** (Section 4 trong plan)
+- Danh sách images cần upload
 
-### Bước 1.2 — Load Reference Settings
-Đọc file: `.agents/notes/bricks-mcp-reference.md`
+### Bước 1.2 — Đọc Widget Library
 
-Xác nhận settings keys cho mỗi widget sẽ dùng:
-- `section`: `_padding`, `_background`, `_border`, `_position`, `_overflow`
-- `container`: `_direction`, `_alignItems`, `_columnGap`, `_padding`, `_rowGap`
-- `block`: `_direction`, `_alignItems`, `_justifyContent`, `_width`, `_background`, `_border`, `_rowGap`, `_columnGap`, `_padding`, `_overflow`, `_position`, `_alignSelf`, `_flexShrink`
-- `heading`: `text`, `tag`, `_typography`, `_margin`, `_alignSelf`
-- `text-basic`: `text`, `tag`, `_typography`, `_padding`, `_alignSelf`
-- `image`: `image.id`, `image.url`, `image.size`, `_position`, `stretch`, `_objectFit`, `_width`, `_height`, `_border`
-- `button`: `text`, `link.url`, `_typography`, `_background`, `_border`, `_padding`
+**BẮT BUỘC** đọc file widget tương ứng với từng widget trong danh sách Section 4 của plan:
 
-### Bước 1.3 — Mapping Figma → Bricks
+```
+Đọc README: /Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/README.md
 
-Với mỗi section trong plan, tạo bảng mapping:
-| Figma element | Bricks widget | Settings keys cần dùng |
-|--------------|--------------|------------------------|
-| Outer section | `section` | `_padding`, `_background.color` |
-| Inner container (bg#f2f3f5, radius 24px) | `block` | `_background.color`, `_border.radius`, `_overflow` |
-| Background overlay image (absolute, opacity) | `image` | `_position: "absolute"`, `stretch: true`, `_objectFit: "cover"` |
-| 2-col row | `container` hoặc `block` | `_direction: "row"`, `_columnGap` |
-| Col left (flex-col) | `block` | `_direction: "column"`, `_rowGap`, `_width`, `_padding` |
-| Title "ĐẶNG TUẤN" | `heading` | `tag: "h1"`, `text`, `_typography` |
-| Subtitle text | `heading` hoặc `text-basic` | `tag: "custom"`, `customTag: "p"`, `_typography` |
-| Bio text | `text-basic` | `text`, `_typography` |
-| Cert image | `image` | `image.id`, `_width`, `_height` |
-| CTA button | `button` | `text`, `link`, `_background`, `_border`, `_padding` |
-| Profile photo | `image` | `image.id`, `_width`, `_height`, `_objectFit` |
+Với mỗi widget trong danh sách plan → đọc file tương ứng:
+/Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/[tên-file].md
+```
 
-### Bước 1.4 — Bảng kế hoạch build
+Mục đích — ghi nhận cho từng widget:
+- **Settings keys chính xác** và kiểu dữ liệu (string / object / number)
+- **`_cssCustom` selectors** nếu cần style nâng cao
+- **JSON example** để tham khảo cấu trúc
 
-| # | Section | Template Slug | Status |
-|---|---------|--------------|--------|
-| 1 | Hero | `[slug]-hero` | ⏳ |
+> ⚠️ Không dùng settings key từ trí nhớ hay bảng hardcode. Chỉ dùng keys từ widget library.
+
+### Bước 1.3 — Xác định thứ tự build
+
+Sắp xếp sections theo thứ tự:
+1. `[SIMPLE]` trước — build nhanh, ít rủi ro
+2. `[MEDIUM]` tiếp theo
+3. `[COMPLEX]` cuối — xem xét kỹ nhất
+
+Tạo bảng kế hoạch:
+
+| # | Section | Complexity | Template Slug | Status |
+|---|---------|-----------|--------------|--------|
+| 1 | Hero | SIMPLE | `[slug]-hero` | ⏳ |
+| 2 | Features | MEDIUM | `[slug]-features` | ⏳ |
+| 3 | Pricing | COMPLEX | `[slug]-pricing` | ⏳ |
 
 ---
 
 ## GIAI ĐOẠN 2: Chuẩn bị Images
 
-> **Quan trọng:** `image` element trong Bricks PHẢI có `attachment_id` hợp lệ. Không dùng placeholder src rỗng.
+> ✅ **Workflow khuyến nghị — Dùng Custom URL trong build phase:**
+> Image widget hỗ trợ **Custom URL** (`id: 0, url: "..."`). Trong giai đoạn build/prototype, dùng thẳng URL `localhost:3845` từ Figma — **không cần download hay upload**.
 
-### Bước 2.1 — Download images từ Figma local server
-Với mỗi image trong plan:
-```bash
-curl -o ".agents/images/[slug]/[name].png" "http://localhost:3845/assets/[hash].png"
+### Bước 2.1 — Xác định nguồn ảnh
+
+Với mỗi ảnh trong plan Section 5:
+
+```json
+// Build phase — dùng Figma URL trực tiếp
+"image": {
+  "id": 0,
+  "url": "http://localhost:3845/assets/[hash].png"
+}
 ```
 
-### Bước 2.2 — Upload lên WP Media Library
-Có 2 cách:
+> ⚠️ `localhost:3845` chỉ hoạt động khi **Figma Desktop đang chạy** trên máy người xem. Ổn cho môi trường dev/staging.
 
-**Cách A: Dùng `mcp_bricks-mcp_media(action: "sideload")`**
+### Bước 2.2 — Upload WP (chỉ khi production)
+
+Khi cần deploy production hoặc user yêu cầu ảnh thật:
+
+**Cách A: Sideload qua MCP** (thử trước)
 ```
 mcp_bricks-mcp_media(
   action: "sideload",
@@ -101,24 +111,79 @@ mcp_bricks-mcp_media(
 )
 → Lấy attachment_id từ response
 ```
-> Thử cách này trước — nếu site có thể fetch localhost:3845 thì sẽ work.
 
-**Cách B: User upload thủ công**
-- User upload 4 files lên WP Admin > Media
-- User cung cấp attachment_id cho AI
-- AI mới tiến hành build template
+**Cách B: User upload thủ công** (nếu Cách A lỗi do localhost)
+- Báo user upload lên WP Admin > Media
+- Chờ user cung cấp `attachment_id`
+- Thay `id: 0, url: localhost` → `id: [real_id], url: [wp_url]`
 
-### Bước 2.3 — Ghi attachment_ids vào bảng
-| Tên | File local | Attachment ID | WP URL |
-|-----|-----------|--------------|--------|
-| hero-bg | `.agents/images/[slug]/hero-bg.png` | ??? | ??? |
-| profile-photo | `.agents/images/[slug]/profile-photo.png` | ??? | ??? |
+### Bước 2.3 — Ghi bảng images
+
+| Tên | Figma URL | Build URL (id:0) | WP attachment_id (production) |
+|-----|-----------|-----------------|-------------------------------|
+| hero-bg | `localhost:3845/assets/[hash].png` | ✅ dùng ngay | ___ (điền sau) |
 
 ---
 
-## GIAI ĐOẠN 3: Build Templates
+## GIAI ĐOẠN 3: Build từng Section (tuần tự)
 
-### Bước 3.1 — Tạo template rỗng
+> **Nguyên tắc vàng để đạt độ chính xác 100%:**
+> 1. Build xong 1 section → báo user → chờ xác nhận → mới tiếp tục.
+> 2. **Context Reinforcement:** Trước khi build MỖI section, AI phải dùng `view_file` đọc lại:
+>    - `.agents/plans/[slug].md` (để lấy variables & layout của đúng section đó)
+>    - `/Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/[widget].md` (cho các widget sẽ dùng trong section đó)
+>    *Điều này đảm bảo không có sai sót do AI bị trôi context.*
+
+---
+
+### [Lặp lại cho mỗi section theo thứ tự]
+
+---
+
+#### Bước 3.A — Chuẩn bị JSON cho section hiện tại
+
+**Bắt buộc thực hiện:** Đọc lại Plan và Widget Library của các widget trong section này ngay tại đây.
+
+Dựa vào dữ liệu "tươi" vừa đọc, build elements array:
+
+**Nguyên tắc build JSON:**
+1. Root element phải `"parent": "0"`
+2. IDs: 6 ký tự alphanumeric ngẫu nhiên (vd: `a1b2c3`)
+3. Thứ tự trong array = thứ tự render (parent trước, children sau)
+4. Thiết lập settings keys lấy **chính xác** từ tài liệu widget vừa đọc.
+5. `_cssCustom` syntax: `"%root% { ... }\n%root%:hover { ... }"`
+
+**Cấu trúc mẫu (adapting theo từng section):**
+```json
+[
+  {
+    "id": "sec[XX]",
+    "name": "section",
+    "parent": "0",
+    "settings": {
+      "_padding": {"top": "Xpx", "bottom": "Xpx", "left": "0px", "right": "0px"},
+      "_background": {"color": {"hex": "#XXXXXX"}}
+    }
+  },
+  {
+    "id": "ctn[XX]",
+    "name": "container",
+    "parent": "sec[XX]",
+    "settings": {
+      "_maxWidth": "1200px",
+      "_direction": "row",
+      "_columnGap": "24px",
+      "_alignItems": "center"
+    }
+  }
+  // ... children theo plan
+]
+```
+
+> **Với section [COMPLEX]:** Phân tích kỹ behavior analysis trong plan, xác định rõ `_cssCustom` cần thiết trước khi gọi API.
+
+#### Bước 3.B — Tạo template rỗng
+
 ```
 mcp_bricks-mcp_template(
   action: "create",
@@ -126,207 +191,79 @@ mcp_bricks-mcp_template(
   title: "[slug]-[ten-section]",
   status: "publish"
 )
-```
-→ Lưu `template_id`.
-
-### Bước 3.2 — Build elements array
-
-**Quy tắc elements array:**
-1. Mỗi element: `{"id": "abc123", "name": "widget", "parent": "parentId", "settings": {...}}`
-2. Root section: `"parent": "0"` (string, không phải integer)
-3. IDs: 6 ký tự alphanumeric (ví dụ: `"a1b2c3"`)
-4. Không cần set `children` array — Bricks tự tính
-5. Thứ tự trong array = thứ tự render
-
-**Template pattern cho section có 2-col layout:**
-```json
-[
-  {
-    "id": "secAAA",
-    "name": "section",
-    "parent": "0",
-    "settings": {
-      "_padding": {"top": "40px", "bottom": "40px", "left": "40px", "right": "40px"}
-    }
-  },
-  {
-    "id": "blkBG",
-    "name": "block",
-    "parent": "secAAA",
-    "settings": {
-      "_background": {"color": {"hex": "#f2f3f5"}},
-      "_border": {"radius": {"top": "24px", "right": "24px", "bottom": "24px", "left": "24px"}},
-      "_overflow": "hidden",
-      "_position": "relative"
-    }
-  },
-  {
-    "id": "imgBG",
-    "name": "image",
-    "parent": "blkBG",
-    "settings": {
-      "image": {"id": ATTACHMENT_ID, "url": "WP_URL", "size": "full"},
-      "_position": "absolute",
-      "stretch": true,
-      "_objectFit": "cover"
-    }
-  },
-  {
-    "id": "ctnRow",
-    "name": "container",
-    "parent": "blkBG",
-    "settings": {
-      "_direction": "row",
-      "_alignItems": "flex-end",
-      "_columnGap": "24px",
-      "_zIndex": "1"
-    }
-  },
-  {
-    "id": "blkL",
-    "name": "block",
-    "parent": "ctnRow",
-    "settings": {
-      "_direction": "column",
-      "_rowGap": "24px",
-      "_padding": {"top": "64px", "bottom": "64px"},
-      "_width": "684px",
-      "_flexShrink": "0"
-    }
-  },
-  {
-    "id": "txtSub",
-    "name": "text-basic",
-    "parent": "blkL",
-    "settings": {
-      "text": "<p>Chuyên viên R&D</p>",
-      "tag": "p",
-      "_typography": {
-        "font-size": "18px",
-        "font-weight": "500",
-        "line-height": "30px",
-        "font-family": "Inter",
-        "color": {"hex": "#282829"}
-      }
-    }
-  },
-  {
-    "id": "hdgName",
-    "name": "heading",
-    "parent": "blkL",
-    "settings": {
-      "text": "ĐẶNG TUẤN",
-      "tag": "h1",
-      "_typography": {
-        "font-size": "44px",
-        "font-weight": "700",
-        "line-height": "56px",
-        "font-family": "Inter",
-        "color": {"hex": "#282829"}
-      }
-    }
-  },
-  {
-    "id": "txtBio",
-    "name": "text-basic",
-    "parent": "blkL",
-    "settings": {
-      "text": "<p>Bio paragraph 1</p><p>Bio paragraph 2</p>",
-      "_typography": {
-        "font-size": "18px",
-        "font-weight": "400",
-        "line-height": "30px",
-        "color": {"hex": "#282829"}
-      }
-    }
-  },
-  {
-    "id": "imgCert",
-    "name": "image",
-    "parent": "blkL",
-    "settings": {
-      "image": {"id": CERT_ID, "url": "CERT_URL", "size": "full"},
-      "_width": "144px",
-      "_height": "60px"
-    }
-  },
-  {
-    "id": "btnCTA",
-    "name": "button",
-    "parent": "blkL",
-    "settings": {
-      "text": "Xem bài chia sẻ",
-      "link": {"url": "#"},
-      "_background": {"color": {"hex": "#007cfc"}},
-      "_border": {
-        "radius": {"top": "12px", "right": "12px", "bottom": "12px", "left": "12px"}
-      },
-      "_padding": {"top": "12px", "bottom": "12px", "left": "32px", "right": "32px"},
-      "_typography": {"color": {"hex": "#fcfcfc"}, "font-size": "18px", "font-weight": "500"}
-    }
-  },
-  {
-    "id": "blkR",
-    "name": "block",
-    "parent": "ctnRow",
-    "settings": {
-      "_alignSelf": "stretch",
-      "_alignItems": "center",
-      "_justifyContent": "flex-end",
-      "_overflow": "hidden",
-      "_position": "relative"
-    }
-  },
-  {
-    "id": "imgProfile",
-    "name": "image",
-    "parent": "blkR",
-    "settings": {
-      "image": {"id": PROFILE_ID, "url": "PROFILE_URL", "size": "full"},
-      "_width": "520px",
-      "_height": "520px",
-      "_objectFit": "cover",
-      "_position": "absolute",
-      "_bottom": "0"
-    }
-  }
-]
+→ Lưu template_id
 ```
 
-### Bước 3.3 — Gọi update_content
+#### Bước 3.C — Push elements
+
 ```
 mcp_bricks-mcp_content(
   action: "update_content",
   post_id: [template_id],
-  elements: [... array trên ...]
+  elements: [... array đã build ...]
 )
 ```
 
-### Bước 3.4 — Verify
+#### Bước 3.D — Verify structure
+
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id])
 ```
-Kiểm tra:
-- Số elements đúng không
-- parent/children relationships đúng không
-- IDs trong children array khớp với elements
 
-### Bước 3.5 — Fix nếu parent sai
+Kiểm tra:
+- Số elements đúng với array đã push
+- Parent/children relationships khớp
+- IDs không bị thay đổi
+
+**Nếu có lỗi parent:**
 ```
 mcp_bricks-mcp_content(
   action: "move",
-  element_id: "[element-id-thực-tế]",
+  element_id: "[element-id]",
   post_id: [template_id],
-  target_parent_id: "[parent-id-thực-tế]",
+  target_parent_id: "[parent-id-đúng]",
   position: 0
 )
 ```
 
+#### Bước 3.E — Báo cáo user & CHỜ XÁC NHẬN
+
+Sau khi verify xong, báo cáo:
+
+```
+✅ Section [N]: "[Tên section]" đã build xong!
+
+🔗 Xem trong Bricks editor:
+   [site_url]/wp-admin/post.php?post=[template_id]&action=bricks
+
+📋 Template: [slug]-[ten-section] (ID: [template_id])
+📊 Elements: [số] elements | Complexity: [SIMPLE/MEDIUM/COMPLEX]
+
+⚠️ Vui lòng kiểm tra:
+   - Layout có đúng với Figma không?
+   - Typography, spacing có khớp không?
+   - Images hiển thị đúng không?
+   - Hover/interaction (nếu có) hoạt động không?
+
+👉 Gõ "ok" hoặc "tiếp tục" để build Section [N+1]: "[Tên section tiếp}"
+   Gõ "fix [mô tả]" nếu cần chỉnh sửa trước khi tiếp tục.
+```
+
+> **AI DỪNG và CHỜ.** Không tự động sang section tiếp theo.
+
+#### Bước 3.F — Xử lý phản hồi user
+
+- **User gõ "ok" / "tiếp tục":** Chuyển sang section tiếp theo (Bước 3.A với section kế)
+- **User gõ "fix [mô tả]":** Phân tích, fix elements của section vừa build, verify lại rồi báo lại (Bước 3.E)
+- **User gõ nội dung khác:** Xử lý yêu cầu cụ thể
+
 ---
 
-## GIAI ĐOẠN 4: Ghi file Note
+## GIAI ĐOẠN 4: Hoàn thành — Ghi file Note
 
-File: `.agents/notes/[slug]-templates.md`
+Sau khi **tất cả sections đã được user xác nhận**, ghi file:
+
+`.agents/notes/[slug]-templates.md`
 
 ```markdown
 # Note: Templates – [Tên Page]
@@ -334,29 +271,45 @@ File: `.agents/notes/[slug]-templates.md`
 **Images:** `.agents/images/[slug]/`
 **Site:** [site_url] | Bricks [version]
 **Ngày:** [YYYY-MM-DD]
+**Trạng thái:** ✅ Hoàn thành / 🔄 Đang xử lý
 
 ## Templates
 
-| # | Template | ID | Edit URL | Status |
-|---|----------|----|----------|--------|
-| 1 | [slug]-hero | [id] | [url] | ✅/❌ |
+| # | Tên Section | Template ID | Edit URL | User Review |
+|---|-------------|-------------|----------|-------------|
+| 1 | [slug]-hero | [id] | [wp-admin url] | ✅ Approved |
+| 2 | [slug]-features | [id] | [wp-admin url] | ✅ Approved |
 
 ## Images
 
-| File | Attachment ID | Dùng trong element |
-|------|--------------|-------------------|
-| hero-bg.png | [id] | imgBG |
-| profile-photo.png | [id] | imgProfile |
+| File | Attachment ID | Dùng trong |
+|------|--------------|------------|
+| hero-bg.png | [id] | imgBG (section 1) |
 
-## Lỗi
-- [ ] Chưa fix...
+## Ghi chú
+
+- [Các vấn đề gặp phải và cách xử lý]
+```
+
+Báo cáo cuối:
+```
+🎉 Hoàn thành! Đã build [N] sections cho "[Tên Page]"
+
+Chạy /restore-bricks-template để review tổng thể và so sánh với Figma.
 ```
 
 ---
 
-## Thứ tự xử lý khi có nhiều sections
+## Tóm tắt flow
 
-1. Build **tất cả sections song song** nếu không phụ thuộc nhau
-2. Mỗi section là 1 template độc lập
-3. Ghi note sau khi build xong tất cả
-4. Chạy `/restore-bricks-template` để review tổng thể
+```
+Đọc plan → Đọc widget library → Chuẩn bị images
+    ↓
+[Section 1] Build → Verify → Báo user → CHỜ
+    ↓ (user ok)
+[Section 2] Build → Verify → Báo user → CHỜ
+    ↓ (user ok)
+[Section N] Build → Verify → Báo user → CHỜ
+    ↓ (user ok)
+Ghi note → Done
+```
