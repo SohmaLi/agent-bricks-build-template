@@ -2,100 +2,162 @@
 description: Audit và đồng bộ dữ liệu của các Bricks templates. So sánh JSON thực tế với Plan và Figma để đảm bảo tính nhất quán của Design System.
 ---
 
-# Workflow: Restore Bricks Template (Design Data Audit)
+# Workflow: Restore Bricks Template (Design Audit)
 
 ## Input
-- Slug của plan file (ví dụ: `blog-author-profile`)
+- Slug của plan: `.agents/plans/[slug].md`
 - Note file từ Flow 2: `.agents/notes/[slug]-templates.md`
 
 ## Output
-- **Báo cáo Audit:** `.agents/audit/[slug]-result.md`
-- **Kết quả:** Đồng bộ hóa các thông số sai lệch hoặc thông báo "Design Verified".
+- Báo cáo: `.agents/audit/[slug]-result.md`
+- Kết quả: Đồng bộ lỗi hoặc thông báo "Design Verified"
 
-## Điều kiện chạy
-> Chạy sau khi tất cả các section trong `/bricks-create-template` đã được build và user xác nhận "ok" sơ bộ.
+## Skip khi
+> Section toàn `[SIMPLE]`, không có `_cssCustom`, user đã xác nhận visual 100% khớp Figma.
 
 ---
 
-## GIAI ĐOẠN 1: Thu thập dữ liệu tổng hợp
+## GIAI ĐOẠN 1: Thu thập dữ liệu
 
-### Bước 1.1 — Đọc dữ liệu nguồn
-Đọc đồng thời 3 nguồn:
-1.  `.agents/plans/[slug].md`: Lấy Design Variables (Color Palette, Font sizes, Spacing rules).
-2.  `.agents/notes/[slug]-templates.md`: Lấy danh sách Template IDs.
-3.  `mcp_figma_get_design_context`: Để có cái nhìn tổng quan (Macro) về toàn bộ thiết kế, tránh rơi rớt element.
+### Bước 1.1 — Đọc đồng thời 3 nguồn
 
-### Bước 1.2 — Lấy JSON thực tế từ site
-Với mỗi template ID trong Note file, gọi:
 ```
-mcp_bricks-mcp_content(action: "get", post_id: [id])
+[1] .agents/plans/[slug].md          → Design Variables, danh sách sections
+[2] .agents/notes/[slug]-templates.md → Template IDs
+[3] mcp_figma_get_design_context      → Tổng quan visual để detect missing elements
 ```
-Hợp nhất tất cả các `elements[]` từ các section vào một "Global JSON Map" để phân tích xuyên suốt trang.
+
+### Bước 1.2 — Lấy JSON thực tế
+
+Với mỗi template ID từ Note file:
+```
+mcp_bricks-mcp_content(action: "get", post_id: [id], view: "summary")
+```
+→ Hợp nhất tất cả `elements[]` thành **Global JSON Map** để audit xuyên suốt.
 
 ---
 
-## GIAI ĐOẠN 2: Chạy Audit (Design Linter)
+## GIAI ĐOẠN 2: Audit (Design Linter)
 
-AI tiến hành "soi" Global JSON Map theo các tiêu chuẩn sau:
+Chạy 4 kiểm tra trên Global JSON Map:
 
-### 2.1 — Audit Design System (Độ chính xác thông số)
-- **Colors:** Tìm các hex code trong `settings`. Nếu phát hiện màu nào không nằm trong Color Palette của Plan nhưng lại có độ tương đồng cao (ví dụ lệch vài tone) → Đánh dấu là "Invalid Color".
-- **Typography:** Kiểm tra font-family, font-size, line-height. So sánh với các Typography Token ở Flow 1.
-- **Spacing:** Kiểm tra padding/margin. Các giá trị nên tuân theo hệ thống (ví dụ: chia hết cho 4 hoặc 8).
+### 2.1 — Design System
 
-### 2.2 — Audit Tài nguyên & Dữ liệu
-- **Media Check:** Đảm bảo tất cả widget `image` đều có `attachment_id` thực tế và ID đó tồn tại trong hệ thống.
-- **Dynamic Data Check:** Rà soát các cú pháp `{...}`. Nếu plan yêu cầu dynamic nhưng build đang dùng static text hoặc ngược lại → Ghi chú lỗi.
+| Kiểm tra | Tiêu chuẩn |
+|---------|-----------|
+| **Colors** | Mọi hex trong `settings` phải khớp Color Palette của Plan → lệch tone → "Invalid Color" |
+| **Typography** | font-family, font-size, line-height khớp Typography Tokens |
+| **Spacing** | padding/margin tuân theo hệ thống (chia hết cho 4 hoặc 8) |
 
-### 2.3 — Audit Cấu trúc & Logic
-- **Missing Elements:** Dựa trên Figma Context, kiểm tra xem có block/element nào trong thiết kế nhưng chưa xuất hiện trong bất kỳ template nào không?
-- **CSS Isolation:** Kiểm tra xem có class CSS nào bị trùng tên ở các section khác nhau nhưng mang thuộc tính khác nhau không (tránh xung đột hiển thị).
-- **%root% Verify:** Đảm bảo 100% `_cssCustom` sử dụng đúng biến `%root%` để target element.
+### 2.2 — Media & Dynamic Data
+
+| Trạng thái | Kết quả |
+|-----------|--------|
+| `id:0 + url: localhost:3845/...` | ✅ Hợp lệ (build phase) |
+| `id:0 + url: localhost:3845/...` trên production | ⚠️ Cần thay WP URL |
+| `id>0 + WP URL` | ✅ Hợp lệ (production) |
+| `id:0 + url rỗng/sai` | ❌ Lỗi — cần fix |
+| Dynamic `{...}` trong Plan `[DYNAMIC]` nhưng build dùng static | ❌ Lỗi ngược |
+
+### 2.3 — Cấu trúc & CSS
+
+- **Missing Elements:** So Figma context — block/element nào có trong design nhưng không có trong template?
+- **CSS Isolation:** Class CSS trùng tên nhưng thuộc tính khác nhau giữa các sections?
+- **`%root%` Verify:** 100% `_cssCustom` phải dùng `%root%` để target đúng element
+
+### 2.4 — Parent-Child Tree *(lỗi phổ biến nhất)*
+
+> 🚨 Xảy ra **100%** sau mỗi `update_content`. Bắt buộc audit.
+
+```
+mcp_bricks-mcp_content(action: "get", post_id: [id], view: "summary")
+```
+
+Kiểm tra:
+- Chỉ `section` ở `depth: 0` — element khác ở `depth: 0` → parent bị flat
+- `container` ở `depth: 1`, các blocks/widgets ở đúng depth theo plan
+- Số `children` của từng node khớp plan
+
+**Fix nếu flat:**
+```
+mcp_bricks-mcp_content(action: "move", post_id: [id],
+  element_id: "[id]", target_parent_id: "[parent]", position: N)
+```
+→ Move từ ngoài vào trong (level 1 → 2 → ... → leaf)
 
 ---
 
-## GIAI ĐOẠN 3: Xử lý & Đồng bộ
+## GIAI ĐOẠN 3: Báo cáo & Sync
 
-### 3.1 — Tạo báo cáo Audit
-Ghi file: `.agents/audit/[slug]-result.md`
+### Bước 3.1 — Ghi báo cáo
+
+`.agents/audit/[slug]-result.md`
 
 ```markdown
 # Audit Report: [Tên Page]
 
-## 📊 Thống kê tổng quan
-- Tổng số templates: [N]
-- Tổng số elements: [M]
+## 📊 Tổng quan
+- Templates: [N] | Elements: [M]
+- Môi trường: Build (localhost) / Production
 - Trạng thái: ⚠️ Cần đồng bộ / ✅ Design Verified
 
-## 🔍 Kết quả chi tiết
+## 🔍 Lỗi phát hiện
 
-### Item 1: Màu sắc không đồng nhất
-- **Phát hiện:** `color: #0875e1` tại [Element ID] thuộc Section 2.
-- **Kỳ vọng:** `#007cfc` (Brand Color).
-- **Hành động:** Propose Auto-fix
-
-### Item 2: Thiếu Element thiết kế
-- **Phát hiện:** Dải "Copyright text" ở Footer Figma chưa được build trong bất kỳ section nào.
-
-### Item 3: Lỗi cú pháp CSS
-- **Phát hiện:** `_cssCustom` tại [Element ID] thiếu `%root%`.
+### [#1] [Tên lỗi] — [Loại: Color / Typography / Tree / Missing / CSS]
+- **Phát hiện:** [mô tả + Element ID + Section]
+- **Kỳ vọng:** [giá trị đúng]
+- **Hành động:** Auto-fix / Cần rebuild section / Bỏ qua
 ```
 
-### 3.2 — Quy trình Khắc phục (Sync Protocol)
-Thay vì tự động sửa ngay lập tức, AI tuân thủ:
+### Bước 3.2 — Sync Protocol
 
-1.  **Phân loại lỗi:**
-    - `Lỗi Typo/Thông số`: Sai mã màu, sai font size, thiếu `%root%`.
-    - `Lỗi logic/thiếu hụt`: Thiếu element, sai parent-child.
-2.  **Đề xuất:** AI liệt kê danh sách các thay đổi sẽ thực hiện vào báo cáo Audit.
-3.  **Xác nhận:** AI hỏi: *"Tôi phát hiện [N] lỗi thông số có thể tự động đồng bộ. Bạn có đồng ý để tôi fix chúng không?"*
-4.  **Hành động:** Chỉ gọi `update_content` sau khi user gõ "ok". Với lỗi logic (thiếu element), AI đề xuất hướng rebuild section đó ở Flow 2.
-
-### 3.3 — Báo cáo kết quả cuối cùng
-- Cập nhật dòng "Design Audit: ✅ PASS" vào Note file sau khi đã fix.
-- Thông báo cho user link các template đã được đồng bộ chuẩn thiết kế.
+1. **Phân loại:**
+   - `Typo/Thông số` (sai màu, sai font, thiếu `%root%`) → Auto-fix
+   - `Logic/Thiếu hụt` (missing element, sai parent-child) → Đề xuất rebuild tại Flow 2
+2. **Hỏi user:** *"Tôi phát hiện [N] lỗi thông số. Đồng ý để tôi auto-fix?"*
+3. **Chỉ execute** `bulk_update` / `move` sau khi user gõ "ok"
+4. **Cập nhật** dòng "Design Audit: ✅ PASS" vào Note file sau khi fix xong
 
 ---
 
-## GIAI ĐOẠN 4: Page Assembly (Lắp ghép)
-AI gợi ý thứ tự shortcode hoặc ID template để user dán vào Page chính trong WordPress để tạo thành trang hoàn chỉnh.
+## GIAI ĐOẠN 4: Page Assembly
+
+### Bước 4.1 — Xác định thứ tự sections
+Từ `.agents/plans/[slug].md` → list sections từ trên xuống.
+
+### Bước 4.2 — Insert templates vào Page
+
+**Cách A (khuyến nghị):** Thêm element `template` trong Bricks editor, chọn đúng Template ID cho mỗi section.
+
+**Cách B (reference):**
+```
+Section 1: [tên] — ID: [id] — [edit URL]
+Section 2: [tên] — ID: [id] — [edit URL]
+```
+
+### Bước 4.3 — Checklist frontend
+
+- [ ] Thứ tự sections đúng với Figma
+- [ ] Không có khoảng trắng thừa giữa sections
+- [ ] Images hiển thị (localhost nếu build, WP URL nếu production)
+- [ ] Hover effects hoạt động
+- [ ] Responsive mobile đúng (nếu có breakpoints)
+
+```
+🎉 Audit hoàn thành!
+Trang: [URL] | [N] sections | Ảnh: Build / Production
+```
+
+---
+
+## Tóm tắt flow
+
+```
+Đọc plan + notes + Figma → Lấy JSON thực tế → Hợp nhất Global JSON Map
+    ↓
+Audit: Design System → Media → CSS → Parent-Child Tree
+    ↓
+Ghi báo cáo → Hỏi user → Fix (bulk_update / move)
+    ↓
+Page Assembly → Checklist frontend → Done
+```
