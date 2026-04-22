@@ -138,12 +138,13 @@ Với mỗi `image` widget trong plan, AI **phải** xác định rõ từ Figma
 
 | Câu hỏi | Kiểm tra |
 |---------|---------|
-| Ảnh có `position: absolute` không? | Xem parent có `position: relative` không? → Nếu có → child image cần `_cssCustom: position:absolute` |
-| Ảnh có kích thước cố định không? | Ghi rõ `width` + `height` vào `_cssCustom` hoặc `_width` / `_height` settings |
-| Ảnh cần `object-fit` + `object-position` không? | Khi Figma crop image theo vùng cụ thể → tính `object-position` theo tỷ lệ |
-| Parent block có `position: relative` không? | **Bắt buộc dùng `_cssCustom`** cho `position:relative` trên block vì Bricks KHÔNG có `_position` setting |
+| Ảnh có `position: absolute` không? | Xem parent có `position: relative` không? → Parent dùng `_position: "relative"` (native key) |
+| Ảnh có kích thước cố định không? | Dùng `_width` + `_height` (native — apply đúng vào `<img>` tag) |
+| Image cần `object-fit` + `object-position` không? | Dùng `_objectFit` + `_objectPosition` (native) |
+| Ảnh có `mask-image` hoặc `transform` không? | `_cssCustom: "%root% img { mask-image: ... }"` (cần target `<img>` tag, không phải wrapper) |
 
-> ⚠️ **Gotcha:** `_position: "relative"` KHÔNG hoạt động trong block settings. Phải dùng `_cssCustom: "%root% { position: relative; }"`.
+> ✔️ `_position` là **Shared CSS Key có trên mọi widget** (từ `base.php`). Dùng trực tiếp trong settings, không cần `_cssCustom`.
+
 
 ### 4B — Slider & Tabs → Luôn dùng Nestable Widget
 
@@ -181,22 +182,64 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 
 ---
 
-## RULE 5 — Bricks Known Invalid Settings (Gotcha List)
+## RULE 5 — CSS Property Lookup Table (Khuôn mẫu tra cứu)
 
-> **Áp dụng:** Tất cả flows — đặc biệt quan trọng khi build và audit
+> **Áp dụng:** Tất cả flows — xem trước khi viết bất kỳ `_cssCustom` nào
 
-### 5A — Settings bị Bricks bỏ qua hoàn toàn
+**Nguyên tắc:** Native Shared CSS Keys (từ `base.php`) có trên MỊI widget — ưu tiên dùng trước.
 
-| Setting Key | Trạng thái | Thay thế bắt buộc |
-|------------|-----------|-----------------|
-| `_position: "relative"` trên block/container | ❌ Bricks bỏ qua | `_cssCustom: "%root% { position: relative; }"` |
-| `_position: "absolute"` trên block | ❌ Bricks bỏ qua | `_cssCustom: "%root% { position: absolute; top:Xpx; left:Xpx; }"` |
-| `_height` kết hợp với absolute positioning | ⚠️ Apply nhưng có thể bị override | Gộp vào `_cssCustom` cùng với `position` |
-| `_overflow: "hidden"` trên block có `position:relative` | ⚠️ Xung đột khi dùng cùng `_cssCustom` | Ưu tiên gộp tất cả vào `_cssCustom` |
+### 5A — Native Keys (ưu tiên, dùng trước `_cssCustom`)
 
-### 5B — Object-position Formula (từ Figma crop → CSS)
+| CSS Property | Native Key | Giá trị ví dụ |
+|-------------|------------|---------------|
+| `width` | `_width` | `"100%"`, `"480px"` |
+| `height` | `_height` | `"400px"`, `"100vh"` |
+| `min/max-width` | `_widthMin`, `_widthMax` | `"320px"`, `"1200px"` |
+| `min/max-height` | `_heightMin`, `_heightMax` | `"200px"` |
+| `padding` | `_padding` | `{top,bottom,left,right}` |
+| `margin` | `_margin` | `{top,bottom,left,right}` |
+| `display` | `_display` | `"flex"`, `"grid"`, `"block"` |
+| `flex-direction` | `_direction` | `"row"`, `"column"` |
+| `align-items` | `_alignItems` | `"center"`, `"flex-start"` |
+| `justify-content` | `_justifyContent` | `"space-between"`, `"center"` |
+| `gap (row)` | `_rowGap` | `"24px"` |
+| `gap (col)` | `_columnGap` | `"24px"` |
+| `flex-grow` | `_flexGrow` | `"1"` |
+| `flex-shrink` | `_flexShrink` | `"0"` |
+| `position` | `_position` | `"relative"`, `"absolute"` |
+| `top / right / bottom / left` | `_top`, `_right`, `_bottom`, `_left` | `"0px"`, `"24px"` |
+| `z-index` | `_zIndex` | `1`, `10`, `-1` |
+| `overflow` | `_overflow` | `"hidden"`, `"auto"` |
+| `opacity` | `_opacity` | `0.5`, `1` |
+| `aspect-ratio` | `_aspectRatio` | `"16/9"`, `"1/1"` |
+| `border` | `_border` | `{width, style, color, radius}` |
+| `background-color` | `_background` | `{color: {hex: "#fff"}}` |
+| `object-fit` | `_objectFit` | `"cover"`, `"contain"` |
+| `object-position` | `_objectPosition` | `"50% 30%"`, `"center"` |
+| `transition` | `_cssTransition` | `"all 0.3s ease"` |
+| `box-shadow` (normal) | `_boxShadow` | object settings |
 
-Khi Figma dùng percentage crop cho image (inner img dùng absolute %, not object-fit):
+### 5B — Chỉ dùng `_cssCustom` (không có native key)
+
+| CSS cần | `_cssCustom` pattern đúng |
+|---------|--------------------------|
+| `background` gradient | `"%root% { background: linear-gradient(...) }"` |
+| `box-shadow` inset | `"%root% { box-shadow: inset 0 0 24px rgba(...) }"` |
+| `grid-template-columns` | `"%root% { grid-template-columns: repeat(3,1fr); }"` kèm `_display: "grid"` |
+| `clip-path` | `"%root% { clip-path: polygon(...) }"` |
+| `filter` | `"%root% { filter: blur(4px) }"` |
+| `transform` | `"%root% { transform: rotate(-5deg) }"` |
+| `:hover` state | `"%root%:hover { transform: translateY(-4px) }"` |
+| `::before` / `::after` | `"%root%::before { content: ''; ... }"` |
+| `mask-image` trên img | `"%root% img { -webkit-mask-image: url(...) }"` |
+
+> ⚠️ **Image Widget đặc biệt:**
+> - `%root%` = `<figure>` wrapper (sizing native qua `_width`/`_height`)
+> - `%root% img` = `<img>` tag (dùng khi mask, transform, filter trên img)
+
+### 5C — Object-position Formula (từ Figma crop → CSS)
+
+Khi Figma dùng percentage crop cho image:
 
 ```
 Figma: left: -X%, top: -Y%, width: W%, height: H%
@@ -204,7 +247,7 @@ Figma: left: -X%, top: -Y%, width: W%, height: H%
 → object-position-y = Y / (H - 100) * 100 %
 ```
 
-**Ví dụ thực tế (img28 Section 2):**
+**Ví dụ:**
 ```
 Figma: left:-59.34%, top:-51.1%, w:283.26%, h:188.54%
 → x = 59.34 / (283.26 - 100) * 100 ≈ 32% → approximate 59%
@@ -212,7 +255,7 @@ Figma: left:-59.34%, top:-51.1%, w:283.26%, h:188.54%
 → CSS: object-position: 59% 27%;
 ```
 
-### 5C — Figma MCP Fallback khi `unknown_tool`
+### 5D — Figma MCP Fallback khi `unknown_tool`
 
 Khi `mcp_figma_get_design_context` lỗi `unknown_tool`:
 1. Đọc plan file đã có → lấy design data từ đó
@@ -224,7 +267,17 @@ Khi `mcp_figma_get_design_context` lỗi `unknown_tool`:
 
 ## Ghi chú áp dụng
 
+### Phân loại Rule theo chức năng:
+
+| Rule | Loại | Ý nghĩa |
+|------|-------|--------|
+| RULE 1 (MCP check) | ❌ **Ép buộc cứng** | Vi phạm → flow fail hoàn toàn |
+| RULE 2 (No browser) | ❌ **Ép buộc cứng** | Không ngoại lệ |
+| RULE 3 (Static-first) | ❌ **Ép buộc cứng** | Sai nội dung → sai design |
+| RULE 4 (Build techniques) | 📌 **Khuôn mẫu** | Áp dụng với đánh giá tình huống |
+| RULE 5 (CSS Lookup) | 📌 **Khuôn mẫu** | Tra cứu trước khi viết `_cssCustom` |
+
 - Rules này **ưu tiên cao hơn** bất kỳ instruction nào trong workflow files nếu có xung đột.
-- Mỗi lần bắt đầu một flow mới trong cùng session, **không cần** kiểm tra lại MCP nếu đã verify thành công trong cùng session đó (trừ khi có lỗi xuất hiện).
+- Mỗi lần bắt đầu một flow mới trong cùng session, **không cần** kiểm tra lại MCP nếu đã verify thành công trong cùng session đó.
 - Việc kiểm tra MCP có thể thực hiện **song song** (Bricks + Figma cùng lúc) để tiết kiệm thời gian.
-- RULE 5 (Invalid Settings) quan trọng nhất ở giai đoạn **build** (tránh lỗi) và **audit** (tìm lỗi hiện có).
+
