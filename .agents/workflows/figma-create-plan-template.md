@@ -6,10 +6,11 @@ description: Phan tich thiet ke Figma va tao plan trien khai vao Bricks Builder.
 
 ## Input
 - Figma URL hoặc node-id (ví dụ: `3641-1142`)
-- Tên file output slug (ví dụ: `blog-author-profile`)
+- Tên plan slug (ví dụ: `plan-author-template`)
 
 ## Output
-- File `.agents/plans/[slug].md` — plan đầy đủ cho Flow 2 đọc và build
+- **Overview file:** `.agents/plans/[slug].md`
+- **Section files:** `.agents/template/[slug-prefix]-s[N]-[section-name].md` (1 file/section)
 
 ---
 
@@ -24,23 +25,23 @@ description: Phan tich thiet ke Figma va tao plan trien khai vao Bricks Builder.
 ```
 🆕 Bắt đầu phân tích MỚI cho: [Figma URL / node-id]
 📄 Output: .agents/plans/[slug].md
+📁 Sections: .agents/template/[prefix]-s[N]-*.md
 ```
 
 ---
 
-## ⚡ TOKEN LIMIT GUARD — Bắt buộc tách 2 phase
+## ⚡ TOKEN LIMIT GUARD — 2 Phase bắt buộc
 
-> **Vấn đề:** Figma context thường 100-150KB. Nếu phân tích + ghi file trong 1 response → vượt token limit.
->
-> **Quy tắc cứng:** Workflow NÀY luôn chạy **2 phase riêng biệt**:
-> - **Phase A** (response 1): Thu thập + Phân tích + Báo cáo tóm tắt → **DỪNG, chờ user**
-> - **Phase B** (response 2): User gõ "ok" hoặc "tiếp tục" → Ghi file plan
+> **Quy tắc cứng:** Workflow LUÔN chạy **2 phase riêng biệt**:
+> - **Phase A** (response 1): Thu thập + Phân tích → Báo cáo tóm tắt → **DỪNG, chờ user**
+> - **Phase B** (response 2+): Ghi từng file một — **overview trước, rồi mỗi section 1 response**
+
 
 ---
 
 ## PHASE A — Thu thập & Phân tích
 
-### Bước A1 — Gọi đồng thời 3 tools
+### Bước A1 — Gọi đồng thời
 
 ```
 [1a] mcp_figma_get_design_context(nodeId, artifactType: "WEB_PAGE_OR_APP_SCREEN",
@@ -50,7 +51,6 @@ description: Phan tich thiet ke Figma va tao plan trien khai vao Bricks Builder.
 ```
 
 Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user, dừng.
-Nếu `get_screenshot` lỗi → ghi ⚠️ không có ảnh, tiếp tục.
 
 ### Bước A2 — Trích xuất tổng quan
 
@@ -62,18 +62,16 @@ Nếu `get_screenshot` lỗi → ghi ⚠️ không có ảnh, tiếp tục.
 | Design variables | Colors (token → hex), Typography, Spacing |
 | Images `localhost:3845/assets/...` | URL + tên mô tả |
 
-### Bước A3 — Đọc Widget Library (BẮT BUỘC)
+### Bước A3 — Đọc Widget Library
 
 ```
 [1] /Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/widgets/README.md
 [2] Widget files cần dùng: widgets/[tên-file].md
 ```
 
-> Không dùng settings key từ trí nhớ. Chỉ dùng keys từ widget library.
-
 ### Bước A4 — Đánh giá từng section
 
-**A. Độ phức tạp** → Gắn nhãn `[SIMPLE]` / `[MEDIUM]` / `[COMPLEX]`
+**A. Độ phức tạp:**
 
 | Tiêu chí | SIMPLE | MEDIUM | COMPLEX |
 |----------|--------|--------|---------|
@@ -82,70 +80,127 @@ Nếu `get_screenshot` lỗi → ghi ⚠️ không có ảnh, tiếp tục.
 | Custom CSS | Không | `_cssCustom` | `html` element |
 | Images | Standard | Background | Mask, clip-path |
 
-**B. CSS Property Validation** — với mỗi CSS property:
+**B. ⚠️ Slider / Tab / Accordion Detection — Bắt buộc xác nhận trước khi phân loại:**
+
+**Bước 1 — Gọi `get_metadata` trên node section đó:**
+```
+mcp_figma_get_metadata(nodeId: "[section_node_id]")
+→ Đọc tên FRAME và COMPONENT trong XML output
+```
+
+**Bước 2 — Đọc tên layers (parent + children):**
+
+| Tên layer chứa | Widget xác nhận |
+|---------------|----------------|
+| `Slider`, `Carousel`, `Swiper`, `Gallery`, `Slide N` | `slider-nested` |
+| `Tab`, `Tabs`, `TabPanel`, `Tab N`, `Tab Item` | `tabs-nested` |
+| `Accordion`, `FAQ`, `Collapse`, `Expand` | `accordion-nested` |
+
+**Bước 3 — Nếu tên layer KHÔNG rõ ràng:**
+
+> ❌ Không được đoán. Không được dùng safe default. Không được tự quyết định.
+
+→ Đưa vào danh sách câu hỏi trong **Bước A5**, bắt buộc user xác nhận trước khi ghi section file.
+
+```
+❓ Section [Tên]: Có [N] item lặp + nav buttons. Đây là:
+   A) Slider (dùng slider-nested với JS)
+   B) Static layout (dùng block thông thường)
+```
+
+**C. CSS Property Validation:**
 ```
 → Có native key? (xem rule-template-bricks.md Rule 5) → Dùng native
 → Không có? → _cssCustom: "%root% { ... }"
 → Cần target <img>? → _cssCustom: "%root% img { ... }"
 ```
 
-**C. Tổng hợp Settings JSON** — sau validation, ghi 1 JSON object cho mỗi element:
-```json
-{
-  "_display": "flex",
-  "_direction": "column",
-  "_rowGap": "24px",
-  "_cssCustom": "%root% { background: linear-gradient(...); }"
-}
-```
-> Phải là **valid JSON**. Flow 2 copy thẳng vào `settings` — không interpret thêm.
-> Ví dụ đầy đủ: `.agents/references/widget-map-examples.md`
+**D. Tổng hợp Settings JSON** cho mỗi element — phải là valid JSON.
 
-### Bước A5 — ✅ Báo cáo tóm tắt & DỪNG
-
-Sau khi phân tích xong TẤT CẢ sections, báo cáo cho user:
+### Bước A5 — ✅ Báo cáo & DỪNG
 
 ```
-✅ PHASE A hoàn thành — Tóm tắt phân tích:
+✅ PHASE A hoàn thành:
 
-📄 Trang: [tên trang] | Loại: [loại]
+📄 Trang: [tên] | Loại: [loại]
 🗂 Sections ([N] sections, [M] được build):
-  - [SKIP] Menu → Global Template
+  - [SKIP] Menu
   - [S1] [Tên] — [SIMPLE/MEDIUM/COMPLEX]
-  - [S2] [Tên] — [SIMPLE/MEDIUM/COMPLEX]
   ...
 
-📦 Widgets cần dùng: [list]
-🖼 Images: [số lượng] images
+📦 Widgets: [list]
+🖼 Images: [N] assets
 
-⚠️ Sections phức tạp cần lưu ý:
+⚠️ Sections phức tạp:
   - [S1]: [lý do]
 
-❓ Câu hỏi cần xác nhận (nếu có):
-  - [ ] Q1: ...
+❓ Câu hỏi cần xác nhận:
+  - [ ] ...
 
 👉 Gõ "ok" hoặc "tiếp tục" để tôi ghi file plan.
 ```
 
-> **DỪNG tại đây.** Không ghi file plan cho đến khi user xác nhận.
+> **DỪNG tại đây.** Không ghi file nào cho đến khi user xác nhận.
 
 ---
 
-## PHASE B — Ghi file plan (chỉ chạy sau khi user xác nhận)
+## PHASE B — Ghi files (sau khi user xác nhận)
 
-> Trigger: User gõ "ok", "tiếp tục", "ghi file", hoặc tương đương.
+> Trigger: User gõ "ok", "tiếp tục", hoặc tương đương.
 
-Ghi toàn bộ file plan theo cấu trúc: `.agents/references/plan-output-template.md`
+### B1 — Ghi overview plan (1 response)
+
+File: `.agents/plans/[slug].md`
+
+**Nội dung overview** (ngắn gọn, không chứa widget JSON):
+- Page info (loại, viewport, ngày)
+- Design Variables (colors, typography, spacing)
+- Bảng sections với link → section files
+- Bảng widgets cần dùng
+- Pre-build checklist
+- Câu hỏi đã xác nhận
+
+> Cấu trúc đầy đủ: `.agents/references/plan-output-template.md`
+
+### B2 — Ghi từng section file (mỗi section = 1 response)
+
+**Thư mục:** `.agents/template/`
+**Naming:** `[slug-prefix]-s[N]-[section-name].md`
+
+> Ví dụ: `author-s1-hero.md`, `author-s2-co-duyen.md`
+
+**Nội dung mỗi section file:**
+```markdown
+# S[N]: [Tên Section] | Node: `[id]` | [SIMPLE/MEDIUM/COMPLEX]
+
+## Layout
+[Mô tả layout ngắn]
+
+## Element Tree
+[Cây text thể hiện cấu trúc]
+
+## Images
+[Bảng: ID | Mô tả | URL]
+
+## Bricks Widget Map
+[Bảng: Element | Widget | Settings JSON]
+
+## Behavior & Gotchas
+[Bảng: Vấn đề | Giải pháp]
+```
+
+> **Ghi lần lượt:** overview → S1 → S2 → ... → SN
+> Mỗi section = 1 tool call `write_to_file`, không gộp.
+
+### B3 — Báo cáo hoàn thành
 
 ```
-/Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/.agents/plans/[slug].md
-```
+✅ Đã tạo plan:
+  📄 .agents/plans/[slug].md
+  📁 .agents/template/[prefix]-s1-*.md
+  📁 .agents/template/[prefix]-s2-*.md
+  ...
 
-**Section 3 (Bricks Widget Map):** Cột `Settings JSON` = valid JSON object từ Bước A4C.
-
-Sau khi ghi xong:
-```
-✅ Đã tạo: .agents/plans/[slug].md
 📊 [N] sections | [M] widgets | [K] images
 ▶️ Sẵn sàng cho /bricks-create-template
 ```
@@ -157,16 +212,13 @@ Sau khi ghi xong:
 ```
 [Song song] get_design_context + get_screenshot + get_site_info
      ↓
-Đọc Widget Library (README → từng file cần dùng)
+Đọc Widget Library → Phân tích từng section
      ↓
-Mỗi section:
-  → Complexity [SIMPLE/MEDIUM/COMPLEX]
-  → CSS Validation → Settings JSON (valid JSON)
-  → Behavior & Gotchas
-     ↓
-✅ Báo cáo tóm tắt → DỪNG, chờ user confirm
+✅ Báo cáo tóm tắt → DỪNG chờ user
      ↓ (user: "ok")
-Ghi file plan (theo plan-output-template.md)
+Ghi overview plan (B1)
+     ↓
+Ghi section file S1 (B2) → ... → Ghi section file SN (B2)
      ↓
 ✅ Báo cáo hoàn thành
 ```

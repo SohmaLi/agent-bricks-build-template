@@ -30,12 +30,12 @@ Chỉ khác về hành vi mặc định:
 {
   "id": "secXXX",
   "name": "section",
-  "parent": "0",
+  "parent": 0,
   "settings": { ... }
 }
 ```
 
-> `"parent": "0"` (string "0") — **bắt buộc** cho root element.
+> `"parent": 0` (integer, **không phải** string `"0"`) — bắt buộc cho root element. API sẽ báo lỗi nếu dùng string.
 
 ---
 
@@ -46,7 +46,7 @@ Chỉ khác về hành vi mặc định:
 {
   "id": "secABC",
   "name": "section",
-  "parent": "0",
+  "parent": 0,
   "settings": {
     "_padding": {"top": "40px", "bottom": "40px"},
     "_background": {"color": {"hex": "#ffffff"}}
@@ -59,7 +59,7 @@ Chỉ khác về hành vi mặc định:
 {
   "id": "secGrad",
   "name": "section",
-  "parent": "0",
+  "parent": 0,
   "settings": {
     "_padding": {"top": "80px", "bottom": "80px"},
     "_cssCustom": "%root% {\n  background: linear-gradient(135deg, #f2f3f5 0%, #e8edf5 100%);\n}"
@@ -72,7 +72,7 @@ Chỉ khác về hành vi mặc định:
 {
   "id": "secHero",
   "name": "section",
-  "parent": "0",
+  "parent": 0,
   "settings": {
     "_heightMin": "100vh",
     "_position": "relative",

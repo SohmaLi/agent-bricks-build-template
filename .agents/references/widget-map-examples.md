@@ -57,6 +57,21 @@
 }
 ```
 
+### `block` — Card với inset box-shadow (bắt buộc dùng `_cssCustom`)
+```json
+{
+  "_border": {
+    "radius": {"top": "20px", "right": "20px", "bottom": "20px", "left": "20px"},
+    "width": {"top": "2px", "right": "2px", "bottom": "2px", "left": "2px"},
+    "style": "solid",
+    "color": {"hex": "rgba(0,124,252,0.5)"}
+  },
+  "_cssCustom": "%root% { box-shadow: inset 0px 0px 24px 0px rgba(0,124,252,0.2); }"
+}
+```
+> ⚠️ Native `_boxShadow` **không hỗ trợ `inset`** → bắt buộc dùng `_cssCustom`.
+> Inset shadow không bị clip bởi `_overflow: hidden`. Outset shadow thì bị clip — tránh dùng `overflow:hidden` khi cần outset shadow.
+
 ### `block` — Absolute positioned (overlay)
 ```json
 {

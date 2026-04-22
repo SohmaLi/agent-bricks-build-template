@@ -5,7 +5,8 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 # Workflow: Bricks Create Template
 
 ## Input
-- Plan file: `.agents/plans/[slug].md`
+- Overview plan: `.agents/plans/[slug].md`
+- Section files: `.agents/template/[prefix]-s[N]-[name].md`
 
 ## Output
 - N Bricks templates trên site (mỗi section = 1 template)
@@ -22,7 +23,7 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 | CSS ưu tiên | Native key trước, `_cssCustom` khi không có native | `_cssCustom` cho mọi thứ |
 | Slider / Tab | `slider-nestable` / `tabs-nestable` | Block giả slider |
 | Image URL | `{"id":0,"url":"localhost:3845/..."}` | `src: ""` rỗng |
-| Nội dung text | Copy y chang từ Figma, đủ số lượng | Tự dùng dynamic tag |
+| Nội dung text | Copy y chang từ section file, đủ số lượng | Tự dùng dynamic tag |
 | Push format | Native Flat Format (`id+parent+children`) → push 1 lần | Simplified → phải restore |
 | `parent` root | `"parent": 0` (integer) | `"parent": "0"` hay `""` |
 | `children` | Mảng IDs con trực tiếp, khớp 2 chiều | Bỏ trống / bỏ qua |
@@ -34,12 +35,12 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 ## GIAI ĐOẠN 1: Đọc & Chuẩn bị
 
-### Bước 1.1 — Đọc plan file
+### Bước 1.1 — Đọc overview plan
 
-Đọc toàn bộ `.agents/plans/[slug].md`, ghi lại:
-- Danh sách sections (bỏ `[SKIP]`) + mức `[SIMPLE/MEDIUM/COMPLEX]`
-- Danh sách widgets cần dùng (Section 4)
-- Danh sách images + chiến lược (Cách 1 / Cách 2)
+Đọc `.agents/plans/[slug].md`, ghi lại:
+- Danh sách sections + file tương ứng (bỏ `[SKIP]`)
+- Thứ tự build: `[SIMPLE] → [MEDIUM] → [COMPLEX]`
+- Bảng widgets cần dùng → đọc widget files
 
 ### Bước 1.2 — Đọc Widget Library
 
@@ -50,12 +51,6 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 > Ghi nhận: settings keys chính xác, kiểu dữ liệu, `_cssCustom` selectors.
 
-### Bước 1.3 — Sắp xếp thứ tự build
-
-```
-[SIMPLE] → [MEDIUM] → [COMPLEX]
-```
-
 ---
 
 ## GIAI ĐOẠN 2: Chuẩn bị Images
@@ -65,17 +60,19 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 {"image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"}}
 ```
 
-**Cách 2 — Upload WP** *(fallback)*: Download về `images/` → báo user upload → nhận WP URL.
+**Cách 2 — Upload WP** *(fallback)*: Download về → báo user upload → nhận WP URL.
 
 ---
 
 ## GIAI ĐOẠN 3: Build từng Section (tuần tự)
 
-> Trước mỗi section: đọc lại phần đó trong plan + widget files sẽ dùng.
+> **Trước mỗi section:** Đọc file `.agents/template/[prefix]-s[N]-[name].md` tương ứng.
+> Không đọc toàn bộ plan — chỉ đọc section file cần build.
 
 ### Sub-bước A — Element Tree Design
 
-> Bắt buộc với section > 10 elements. Vẽ cây text trước, không có settings/ID:
+> Bắt buộc với section > 10 elements. Dùng Element Tree từ section file nếu đã có.
+> Nếu chưa đủ chi tiết, vẽ lại từ section file:
 
 ```
 Section                               ← depth 0
@@ -89,23 +86,24 @@ Section                               ← depth 0
 
 Output: Tổng elements N | Depth max D | Số elements lặp
 
-**Pre-build Checklist:**
+**Pre-build Checklist (đọc từ section file → Behavior & Gotchas):**
 
 | # | Kiểm tra | Hành động |
 |---|---------|----------|
-| 1 | Số item lặp trong Figma | Build đúng số — không bớt |
+| 1 | Số item lặp từ section file | Build đúng số — không bớt |
 | 2 | Slider / Tab? | `slider-nestable` / `tabs-nestable` |
 | 3 | Image absolute? | Parent: `_position: "relative"` (native) |
 | 4 | Gradient / inset shadow? | `_cssCustom` trên chính widget |
 | 5 | Image sizing? | `_width` + `_height` (native) |
-| 6 | Text content? | Copy y chang từ Figma |
-| 7 | CSS cần dùng? | Native trước — xem Rule 5 |
+| 6 | Text content? | Copy y chang từ section file |
+| 7 | Gotchas trong section file? | Áp dụng giải pháp đã ghi |
 
 ---
 
 ### Sub-bước B — Build JSON (Native Flat Format)
 
 > Plugin nhận `id + parent + children` đầy đủ → giữ nguyên cây, không cần restore.
+> **Settings JSON:** Copy từ cột `Settings JSON` trong section file — đã là valid JSON.
 
 **Quy tắc ID/parent/children:**
 
@@ -145,7 +143,7 @@ mcp_bricks-mcp_content(action: "update_content",
 **C3 — Verify tree:**
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
-→ Chỉ section ở depth:0 → ✅ Done
+→ Section ở depth:0 → ✅ Done
 → Còn flat → Debug checklist bên dưới
 ```
 
@@ -164,7 +162,7 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 ```
 ✅ Section [N]: "[Tên]" xong!
 🔗 [site_url]/wp-admin/post.php?post=[id]&action=bricks
-⚠️ Kiểm tra: Layout | Spacing | Images | Hover
+⚠️ Kiểm tra: Layout | Spacing | Images | Text content
 👉 "ok" → tiếp tục | "fix [mô tả]" → chỉnh trước
 ```
 
@@ -180,9 +178,9 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 # Note: Templates – [Tên Page]
 **Plan:** `.agents/plans/[slug].md` | **Ngày:** [YYYY-MM-DD]
 
-| # | Section | Template ID | Edit URL | Status |
-|---|---------|-------------|----------|--------|
-| 1 | [slug]-hero | [id] | [url] | ✅ Approved |
+| # | Section | File | Template ID | Edit URL | Status |
+|---|---------|------|-------------|----------|--------|
+| 1 | Hero | author-s1-hero.md | [id] | [url] | ✅ Approved |
 
 | Tên ảnh | Cách | URL |
 |---------|------|-----|
@@ -194,18 +192,19 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 ## Tóm tắt flow
 
 ```
-Đọc plan → Đọc widget library → Sắp xếp [SIMPLE→COMPLEX]
-    ↓
+Đọc overview plan → Đọc widget library → Sắp xếp [SIMPLE→COMPLEX]
+     ↓
 [Mỗi section]
-  A: Vẽ cây text (depth, count, lặp)
+  Đọc .agents/template/[prefix]-s[N]-[name].md
+  A: Xác nhận cây (từ section file, hoặc vẽ lại nếu cần)
   B: Build JSON — Native Flat Format
-     (native keys trước, _cssCustom khi không có native)
+     (Settings JSON copy từ section file, native keys trước)
   C: Push 1 lần → Verify tree
      → depth:0 chỉ có section → ✅ Done
-     → Còn flat → Debug → Fix JSON → Push lại
+     → Còn flat → Debug → Fix → Push lại
   Báo user → CHỜ xác nhận
-    ↓ (all ok)
+     ↓ (all ok)
 Ghi note → Done
 ```
 
-> 🎯 Mỗi section = 1 push = done. Không restore step.
+> 🎯 Mỗi section = đọc 1 file nhỏ + 1 push = done. Không load toàn bộ plan.

@@ -66,6 +66,14 @@ Slider/carousel nestable — mỗi slide là một block nestable chứa bất k
 | `nextArrowTop/Right/Bottom/Left` | Vị trí next |
 | `arrowDisabledBackground`, `arrowDisabledColor`, `arrowDisabledOpacity` | Style disabled |
 
+> ✅ **Best practice — phân tách rõ:**
+> - **Widget settings** → shape (size, border, color, disabled opacity)
+> - **`_cssCustom`** → position only (top/bottom/left/right + overflow fix)
+>
+> ```json
+> "_cssCustom": "%root% { overflow: visible; }\n%root% .splide__track { overflow: hidden; }\n%root% .splide__arrow { top: auto !important; bottom: -68px !important; transform: none !important; }\n%root% .splide__arrow--prev { left: calc(50% - 52px) !important; right: auto !important; }\n%root% .splide__arrow--next { right: auto !important; left: calc(50% + 4px) !important; }"
+> ```
+
 ---
 
 ## Pagination Group (selector: `.splide__pagination`)
@@ -77,6 +85,11 @@ Slider/carousel nestable — mỗi slide là một block nestable chứa bất k
 | `paginationBackground`, `paginationBorder` | Style dot |
 | `paginationBackgroundActive`, `paginationBorderActive` | Style active dot |
 
+> ⚠️ **Gotcha:** `"pagination": false` **không đủ** để ẩn pagination dots trong một số trường hợp.
+> Bắt buộc kết hợp thêm `_cssCustom`:
+> ```json
+> "_cssCustom": "%root% .splide__pagination { display: none !important; }"
+> ```
 ---
 
 ## Ví dụ JSON
