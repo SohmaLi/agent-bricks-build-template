@@ -18,7 +18,8 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 | Rule | ✅ Đúng | ❌ Sai |
 |------|--------|--------|
-| Layout engine | `section → block → [widgets]` | `html` cho layout |
+| Layout engine | `section → container → block → [widgets]` | `html` cho layout, hoặc bỏ `container` |
+| Container rule | `container` là con trực tiếp duy nhất của `section` | `block` là con trực tiếp của `section` |
 | Settings keys | Đọc từ `widgets/[widget].md` | Tự đặt key từ trí nhớ |
 | CSS ưu tiên | Native key trước, `_cssCustom` khi không có native | `_cssCustom` cho mọi thứ |
 | Slider / Tab | `slider-nestable` / `tabs-nestable` | Block giả slider |
@@ -119,9 +120,24 @@ Ví dụ đầy đủ: `.agents/references/widget-map-examples.md` → mục "Na
 **CSS inline validation khi viết mỗi element:**
 ```
 □ Có native key? → Dùng native (Rule 5)
-□ Không có? → _cssCustom: "%root% { ... }"
-□ Target <img>? → _cssCustom: "%root% img { ... }"
+□ Không có native key? → _cssCustom với format #brxe-[element-id]{ ... }
+□ Target <img>? → _cssCustom: "#brxe-[element-id] img{ ... }"
+□ Descendant: "#brxe-[element-id] .class{ ... }"
 ```
+
+> ⚠️ **CRITICAL — Bricks API không replace `%root%`:**
+> Khi lưu qua MCP API, Bricks KHÔNG thay `%root%` bằng selector thực.
+> CSS file sẽ chứa `%root%{...}` nguyên văn → **INVALID CSS → không render**.
+>
+> ✅ **Format đúng duy nhất khi dùng MCP:**
+> ```
+> "#brxe-[element-id]{ box-shadow: inset 0 0 24px rgba(0,124,252,0.2); }"
+> "#brxe-[element-id] img{ -webkit-mask-image: url('...'); }"
+> "#brxe-[element-id] .splide__pagination{ display: none; }"
+> ```
+>
+> `%root%` chỉ được Bricks replace khi save **từ Bricks Editor UI**.
+> Sau khi bulk_update với `#brxe-[id]{...}`, vẫn cần Save trong editor → CSS file compile.
 
 ---
 
@@ -140,12 +156,26 @@ mcp_bricks-mcp_content(action: "update_content",
   post_id: [template_id], elements: [...Native Flat Format...])
 ```
 
-**C3 — Verify tree:**
+**C3 — Verify tree & capture actual IDs:**
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 → Section ở depth:0 → ✅ Done
 → Còn flat → Debug checklist bên dưới
 ```
+
+**C4 — So sánh IDs (bắt buộc nếu cần bulk_update sau này):**
+```
+Bricks không đảm bảo giữ nguyên IDs ta đặt trong update_content.
+Sau mỗi push, so sánh actual IDs từ summary với IDs ta đặt:
+
+□ IDs khớp → OK, bulk_update bình thường
+□ IDs KHÔNG khớp (Bricks tự gen: "ekgjsk", "hvdpba"...)
+  → Ghi lại actual IDs vào template file
+  → Chỉ dùng actual IDs cho mọi bulk_update tiếp theo
+  → KHÔNG dùng IDs ta đặt ban đầu
+```
+
+> **Rule:** Luôn GET actual IDs TRƯỚC khi bulk_update. Không assume IDs được preserve.
 
 **Debug khi tree sai:**
 ```
@@ -199,12 +229,38 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
   A: Xác nhận cây (từ section file, hoặc vẽ lại nếu cần)
   B: Build JSON — Native Flat Format
      (Settings JSON copy từ section file, native keys trước)
-  C: Push 1 lần → Verify tree
+     _cssCustom format: "#brxe-[element-id]{" (KHÔNG dùng %root% — không hoạt động qua API)
+  C: Push 1 lần → Verify tree → Capture actual IDs
      → depth:0 chỉ có section → ✅ Done
+     → IDs khác với ta đặt → Ghi vào template file
      → Còn flat → Debug → Fix → Push lại
   Báo user → CHỜ xác nhận
      ↓ (all ok)
 Ghi note → Done
+```
+
+---
+
+## ⚠️ Cuối mỗi session có dùng `_cssCustom`
+
+```
+Bricks dùng cssLoading: "file" → _cssCustom KHÔNG tự render sau API update.
+Bắt buộc: Mở từng template trong Bricks builder → Ctrl+S → đóng.
+
+Các template cần Save (có _cssCustom):
+□ Mở: http://[site]/?bricks=run&postId=[template_id]
+□ Ctrl+S NGAY (KHÔNG click vào element nào trước khi Save)
+□ Đợi "Saved" toast → đóng → sang template tiếp theo
+
+⚠️ KHÔNG dùng "Regenerate All CSS Files" trong WP admin
+   → Site 1000+ pages → Risk timeout/memory error
+
+⚠️ SIDE-EFFECT của Bricks editor khi Save:
+   Khi Save mà có element đang được SELECT → Bricks convert
+   _cssCustom từ "%root%{...}" → "#brxe-[id]{...}" (hardcoded selector)
+   → Element đó sẽ có CSS format khác với các element còn lại
+   → FIX: Sau khi Save, dùng bulk_update để reset lại "%root%{...}"
+   hoặc phòng tránh bằng cách: KHÔNG select element, Ctrl+S ngay.
 ```
 
 > 🎯 Mỗi section = đọc 1 file nhỏ + 1 push = done. Không load toàn bộ plan.
