@@ -8,6 +8,20 @@
 
 ---
 
+## ⚠️ CRITICAL — `%root%` vs `#brxe-[id]` trong `_cssCustom`
+
+| Ngữ cảnh | Format đúng | Lý do |
+|----------|-------------|-------|
+| **Bricks Editor UI** (lưu tay) | `%root% { ... }` | Bricks replace `%root%` thành selector thật khi compile |
+| **MCP API** (`update_content`, `bulk_update`) | `#brxe-[element-id] { ... }` | API KHÔNG replace `%root%` → CSS bị invalid, không render |
+
+> **Khi dùng MCP luôn dùng `#brxe-[element-id]`** thay vì `%root%`.
+> Các ví dụ bên dưới dùng `%root%` để dễ đọc — **phải thay thế bằng `#brxe-[id]` khi push qua MCP**.
+
+---
+
+---
+
 ## Layout Elements
 
 ### `section` — Root wrapper
@@ -191,6 +205,128 @@
   "direction": "horizontal"
 }
 ```
+
+---
+
+## Patterns nâng cao (từ Session lessons)
+
+### ⚠️ `justify-content: center` — cần container có width
+
+`justify-content: center` chỉ có tác dụng khi container **rộng hơn** tổng width của children.
+
+| Vấn đề | Container auto-width (= text width) → `justify-content` không có space để center |
+|--------|---|
+| **Fix A** | Thêm `_width: "1140px"` (hoặc `_widthMax: "1140px"` + `_margin: auto`) |
+| **Fix B** | Đổi sang `_direction: "column"` + `_alignItems: "center"` (cross axis = horizontal khi column) |
+
+> ✅ **Centering đơn giản nhất:** flex-direction column + align-items center — không cần set width.
+
+---
+
+### 🔵 Icon circle với gradient + flex-shrink
+
+> **Dùng khi:** Section header có icon circle fixed-size nằm trong flex row
+>
+> ⚠️ **BẮT BUỘC** `_flexShrink: "0"` — thiếu → circle bị squish trong flex row
+
+```json
+{
+  "id": "ico000",
+  "name": "block",
+  "settings": {
+    "_width": "100px",
+    "_height": "100px",
+    "_flexShrink": "0",
+    "_display": "flex",
+    "_alignItems": "center",
+    "_justifyContent": "center",
+    "_border": {"radius": {"top": "999px", "right": "999px", "bottom": "999px", "left": "999px"}},
+    "_cssCustom": "#brxe-ico000{ background: radial-gradient(52.5% 40.5% at 52.5% 74%, #007CFC 0%, #1EAFFF 100%); box-shadow: 0 4px 24px 0 rgba(255,255,255,0.88) inset; }"
+  }
+},
+{
+  "id": "svg000",
+  "name": "image",
+  "settings": {
+    "_width": "52px",
+    "_height": "52px",
+    "_flexShrink": "0",
+    "_objectFit": "contain",
+    "image": {"id": 0, "url": "http://localhost:3845/assets/[hash].svg"}
+  }
+}
+```
+
+> ⚠️ Màu gradient lấy **exact từ Figma DevMode > Code > CSS** — KHÔNG đoán. Thường là `radial-gradient(52.5% 40.5% at 52.5% 74%, [color-primary-700] 0%, [color-primary-500] 100%)`.
+
+---
+
+### 🏷️ Badge với SVG background + text overlay
+
+> **Dùng khi:** Badge/label có hình nền SVG (shield, ribbon) với text chồng lên
+
+```
+badge-container (position: absolute — để float trên card)
+  ├── SVG image (position: absolute, full-fill container)
+  └── text label (position: relative, z-index: 1)
+```
+
+```json
+{
+  "id": "bgc000",
+  "name": "block",
+  "settings": {
+    "_position": "absolute",
+    "_left": "22px",
+    "_top": "-2px",
+    "_width": "81px",
+    "_height": "52px",
+    "_display": "flex",
+    "_alignItems": "center",
+    "_justifyContent": "center"
+  }
+},
+{
+  "id": "svb000",
+  "name": "image",
+  "settings": {
+    "_position": "absolute",
+    "_top": "0",
+    "_left": "0",
+    "_width": "100%",
+    "_height": "100%",
+    "_objectFit": "contain",
+    "image": {"id": 0, "url": "http://localhost:3845/assets/[badge-hash].svg"}
+  }
+},
+{
+  "id": "lbl000",
+  "name": "text-basic",
+  "settings": {
+    "_position": "relative",
+    "_zIndex": 1,
+    "text": "CDMP"
+  }
+}
+```
+
+> ⚠️ Card cha phải có `_position: "relative"` để badge `position: absolute` hoạt động.
+> ⚠️ Thiếu `_top`/`_left` trên SVG → SVG nằm ngoài flow → badge container không có intrinsic width → render sai.
+
+---
+
+### 🎠 Splide slider — Arrows dưới track (CSS order)
+
+> **Dùng khi:** Arrows cần nằm BÊN DƯỚI slides thay vì overlay/top
+
+```json
+{
+  "_cssCustom": "#brxe-sld000 .splide__track { order: 1; } #brxe-sld000 .splide__arrows { order: 2; margin-top: 24px; display: flex; justify-content: center; gap: 12px; position: static; } #brxe-sld000 .splide__arrow { position: static; transform: none !important; } #brxe-sld000 .splide__arrow--prev { transform: rotate(180deg) !important; } #brxe-sld000 .splide__arrow--next { transform: none !important; }"
+}
+```
+
+> ⚠️ `transform: none !important` dùng CHUNG sẽ xóa cả rotate 180deg của prev arrow → cả 2 arrow cùng chiều.
+> ✅ Luôn tách riêng `--prev { rotate(180deg) }` và `--next { none }`.
 
 ---
 

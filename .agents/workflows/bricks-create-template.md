@@ -29,28 +29,22 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 | `parent` root | `"parent": 0` (integer) | `"parent": "0"` hay `""` |
 | `children` | Mảng IDs con trực tiếp, khớp 2 chiều | Bỏ trống / bỏ qua |
 
-> CSS lookup đầy đủ: `rule-template-bricks.md` Rule 5
-> Ví dụ Settings JSON: `.agents/references/widget-map-examples.md`
+> CSS lookup: `rule-build-techniques.md` RULE 5 | Ví dụ JSON: `.agents/references/widget-map-examples.md`
 
 ---
 
 ## GIAI ĐOẠN 1: Đọc & Chuẩn bị
 
 ### Bước 1.1 — Đọc overview plan
-
 Đọc `.agents/plans/[slug].md`, ghi lại:
 - Danh sách sections + file tương ứng (bỏ `[SKIP]`)
 - Thứ tự build: `[SIMPLE] → [MEDIUM] → [COMPLEX]`
-- Bảng widgets cần dùng → đọc widget files
 
 ### Bước 1.2 — Đọc Widget Library
-
 ```
 [1] widgets/README.md
 [2] Mỗi widget trong plan → widgets/[tên-file].md
 ```
-
-> Ghi nhận: settings keys chính xác, kiểu dữ liệu, `_cssCustom` selectors.
 
 ---
 
@@ -60,86 +54,39 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 ```json
 {"image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"}}
 ```
-
-**Cách 2 — Upload WP** *(fallback)*: Download về → báo user upload → nhận WP URL.
+**Cách 2 — Upload WP** *(fallback)*: Download → báo user upload → nhận WP URL.
 
 ---
 
 ## GIAI ĐOẠN 3: Build từng Section (tuần tự)
 
-> **Trước mỗi section:** Đọc file `.agents/template/[prefix]-s[N]-[name].md` tương ứng.
-> Không đọc toàn bộ plan — chỉ đọc section file cần build.
+> Trước mỗi section: Đọc `.agents/template/[prefix]-s[N]-[name].md`
 
-### Sub-bước A — Element Tree Design
+### Sub-bước A — Checklist & Element Tree
 
-> Bắt buộc với section > 10 elements. Dùng Element Tree từ section file nếu đã có.
-> Nếu chưa đủ chi tiết, vẽ lại từ section file:
+> **Đọc component:** `.agents/components/prebuild-checklist.md`
 
+Vẽ Element Tree nếu section > 10 elements (hoặc dùng tree từ section file):
 ```
 Section                               ← depth 0
 └── Block inner (flex col, gap:40px)  ← depth 1
     ├── Block header (flex row)       ← depth 2
-    │   ├── Heading h2 "Tiêu đề"      ← depth 3
-    │   └── Text sub                  ← depth 3
     └── Block grid (3 cols)           ← depth 2
-        └── [×6] Block card           ← depth 3
 ```
-
-Output: Tổng elements N | Depth max D | Số elements lặp
-
-**Pre-build Checklist (đọc từ section file → Behavior & Gotchas):**
-
-| # | Kiểm tra | Hành động |
-|---|---------|----------|
-| 1 | Số item lặp từ section file | Build đúng số — không bớt |
-| 2 | Slider / Tab? | `slider-nestable` / `tabs-nestable` |
-| 3 | Image absolute? | Parent: `_position: "relative"` (native) |
-| 4 | Gradient / inset shadow? | `_cssCustom` trên chính widget |
-| 5 | Image sizing? | `_width` + `_height` (native) |
-| 6 | Text content? | Copy y chang từ section file |
-| 7 | Gotchas trong section file? | Áp dụng giải pháp đã ghi |
-
----
 
 ### Sub-bước B — Build JSON (Native Flat Format)
 
-> Plugin nhận `id + parent + children` đầy đủ → giữ nguyên cây, không cần restore.
-> **Settings JSON:** Copy từ cột `Settings JSON` trong section file — đã là valid JSON.
+> Settings JSON: Copy từ section file. Native keys trước, `_cssCustom` khi không có native.
+> `_cssCustom` format: `"#brxe-[element-id]{"` — KHÔNG dùng `%root%` qua API.
 
-**Quy tắc ID/parent/children:**
+**Quy tắc ID:**
 
 | Rule | Chi tiết |
 |------|---------|
 | ID format | 6 ký tự `[a-z0-9]` |
-| Root parent | `"parent": 0` (integer, không phải `"0"`) |
+| Root parent | `"parent": 0` (integer) |
 | Children | Mảng IDs con — leaf: `"children": []` |
-| Reciprocal | `parent` của con ↔ `children` của cha phải khớp 2 chiều |
-
-Ví dụ đầy đủ: `.agents/references/widget-map-examples.md` → mục "Native Flat Format"
-
-**CSS inline validation khi viết mỗi element:**
-```
-□ Có native key? → Dùng native (Rule 5)
-□ Không có native key? → _cssCustom với format #brxe-[element-id]{ ... }
-□ Target <img>? → _cssCustom: "#brxe-[element-id] img{ ... }"
-□ Descendant: "#brxe-[element-id] .class{ ... }"
-```
-
-> ⚠️ **CRITICAL — Bricks API không replace `%root%`:**
-> Khi lưu qua MCP API, Bricks KHÔNG thay `%root%` bằng selector thực.
-> CSS file sẽ chứa `%root%{...}` nguyên văn → **INVALID CSS → không render**.
->
-> ✅ **Format đúng duy nhất khi dùng MCP:**
-> ```
-> "#brxe-[element-id]{ box-shadow: inset 0 0 24px rgba(0,124,252,0.2); }"
-> "#brxe-[element-id] img{ -webkit-mask-image: url('...'); }"
-> "#brxe-[element-id] .splide__pagination{ display: none; }"
-> ```
->
-> `%root%` chỉ được Bricks replace khi save **từ Bricks Editor UI**.
-> Sau khi bulk_update với `#brxe-[id]{...}`, vẫn cần Save trong editor → CSS file compile.
-
----
+| Reciprocal | parent ↔ children khớp 2 chiều |
 
 ### Sub-bước C — Push & Verify
 
@@ -149,33 +96,17 @@ mcp_bricks-mcp_template(action: "create", type: "section",
   title: "[slug]-[ten-section]", status: "publish")
 → Lưu template_id
 ```
-
-**C2 — Push 1 lần:**
+**C2 — Push:**
 ```
 mcp_bricks-mcp_content(action: "update_content",
-  post_id: [template_id], elements: [...Native Flat Format...])
+  post_id: [template_id], elements: [...])
 ```
-
-**C3 — Verify tree & capture actual IDs:**
+**C3 — Verify + Capture actual IDs:**
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
-→ Section ở depth:0 → ✅ Done
-→ Còn flat → Debug checklist bên dưới
+→ depth:0 = section → ✅
+→ IDs khác với ta đặt → ghi lại actual IDs, dùng cho mọi bulk_update sau
 ```
-
-**C4 — So sánh IDs (bắt buộc nếu cần bulk_update sau này):**
-```
-Bricks không đảm bảo giữ nguyên IDs ta đặt trong update_content.
-Sau mỗi push, so sánh actual IDs từ summary với IDs ta đặt:
-
-□ IDs khớp → OK, bulk_update bình thường
-□ IDs KHÔNG khớp (Bricks tự gen: "ekgjsk", "hvdpba"...)
-  → Ghi lại actual IDs vào template file
-  → Chỉ dùng actual IDs cho mọi bulk_update tiếp theo
-  → KHÔNG dùng IDs ta đặt ban đầu
-```
-
-> **Rule:** Luôn GET actual IDs TRƯỚC khi bulk_update. Không assume IDs được preserve.
 
 **Debug khi tree sai:**
 ```
@@ -185,18 +116,17 @@ Sau mỗi push, so sánh actual IDs từ summary với IDs ta đặt:
 □ ID đúng 6 ký tự [a-z0-9]?
 ```
 
----
-
 ### Bước 3.D — Báo user & CHỜ XÁC NHẬN
 
 ```
 ✅ Section [N]: "[Tên]" xong!
 🔗 [site_url]/wp-admin/post.php?post=[id]&action=bricks
 ⚠️ Kiểm tra: Layout | Spacing | Images | Text content
-👉 "ok" → tiếp tục | "fix [mô tả]" → chỉnh trước
+👉 "ok [tên section]" → tiếp | "fix [mô tả]" → chỉnh trước
 ```
 
 > **AI DỪNG và CHỜ.** Không tự động sang section tiếp theo.
+> ⛔ "ok tiếp tục" = chỉ build section tiếp theo, KHÔNG build thêm.
 
 ---
 
@@ -210,11 +140,16 @@ Sau mỗi push, so sánh actual IDs từ summary với IDs ta đặt:
 
 | # | Section | File | Template ID | Edit URL | Status |
 |---|---------|------|-------------|----------|--------|
-| 1 | Hero | author-s1-hero.md | [id] | [url] | ✅ Approved |
+| 1 | Hero | s1-hero.md | [id] | [url] | ✅ Approved |
+```
 
-| Tên ảnh | Cách | URL |
-|---------|------|-----|
-| hero-bg | Cách 1 | localhost:3845/assets/[hash].png |
+---
+
+## ⚠️ Cuối session có `_cssCustom`
+
+```
+Bricks cssLoading: "file" → _cssCustom KHÔNG tự render sau API update.
+Bắt buộc: Mở template → Ctrl+S → đóng (KHÔNG click element trước khi Save).
 ```
 
 ---
@@ -222,45 +157,13 @@ Sau mỗi push, so sánh actual IDs từ summary với IDs ta đặt:
 ## Tóm tắt flow
 
 ```
-Đọc overview plan → Đọc widget library → Sắp xếp [SIMPLE→COMPLEX]
-     ↓
-[Mỗi section]
-  Đọc .agents/template/[prefix]-s[N]-[name].md
-  A: Xác nhận cây (từ section file, hoặc vẽ lại nếu cần)
+Đọc plan → Widget library
+  ↓
+[Mỗi section] Đọc section file
+  A: Checklist (.agents/components/prebuild-checklist.md)
   B: Build JSON — Native Flat Format
-     (Settings JSON copy từ section file, native keys trước)
-     _cssCustom format: "#brxe-[element-id]{" (KHÔNG dùng %root% — không hoạt động qua API)
-  C: Push 1 lần → Verify tree → Capture actual IDs
-     → depth:0 chỉ có section → ✅ Done
-     → IDs khác với ta đặt → Ghi vào template file
-     → Còn flat → Debug → Fix → Push lại
-  Báo user → CHỜ xác nhận
-     ↓ (all ok)
+  C: Push → Verify → Capture actual IDs
+  Báo user → CHỜ confirm
+  ↓ (ok)
 Ghi note → Done
 ```
-
----
-
-## ⚠️ Cuối mỗi session có dùng `_cssCustom`
-
-```
-Bricks dùng cssLoading: "file" → _cssCustom KHÔNG tự render sau API update.
-Bắt buộc: Mở từng template trong Bricks builder → Ctrl+S → đóng.
-
-Các template cần Save (có _cssCustom):
-□ Mở: http://[site]/?bricks=run&postId=[template_id]
-□ Ctrl+S NGAY (KHÔNG click vào element nào trước khi Save)
-□ Đợi "Saved" toast → đóng → sang template tiếp theo
-
-⚠️ KHÔNG dùng "Regenerate All CSS Files" trong WP admin
-   → Site 1000+ pages → Risk timeout/memory error
-
-⚠️ SIDE-EFFECT của Bricks editor khi Save:
-   Khi Save mà có element đang được SELECT → Bricks convert
-   _cssCustom từ "%root%{...}" → "#brxe-[id]{...}" (hardcoded selector)
-   → Element đó sẽ có CSS format khác với các element còn lại
-   → FIX: Sau khi Save, dùng bulk_update để reset lại "%root%{...}"
-   hoặc phòng tránh bằng cách: KHÔNG select element, Ctrl+S ngay.
-```
-
-> 🎯 Mỗi section = đọc 1 file nhỏ + 1 push = done. Không load toàn bộ plan.
