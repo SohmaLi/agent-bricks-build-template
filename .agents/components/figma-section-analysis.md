@@ -52,10 +52,25 @@ mcp_figma_get_metadata(nodeId: "[section_node_id]")
 → Cần target <img>? → _cssCustom: "#brxe-[id] img{ ... }"
 ```
 
-**Capture exact CSS từ Figma cho gradient/shadow:**
+**Capture exact từ Figma DevMode cho TẤT CẢ các properties sau:**
 ```
 mcp_figma_get_design_context → Figma DevMode > Code > CSS
-→ Copy CHÍNH XÁC vào Settings JSON — không tự đoán giá trị
+→ Copy CHÍNH XÁC vào Exact Values table trong section file — KHÔNG tự đoán giá trị
+
+Per element (bắt buộc extract):
+  - gradient / shadow      → CSS value exact
+  - align-items            → center / flex-start / ... (copy exact, KHÔNG tự đổi)
+  - flex-direction         → row / column
+  - flex-wrap              → nowrap / wrap (nếu wrap → flag [G2-RISK])
+  - gap / padding          → px exact (KHÔNG ước lượng)
+  - icon / image size      → W×H px exact
+  - font-size / weight / line-height / color hex → per text element
+  - border-radius          → px exact
+  - opacity                → value exact
+
+Per mobile node (bắt buộc):
+  - So sánh từng property với desktop
+  - Element không cuản? → flag [ABSENT-MOBILE]
 ```
 
 ---

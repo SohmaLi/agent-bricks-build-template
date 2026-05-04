@@ -28,6 +28,47 @@
 
 ---
 
+## ⚠️ Bricks Framework Gotchas (BẮT BUỘC đọc trước build)
+
+### G1 — Text Color: PHẢI nằm trong _typography.color
+- ❌ SAI:  "_color": {"hex": "#fff"} → không render trong UI
+- ✅ ĐÚNG: "_typography": {"color": {"hex": "#fff"}, "font-family": "Inter", ...}
+- Áp dụng cho: text-basic, heading, button
+
+### G2 — Bricks inject flex-wrap: wrap cho .brxe-block tại max-width 767px
+Bricks framework CSS: @media (max-width:767px) { .brxe-block { flex-wrap: wrap; } }
+→ Phá vỡ mọi flex-row block trên mobile (icon tách dòng khỏi text).
+FIX BẮT BUỘC với mọi block có _direction: row cần giữ hàng trên mobile:
+"_cssCustom": "#brxe-[id] { flex-wrap: nowrap; }"
+Áp dụng với: feature item rows, guarantee row, badge rows, icon+text rows.
+
+### G3 — Ẩn element trên mobile dùng native key
+"_display:mobile_portrait": "none" — hoạt động trên mọi widget kể cả code widget
+
+### G4 — CSS loading = "External files" → BẮT BUỘC Ctrl+S sau push
+```
+Bricks Performance → CSS loading method = "External files" (user đang dùng setting này)
+→ _cssCustom KHÔNG render sau API push cho đến khi Ctrl+S trong Bricks editor
+→ Inline styles (default): render ngay — không cần Ctrl+S
+```
+**Elements cần Ctrl+S:** mọi element có `_cssCustom` (gradient text, mask-image, ::before/::after, keyframes)
+**Quy trình:** Push xong → Mở template trong Bricks editor → Ctrl+S → Đóng (KHÔNG click element trước khi Save)
+
+---
+
+## 📋 Figma Verification Bắt Buộc (trước khi viết JSON)
+
+- Icon/image size? → Figma DevMode inspect → W×H — KHÔNG assume từ breakpoint khác
+- gap/spacing? → Figma Layout panel → đọc từng breakpoint riêng biệt
+- align-items? → Copy exact từ Figma CSS — KHÔNG tự đổi vì nghĩ đẹp hơn
+- Values mobile? → Mở mobile Figma node riêng, đọc từng value (pt/pb/gap/font-size)
+- Element có ở mobile? → So sánh desktop vs mobile node — absent → _display:mobile_portrait: none
+
+RULE CỨNG: Value không confirm từ Figma → DỪNG → gọi mcp_figma_get_design_context trước khi viết.
+
+
+---
+
 ## CSS Inline Validation (mỗi element)
 
 ```
@@ -51,8 +92,10 @@
 □ Không có 2 elements cùng ID
 □ parent/children khớp 2 chiều
 □ Root "parent": 0 (integer, KHÔNG phải "0" string)
-□ Direct child của section là "container", không phải "block"
+□ Direct child của section là "container", không phải "block"  ← RULE 10B BẮT BUỘC
+   ✅ "name": "container"  |  ❌ "name": "block" (ngay cả khi comment ghi "Container inner")
 ```
+
 
 ---
 

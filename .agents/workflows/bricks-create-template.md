@@ -62,11 +62,39 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 > Trước mỗi section: Đọc `.agents/template/[prefix]-s[N]-[name].md`
 
-### Sub-bước A — Checklist & Element Tree
+### Sub-bước A.0 — Figma Spot-Check (BẮT BUỘC trước khi viết JSON)
 
-> **Đọc component:** `.agents/components/prebuild-checklist.md`
+> **Mục đích:** Bắt buộc verify exact values từ Figma trước khi viết bất kỳ JSON nào.
+> **Không được bỏ qua** — nếu Figma MCP không available, dừng và báo user.
 
-Vẽ Element Tree nếu section > 10 elements (hoặc dùng tree từ section file):
+```
+[1] mcp_figma_get_design_context(desktop_node_id) → Verify:
+    □ Exact px values: padding, gap, font-size, icon size, border-radius
+    □ align-items, flex-direction per element (copy exact, không tự đổi)
+    □ Colors: hex code exact (không estimate)
+    □ Image URLs từ localhost:3845/assets/
+
+[2] mcp_figma_get_design_context(mobile_node_id) → Verify:
+    □ Values thay đổi so desktop: padding, gap, font-size
+    □ Element absent trên mobile? → flag _display:mobile_portrait: none
+    □ Block flex-row có bị wrap? → flag [G2-RISK] → _cssCustom: flex-wrap: nowrap
+```
+
+**Output bắt buộc:** Tạo bảng quick-reference trước khi build:
+```
+Element    | Desktop           | Mobile
+s1tg08     | 18px/600/30px     | 16px
+s1h110     | 44px/700/56px     | 28px/800/40px
+s1f114     | center/8px [G2]   | same [G2 apply]
+s1ic15     | 24×24px            | 20×20px
+s1mq30     | visible           | [ABSENT]
+```
+
+### Sub-bước A.1 — Checklist & Element Tree
+
+> **Đọc component:** `.agents/components/prebuild-checklist.md` (bao gồm Gotchas G1–G4)
+
+Vẽ Element Tree **BẮT BUỘC** trước khi build (mọi section, kể cả section nhỏ):
 ```
 Section                               ← depth 0
 └── Block inner (flex col, gap:40px)  ← depth 1
@@ -76,7 +104,8 @@ Section                               ← depth 0
 
 ### Sub-bước B — Build JSON (Native Flat Format)
 
-> Settings JSON: Copy từ section file. Native keys trước, `_cssCustom` khi không có native.
+> Settings JSON: Copy từ **quick-reference table (Sub-bước A.0)**. Native keys trước, `_cssCustom` khi không có native.
+> ❗ **Nếu value không có trong quick-reference → DừNG → gọi `mcp_figma_get_design_context`, KHÔNG tự điền.**
 > `_cssCustom` format: `"#brxe-[element-id]{"` khi push API. Sau Ctrl+S, Bricks tự convert về `%root%`.
 > Với mask/phức tạp: xem `.agents/components/common-patterns.md`.
 
@@ -168,10 +197,11 @@ Bắt buộc: Mở template → Ctrl+S → đóng (KHÔNG click element trước
 ```
 Đọc plan → Widget library
   ↓
-[Mỗi section] Đọc section file
-  A: Checklist (.agents/components/prebuild-checklist.md)
-  B: Build JSON — Native Flat Format
-  C: Push → Verify → Capture actual IDs
+[Mỗi section]
+  A.0: Figma Spot-Check (desktop + mobile node) → Quick-reference table
+  A.1: Checklist + Gotchas G1–G4
+  B:   Build JSON (từ quick-reference, không assumption)
+  C:   Push → Verify → Capture actual IDs
   Báo user → CHỜ confirm
   ↓ (ok)
 Ghi note → Done

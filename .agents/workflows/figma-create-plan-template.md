@@ -52,9 +52,12 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
 |-----------|---------|
 | Tên trang, loại trang | landing / profile / blog / ... |
 | Viewport chính, max-width | px |
-| Số sections, tên + Node ID | List |
+| Số sections, tên + Desktop Node ID + **Mobile Node ID** | List cả 2 |
 | Design variables | Colors (token → hex), Typography, Spacing |
 | Images `localhost:3845/assets/...` | URL + tên mô tả |
+
+> ⚠️ **Scope A2:** Chỉ capture page-level tokens và Node IDs.
+> **KHÔNG** tự suy luận per-element values — per-element exact values extract tại **B1.0**.
 
 ### A3 — Đọc Widget Library
 ```
@@ -121,7 +124,29 @@ view_file: .agents/plans/[slug].md
 
 > **Template:** `.agents/components/output-file-templates.md` → mục "Section File"
 > **BẮT BUỘC:** Đọc lại `→ Status:` trong plan trước mỗi section. Nếu Status có A/B → copy y chang quyết định.
-> **CSS phức tạp:** `mcp_figma_get_design_context` trên node đó → lấy exact values.
+
+**B1.0 — Figma Extraction (BẮT BUỘC trước khi ghi file):**
+```
+[1] mcp_figma_get_design_context(desktop_node_id)  → extract exact desktop values
+[2] mcp_figma_get_design_context(mobile_node_id)   → extract exact mobile values
+    (nếu không có mobile node → ghi rõ: "no mobile breakpoint",
+     nhưng vẫn flag các element cần flex-wrap: nowrap fix)
+```
+
+**B1.1 — Với mỗi element type, extract và ghi vào section file:**
+```
+Per element:  width/height px | padding/gap px | font-size/weight/line-height
+              color hex | align-items | flex-direction | flex-wrap
+              image url + alt | border-radius | opacity
+Per mobile:   Giá trị thay đổi so với desktop | element này có tồn tại không?
+```
+
+**B1.2 — Flag bắt buộc trong section file:**
+```
+[G2-RISK] block có flex-row → ghi "flex-wrap: nowrap required"
+[ABSENT-MOBILE] element không có trong mobile Figma → ghi "_display:mobile_portrait: none"
+[EXACT-FROM-FIGMA] mọi giá trị lấy từ Figma DevMode, không assumption
+```
 
 Thứ tự: S1 → S2 → ... → SN. Section `[SKIP]` → bỏ qua.
 
