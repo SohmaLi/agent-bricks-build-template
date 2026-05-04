@@ -79,6 +79,14 @@ Section                               ← depth 0
 > Settings JSON: Copy từ section file. Native keys trước, `_cssCustom` khi không có native.
 > `_cssCustom` format: `"#brxe-[element-id]{"` — KHÔNG dùng `%root%` qua API.
 
+**Responsive (RULE 10 — chỉ khi được yêu cầu):**
+
+| Tình huống | Hành động |
+|-----------|-----------|
+| Không có lệnh responsive | Build desktop-only, không thêm breakpoint key |
+| User yêu cầu rõ / plan có `[RESPONSIVE]` | Gọi `get_breakpoints` → dùng composite key `_prop:breakpoint` |
+| `_cssCustom` cần responsive | Viết `@media (max-width: Xpx)` bên trong string |
+
 **Quy tắc ID:**
 
 | Rule | Chi tiết |

@@ -134,3 +134,85 @@ Slider/carousel nestable — mỗi slide là một block nestable chứa bất k
   }
 }
 ```
+
+---
+
+## Pattern thực tế — Multi-card Carousel (3→1 col, arrows bên dưới)
+
+> **Nguồn:** `template-blog-author-s3-su-kien` — verified hoạt động.
+
+### Kết quả: 3 cards hiện thị desktop, 1 card mobile, arrows nằm dưới track.
+
+```json
+{
+  "id": "s3bsld",
+  "name": "slider-nested",
+  "parent": "s3bctn",
+  "children": ["s3bcd1", "s3bcd2", "s3bcd3"],
+  "settings": {
+    "_width": "1140px",
+    "type": "loop",
+    "perPage": 3,
+    "perMove": 1,
+    "gap": "24px",
+    "arrows": true,
+    "pagination": false,
+    "autoHeight": false,
+
+    "perPage:mobile_portrait": "1",
+    "gap:mobile_portrait": "16px",
+
+    "arrowBackground": {"color": {"hex": "transparent"}},
+    "arrowBorder": {
+      "color": {"hex": "#0f0f0f"},
+      "radius": {"top": "999px", "right": "999px", "bottom": "999px", "left": "999px"},
+      "style": "solid",
+      "width": {"top": "1.5px", "right": "1.5px", "bottom": "1.5px", "left": "1.5px"}
+    },
+    "arrowColor": {"hex": "#0f0f0f"},
+    "arrowDisabledOpacity": "0.2",
+    "arrowHeight": "48",
+    "arrowWidth": "48",
+    "arrowSize": "16px",
+
+    "_cssCustom": "#brxe-s3bsld { display: flex; flex-direction: column; overflow: visible; } #brxe-s3bsld .splide__track { overflow: hidden; order: 1; } #brxe-s3bsld .splide__arrows { order: 2; display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 20px; position: relative; } #brxe-s3bsld .splide__arrow { position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; } #brxe-s3bsld .splide__arrow--prev { transform: rotate(180deg) !important; } #brxe-s3bsld .splide__arrow--next { transform: none !important; } #brxe-s3bsld .splide__list { align-items: stretch; } #brxe-s3bsld .splide__slide { display: flex; } #brxe-s3bsld .splide__slide > div { flex: 1; } #brxe-s3bsld .splide__pagination { display: none !important; }"
+  }
+}
+```
+
+### ⚠️ Giải thích các key quan trọng
+
+| Key | Giá trị | Lý do |
+|-----|---------|-------|
+| `perPage:mobile_portrait` | `"1"` | **Composite key** responsive — 3→1 col trên mobile ≤478px |
+| `gap:mobile_portrait` | `"16px"` | **Composite key** — giảm gap trên mobile |
+| `.splide__list { align-items: stretch }` | — | Cards bằng chiều cao nhau (equal-height) |
+| `.splide__slide { display: flex }` | — | Bắt buộc để `flex: 1` trên con hoạt động |
+| `.splide__slide > div { flex: 1 }` | — | Card block điền hết chiều cao slide |
+| `pagination: false` + CSS `display: none !important` | — | Tắt chắc chắn — chỉ `false` chưa đủ |
+| `overflow: visible` trên root, `hidden` trên `.splide__track` | — | Arrows có thể overflow ra ngoài track |
+
+### Card slide (equal-height pattern)
+
+```json
+{
+  "id": "s3bcd1",
+  "name": "block",
+  "parent": "s3bsld",
+  "children": ["s3bim1", "s3btx1"],
+  "settings": {
+    "_display": "flex",
+    "_direction": "column",
+    "_background": {"color": {"hex": "#ffffff"}},
+    "_border": {"radius": {"top": "20px", "right": "20px", "bottom": "20px", "left": "20px"}},
+    "_overflow": "hidden",
+    "_padding": {"top": "8px", "bottom": "8px", "left": "8px", "right": "8px"},
+    "_rowGap": "16px",
+    "_cssCustom": "#brxe-s3bcd1{ border: 2px solid rgba(0,124,252,0.5); box-shadow: inset 0px 0px 24px 0px rgba(0,124,252,0.2); }"
+  }
+}
+```
+
+> ✅ Card dùng `_display: flex` + `_direction: column` → khi slide bằng chiều cao, card tự kéo dài.
+> ✅ `_overflow: hidden` → border-radius clip ảnh bên trong.
+

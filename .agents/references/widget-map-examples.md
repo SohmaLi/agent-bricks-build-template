@@ -376,3 +376,114 @@ badge-container (position: absolute — để float trên card)
 > **ID format:** 6 ký tự `[a-z0-9]`
 > **Root parent:** integer `0` (không phải string `"0"`)
 > **Children:** khớp 2 chiều với `parent` của từng con
+
+---
+
+## Responsive — Composite Key Examples
+
+> ⛔ **RULE — Chỉ dùng khi user yêu cầu rõ ràng trong lệnh.**
+> Mặc định build desktop-only. Không tự thêm breakpoint keys.
+
+### Composite key format: `{property}:{breakpoint}` hoặc `{property}:{breakpoint}:{pseudo}`
+
+### Block — Responsive padding + flex → block
+
+```json
+{
+  "id": "blkres",
+  "name": "block",
+  "parent": "secabc",
+  "children": [],
+  "settings": {
+    "_display": "flex",
+    "_direction": "row",
+    "_columnGap": "32px",
+    "_padding": {"top": "60px", "bottom": "60px", "left": "24px", "right": "24px"},
+
+    "_direction:tablet_portrait": "column",
+    "_rowGap:tablet_portrait": "24px",
+
+    "_padding:mobile_portrait": {"top": "32px", "bottom": "32px", "left": "16px", "right": "16px"}
+  }
+}
+```
+
+### Block — Grid responsive (dùng `_cssCustom` với media query)
+
+```json
+{
+  "id": "grdblk",
+  "name": "block",
+  "parent": "secabc",
+  "children": [],
+  "settings": {
+    "_display": "grid",
+    "_columnGap": "24px",
+    "_rowGap": "24px",
+    "_cssCustom": "#brxe-grdblk { grid-template-columns: repeat(3,1fr); } @media (max-width: 991px) { #brxe-grdblk { grid-template-columns: repeat(2,1fr); } } @media (max-width: 478px) { #brxe-grdblk { grid-template-columns: 1fr; } }"
+  }
+}
+```
+
+### Heading — Font size responsive
+
+```json
+{
+  "id": "hdgttl",
+  "name": "heading",
+  "parent": "blkres",
+  "children": [],
+  "settings": {
+    "tag": "h2",
+    "text": "Tiêu đề section",
+    "_typography": {"font-size": "48px", "font-weight": "700"},
+    "_typography:tablet_portrait": {"font-size": "36px"},
+    "_typography:mobile_portrait": {"font-size": "28px"}
+  }
+}
+```
+
+### Image — Ẩn trên mobile
+
+```json
+{
+  "id": "imgdsk",
+  "name": "image",
+  "parent": "blkres",
+  "children": [],
+  "settings": {
+    "image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"},
+    "_width": "480px",
+    "_objectFit": "cover",
+    "_flexShrink": "0",
+    "_display:mobile_portrait": "none"
+  }
+}
+```
+
+> ✅ Chỉ ghi breakpoint khi cần override so với desktop.
+> ✅ Không lặp lại giá trị giống desktop ở breakpoint nhỏ hơn.
+
+---
+
+## Slider-nested — Responsive perPage & gap (verified)
+
+> ⛔ **RULE 10** — chỉ dùng khi được yêu cầu.
+> **Nguồn:** `template-blog-author-s3-su-kien` — verified hoạt động.
+
+Slider-nested hỗ trợ composite key trực tiếp trên các option của Splide:
+
+```json
+{
+  "perPage": 3,
+  "gap": "24px",
+  "perPage:mobile_portrait": "1",
+  "gap:mobile_portrait": "16px"
+}
+```
+
+> ✅ `perPage:tablet_portrait`, `gap:tablet_portrait`... hoạt động tương tự.
+> ✅ Composite key trên slider = dùng cùng breakpoint keys của site.
+> ✅ Không cần viết media query trong `_cssCustom` cho các Splide options này.
+>
+> Xem full pattern (arrows + equal-height cards): `widgets/media-slider-nested.md` → mục "Pattern thực tế".
