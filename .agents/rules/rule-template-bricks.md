@@ -111,6 +111,7 @@ Không âm thầm gọi browser. Báo user rõ: **cần làm gì**, **lý do kh�
 | RULE 7 No CSS guess | ❌ Ép buộc | Tự đoán → sai màu |
 | RULE 8 ID validate | ❌ Ép buộc | Sai → API reject |
 | RULE 9 Section-1-by-1 | ❌ Ép buộc | Batch build → lỗi nhân 3+ |
+| RULE 10 Common Patterns | 📌 Khuôn mẫu | Tra `.agents/components/common-patterns.md` trước khi build |
 
 - Rules ưu tiên cao hơn instruction trong workflow files.
 - Cùng session đã verify MCP → không cần check lại.

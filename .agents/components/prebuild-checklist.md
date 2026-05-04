@@ -2,6 +2,7 @@
 
 > **Dùng khi:** Trước khi build JSON trong `/bricks-create-template` Sub-bước A.
 > Đọc file này + section file tương ứng trước khi viết bất kỳ element nào.
+> **Tham khảo patterns:** `.agents/components/common-patterns.md`
 
 ---
 
@@ -18,6 +19,12 @@
 | 7 | Gotchas? | Áp dụng giải pháp trong section file |
 | 8 | Element có `_width`+`_height` cố định trong flex row? | `_flexShrink: "0"` |
 | 9 | Badge / text-over-SVG? | Container: `position:absolute` + `w/h`. SVG: `absolute top:0 left:0 100%×100%`. Text: `relative z-index:1` |
+| **10** | **Layout engine root?** | `section → container → block` — **KHÔNG** dùng `block` thẳng dưới `section`. Xem PATTERN 6 |
+| **11** | **Background block?** | Dùng `pos:absolute, top:0, left:0, w:100%, h:100%` — KHÔNG copy fixed px từ Figma. Xem PATTERN 1 |
+| **12** | **Mobile gap trace?** | Trace: element nào là flex-parent khi layout đổi column? Gap set đúng đó. Xem PATTERN 5 |
+| **13** | **Mobile centering?** | `left:50% + transform:translateX(-50%)` — KHÔNG dùng `translateX(negative%)`. Xem PATTERN 2 |
+| **14** | **Mobile padding riêng?** | Check Figma mobile per-element — card/container có padding riêng khác desktop không? |
+| **15** | **Right col self-stretch?** | Nếu flex-row dùng `align-items:flex-end`, right col cần `_alignSelf:"stretch"`. Xem PATTERN 7 |
 
 ---
 
@@ -26,8 +33,12 @@
 ```
 □ Có native key? → Dùng native (xem rule-build-techniques.md RULE 5)
 □ Không có native? → _cssCustom: "#brxe-[element-id]{ ... }"
-□ Target <img>? → "#brxe-[element-id] img{ ... }"
-□ %root% → KHÔNG dùng qua MCP API (chỉ Bricks editor UI)
+□ Target <img> tag? → "#brxe-[element-id] img{ ... }"
+□ Mask trên block? → "#brxe-[element-id]{ mask-image: ... }" — KHÔNG cần target img
+□ %root% via API: dùng #brxe-[id] cho chắc. Sau Ctrl+S → Bricks tự convert về %root%.
+□ _cssCustom responsive? → Dùng _cssCustom:mobile_portrait (KHÔNG @media thủ công)
+□ Background block? → Dùng PATTERN 1 (100%/100%) — KHÔNG copy Figma fixed px
+□ SVG mask? → Xem PATTERN 4 — mask trên block wrapper, image không cần CSS
 ```
 
 ---
@@ -40,6 +51,21 @@
 □ Không có 2 elements cùng ID
 □ parent/children khớp 2 chiều
 □ Root "parent": 0 (integer, KHÔNG phải "0" string)
+□ Direct child của section là "container", không phải "block"
+```
+
+---
+
+## Mobile Trace (khi section có responsive)
+
+```
+Trước khi set responsive keys, vẽ mental model:
+□ Desktop layout: [vẽ flex direction]
+□ Mobile layout:  [vẽ flex direction sau khi đổi]
+□ Mỗi gap: nằm đúng flex-parent? (coi chừng absolute element không chiếm space)
+□ Centering oversized elements: dùng PATTERN 2
+□ Height chain: khi column stretch, child có height:100% hoạt động không?
+□ Overflow: child oversized có bị clip bởi parent overflow:hidden không?
 ```
 
 ---
@@ -49,6 +75,7 @@
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [id], view: "summary")
 → Section ở depth:0 → ✅ Done
+→ Direct child của section là "container" type → ✅
 → Bricks có thể tự generate IDs mới → so sánh với IDs ta đặt
 □ IDs khớp → OK
 □ IDs khác (Bricks tự gen) → ghi lại actual IDs, dùng cho bulk_update

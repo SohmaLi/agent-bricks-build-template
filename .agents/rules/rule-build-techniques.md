@@ -4,7 +4,7 @@ glob:
 description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioning, Slider/Tabs, CSS lookup, flex-shrink
 ---
 
-# Rules: Build Techniques (RULE 4–6)
+# Rules: Build Techniques (RULE 4–6, 10)
 
 Áp dụng: Flow `/bricks-create-template` — tất cả giai đoạn.
 
@@ -19,7 +19,7 @@ description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioni
 | Ảnh có `position: absolute` không? | Xem parent có `position: relative` không? → Parent dùng `_position: "relative"` (native key) |
 | Ảnh có kích thước cố định không? | Dùng `_width` + `_height` (native — apply đúng vào `<img>` tag) |
 | Image cần `object-fit` + `object-position` không? | Dùng `_objectFit` + `_objectPosition` (native) |
-| Ảnh có `mask-image` hoặc `transform` không? | `_cssCustom: "%root% img { mask-image: ... }"` (cần target `<img>` tag, không phải wrapper) |
+| Ảnh có `mask-image` trên block wrapper? | `_cssCustom` trên **block wrapper** (không phải `<img>` tag). Xem PATTERN 4 |
 
 > ✔️ `_position` là **Shared CSS Key có trên mọi widget** (từ `base.php`). Dùng trực tiếp trong settings, không cần `_cssCustom`.
 
@@ -65,9 +65,27 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 
 **Native keys phổ biến:** `_width/_height`, `_widthMin/_widthMax/_heightMin/_heightMax`, `_padding/_margin`, `_display/_direction`, `_alignItems/_justifyContent`, `_rowGap/_columnGap`, `_flexGrow/_flexShrink`, `_position/_top/_right/_bottom/_left`, `_zIndex/_overflow/_opacity`, `_border/_background`, `_objectFit/_objectPosition`, `_cssTransition/_aspectRatio`
 
-**Chỉ dùng `_cssCustom` cho:** gradient bg, inset box-shadow, grid-template-columns, clip-path, filter, transform, :hover/:focus, ::before/::after, mask-image trên img
+**Chỉ dùng `_cssCustom` cho:** gradient bg, inset box-shadow, grid-template-columns, clip-path, filter, transform, :hover/:focus, ::before/::after, mask-image
 
-**Format MCP bắt buộc:** `"#brxe-[element-id]{ ... }"` — KHÔNG dùng `%root%` (API không replace, chỉ Bricks editor UI mới replace được)
+> ⚡ **QUAN TRỌNG — `_cssCustom` cũng hỗ trợ responsive:**
+> `_cssCustom:mobile_portrait`, `_cssCustom:tablet` ... là các key hợp lệ.
+> **KHÔNG cần** viết `@media (max-width: 478px) {...}` thủ công bên trong `_cssCustom`.
+> Mỗi breakpoint = 1 key riêng → sạch hơn, dễ quản lý hơn, đúng cách Bricks xử lý.
+>
+> ```json
+> "_cssCustom": "#brxe-xxx { mask-image: url('[desktop.svg]'); ... }",
+> "_cssCustom:mobile_portrait": "#brxe-xxx { mask-image: url('[mobile.svg]'); ... }"
+> ```
+
+**Format `_cssCustom`:**
+
+| Context | Dùng | Lý do |
+|---------|------|-------|
+| Push qua API **không** Ctrl+S | `#brxe-[element-id]{...}` | `%root%` không được replace khi chỉ push API |
+| Push qua API **sau đó** Ctrl+S | Cả 2 đều OK | Bricks editor tự convert `#brxe-[id]` → `%root%` khi save |
+| Viết trực tiếp trong Bricks editor | `%root%{...}` | Editor UI dùng `%root%` chuẩn |
+
+> **Thực tế:** Sau Ctrl+S, Bricks convert tất cả về `%root%`. Vì workflow luôn cần Ctrl+S cho cssCustom → có thể dùng `%root%` trong `_cssCustom` khi biết user sẽ Ctrl+S. Nhưng để an toàn, **luôn dùng `#brxe-[id]`** khi push qua API.
 
 **Image widget:** `%root%` = `<figure>` wrapper | `#brxe-[id] img` = target `<img>` tag
 
@@ -105,7 +123,8 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 | Grid columns | `"#brxe-[id]{ grid-template-columns: repeat(3,1fr); }"` |
 | `:hover` | `"#brxe-[id]:hover{ transform: translateY(-4px) }"` |
 | `::before` | `"#brxe-[id]::before{ content: ''; ... }"` |
-| Mask on img | `"#brxe-[id] img{ -webkit-mask-image: url(...) }"` |
+| Mask trên block | `"#brxe-[id]{ mask-image: url(...); mask-size: Wpx Hpx; }"` — KHÔNG target `img` |
+| Mask trên `<img>` tag | `"#brxe-[id] img{ -webkit-mask-image: url(...) }"` — chỉ khi mask apply lên thẻ img |
 
 ### 5C — Object-position Formula (Figma crop → CSS)
 
@@ -133,3 +152,50 @@ Khi `mcp_figma_get_design_context` lỗi `unknown_tool`:
 Thiếu → flex container co bóp → kích thước thực nhỏ hơn giá trị set.
 
 Áp dụng: icon circles, avatar, badge container, logo, thumbnail fixed-size.
+
+---
+
+## RULE 10 — Common Patterns (bắt buộc tra trước khi build)
+
+> **Đọc:** `.agents/components/common-patterns.md` trước khi build section có các tình huống sau.
+
+### 10A — Background Block: KHÔNG copy Figma fixed px
+
+```
+❌ SAI: _width: "1361px", _height: "577px", _top: "50%", _left: "50%"
+✅ ĐÚNG: _position: "absolute", _top: "0px", _left: "0px", _width: "100%", _height: "100%"
+```
+
+Figma dùng fixed px vì frame tĩnh. Bricks cần relative sizing để responsive.
+
+### 10B — Section Layout Engine Root
+
+```
+❌ SAI: section → block (trực tiếp)
+✅ ĐÚNG: section → container → block → widgets
+```
+
+`container` là direct child duy nhất của `section`. Container CÓ THỂ mang visual styles (bg, rounded, overflow).
+
+### 10C — Mobile Centering: KHÔNG dùng translateX(negative%)
+
+```
+❌ SAI: transform: translateX(-20.15%)   → % của element width
+✅ ĐÚNG: left: 50%; transform: translateX(-50%)  → center chuẩn theo parent
+```
+
+`translateX(X%)` tính X% của **element's own width**, không phải parent. Dùng `left:50% + translateX(-50%)` để horizontally center bất kỳ element nào.
+
+### 10D — Mobile Gap: Trace flex-parent trước khi set
+
+Trước khi set `_rowGap:mobile_portrait`, trace:
+1. Flex-parent nào đổi direction thành column trên mobile?
+2. Gap cần nằm trên **đúng flex-parent đó**
+3. Element `position:absolute` không chiếm flex space → không ảnh hưởng gap
+
+### 10E — Right Column Self-Stretch
+
+Khi flex-row parent có `_alignItems: "flex-end"`:
+- Column muốn stretch theo chiều cao phải có `_alignSelf: "stretch"`
+- KHÔNG dùng `_heightMin: "100%"` (không hiệu quả khi parent không có explicit height)
+- Nếu thiếu → column collapsed → content absolute bên trong vô hình

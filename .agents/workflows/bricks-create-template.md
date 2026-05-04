@@ -77,7 +77,8 @@ Section                               ← depth 0
 ### Sub-bước B — Build JSON (Native Flat Format)
 
 > Settings JSON: Copy từ section file. Native keys trước, `_cssCustom` khi không có native.
-> `_cssCustom` format: `"#brxe-[element-id]{"` — KHÔNG dùng `%root%` qua API.
+> `_cssCustom` format: `"#brxe-[element-id]{"` khi push API. Sau Ctrl+S, Bricks tự convert về `%root%`.
+> Với mask/phức tạp: xem `.agents/components/common-patterns.md`.
 
 **Responsive (RULE 10 — chỉ khi được yêu cầu):**
 
@@ -85,7 +86,7 @@ Section                               ← depth 0
 |-----------|-----------|
 | Không có lệnh responsive | Build desktop-only, không thêm breakpoint key |
 | User yêu cầu rõ / plan có `[RESPONSIVE]` | Gọi `get_breakpoints` → dùng composite key `_prop:breakpoint` |
-| `_cssCustom` cần responsive | Viết `@media (max-width: Xpx)` bên trong string |
+| `_cssCustom` cần responsive | Dùng **`_cssCustom:mobile_portrait`** làm key riêng — KHÔNG viết `@media` thủ công trong string |
 
 **Quy tắc ID:**
 
