@@ -189,20 +189,29 @@
 }
 ```
 
-### `slider-nestable` — Bắt buộc dùng khi có slider/carousel
+### `slider-nested` — Bắt buộc dùng khi có slider/carousel
+> ⚠️ Tên đúng: `slider-nested` (KHÔNG phải `slider-nestable`)
+> Xem full structure: `widgets/media-slider-nested.md`
+
 ```json
 {
   "autoplay": false,
+  "navigation": true,
+  "pagination": true,
   "speed": 500,
-  "dots": true,
-  "arrows": true
+  "loop": true
 }
 ```
 
-### `tabs-nestable` — Bắt buộc dùng khi có tabs
+### `tabs-nested` — Bắt buộc dùng khi có tabs
+> ⚠️ Tên đúng: `tabs-nested` (KHÔNG phải `tabs-nestable`)
+> Xem full structure + Critical Rules: `widgets/general-tabs-nested.md`
+
 ```json
 {
-  "direction": "horizontal"
+  "direction": "row",
+  "openTabOn": "click",
+  "openTab": "0"
 }
 ```
 
@@ -408,7 +417,9 @@ badge-container (position: absolute — để float trên card)
 }
 ```
 
-### Block — Grid responsive (dùng `_cssCustom` với media query)
+### Block — Grid responsive (dùng `_cssCustom` với breakpoint keys)
+
+> ✅ ĐÚNG theo RULE 5: dùng `_cssCustom:mobile_portrait` — KHÔNG dùng `@media` thủ công bên trong `_cssCustom`.
 
 ```json
 {
@@ -420,7 +431,9 @@ badge-container (position: absolute — để float trên card)
     "_display": "grid",
     "_columnGap": "24px",
     "_rowGap": "24px",
-    "_cssCustom": "#brxe-grdblk { grid-template-columns: repeat(3,1fr); } @media (max-width: 991px) { #brxe-grdblk { grid-template-columns: repeat(2,1fr); } } @media (max-width: 478px) { #brxe-grdblk { grid-template-columns: 1fr; } }"
+    "_cssCustom": "#brxe-grdblk { grid-template-columns: repeat(3, 1fr); }",
+    "_cssCustom:tablet_portrait": "#brxe-grdblk { grid-template-columns: repeat(2, 1fr); }",
+    "_cssCustom:mobile_portrait": "#brxe-grdblk { grid-template-columns: 1fr; }"
   }
 }
 ```

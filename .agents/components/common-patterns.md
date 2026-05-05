@@ -355,3 +355,97 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 ```
 
 > `_aspectRatio` là cách hiện đại nhất để giữ tỉ lệ mà không cần padding-top hack.
+
+---
+
+## PATTERN 13 — Flex Equal Columns: Dùng CSS Shorthand, Tránh Nhiều Native Keys
+
+**Vấn đề:** Dùng nhiều native keys rời (`_flexGrow`, `_flexShrink`, `_widthMin`) → verbose, khó debug, có thể xung đột.
+
+**Giải pháp:** Dùng 1 dòng `flex` shorthand trong `_cssCustom`.
+
+```json
+// ❌ SAI - nhiều keys rời
+{
+  "_flexGrow": "1",
+  "_flexShrink": "1",
+  "_widthMin": "0px"
+}
+
+// ✅ ĐÚNG - 1 dòng CSS shorthand
+{
+  "_cssCustom": "#brxe-[id] { flex: 1 1 0; min-width: 0; }"
+}
+```
+
+**Common flex values:**
+| Layout | CSS | Ý nghĩa |
+|--------|-----|---------|
+| Equal col (shrinkable) | `flex: 1 1 0` | Grow + shrink equally, basis 0 |
+| Fixed col (no shrink) | `flex: 1 0 0` | Grow nhưng không shrink |
+| Auto col | `flex: 1` | shorthand = `1 1 auto` |
+
+> **Rule:** Nếu cần set 2+ flex properties → ưu tiên `_cssCustom` shorthand.
+
+---
+
+## PATTERN 14 — Accordion Nestable: `openItemIndex` là 0-Based
+
+**Verified:** `openItemIndex` trong `accordion-nested` dùng **0-based index**.
+
+```json
+// ❌ SAI - nghĩ là 1-based, thực ra mở item 2
+{ "openItemIndex": 1 }
+
+// ✅ ĐÚNG - mở item đầu tiên
+{ "openItemIndex": 0 }
+```
+
+| Muốn mở item | Dùng giá trị |
+|--------------|--------------|
+| Item 1 (mặc định) | `0` |
+| Item 2 | `1` |
+| Item 3 | `2` |
+
+> Widget docs ghi "1-based, default: 1" nhưng thực tế là 0-based. Đây là bug trong docs.
+
+---
+
+## PATTERN 15 — Dual Layout: Desktop vs Mobile Hoàn Toàn Khác
+
+**Khi nào dùng:** Layout desktop và mobile quá khác nhau (không thể responsive bằng flex-direction thôi).
+
+**Chiến lược:** Tạo 2 block riêng, toggle visibility qua `_display`.
+
+```json
+// Desktop block (ẩn trên mobile)
+{
+  "id": "s6deskblk",
+  "name": "block",
+  "settings": {
+    "_display": "flex",
+    "_display:mobile_portrait": "none"
+  }
+}
+
+// Mobile block (ẩn trên desktop, hiện trên mobile)
+{
+  "id": "s6mobblk",
+  "name": "block",
+  "settings": {
+    "_display": "none",
+    "_display:mobile_portrait": "flex"
+  }
+}
+```
+
+**Ưu điểm:**
+- Không cần hacking CSS phức tạp
+- Mỗi layout độc lập, dễ maintain
+- Không có conflict giữa desktop/mobile styles
+
+**Nhược điểm:**
+- Content duplicate → cần sync thủ công nếu thay đổi text
+- Tăng DOM size (không đáng kể với landing page)
+
+> **Áp dụng khi:** Desktop = accordion list + right glow / Mobile = 3 full cards riêng biệt (verified trong S06 AI Model section)

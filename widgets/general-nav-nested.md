@@ -1,19 +1,9 @@
 # Widget: `nav-nested`
 
 > **Source:** `bricks/includes/elements/nav-nested.php`
-> **Category:** general | **Tag:** `nav` | **Nestable:** true | **Scripts:** bricksNavNested, bricksSubmenuListeners
+> **Category:** general | **Nestable:** true | **Scripts:** bricksNavNested
 
-Navigation menu nestable — build menu hoàn toàn tự do với dropdown, mega menu, và mobile toggle.
-
----
-
-## Control Groups
-
-| Group | Mô tả |
-|-------|-------|
-| `item` | Top-level menu items |
-| `dropdown` | Dropdown/submenu styling |
-| `mobile-menu` | Mobile breakpoint & toggle |
+Nav nestable — navigation bar với dropdown support và mobile hamburger toggle.
 
 ---
 
@@ -21,101 +11,187 @@ Navigation menu nestable — build menu hoàn toàn tự do với dropdown, mega
 
 | Key | Type | Mô tả |
 |-----|------|-------|
-| `tag` | text | HTML tag (default: `nav`) |
-| `ariaLabel` | text | aria-label (default: "Menu") |
-
-### Top Level Item Group (selector: `.brx-nav-nested-items > li`)
-
-| Key | Selector | Mô tả |
-|-----|----------|-------|
-| `gap` | `.brx-nav-nested-items` | Gap giữa items |
-| `itemPadding` | `> li > a`, `> li > .brx-submenu-toggle > *` | Padding |
-| `itemBackgroundColor` | `> li > a`, `> li > .brx-submenu-toggle` | BG |
-| `itemBorder` | Idem | Border |
-| `itemTypography` | Idem | Typography |
-| `itemTransition` | Idem | Transition |
-| `itemBackgroundColorActive` | `[aria-current="page"]` | BG active |
-| `itemBorderActive` | `[aria-current="page"]` | Border active |
-| `itemTypographyActive` | `[aria-current="page"]` | Typography active |
-
-### Dropdown Group (selector: `.brx-dropdown-content`)
-
-| Key | Mô tả |
-|-----|-------|
-| `iconPadding`, `iconGap`, `iconSize`, `iconColor` | Style toggle icon |
-| `iconPosition` | `left` hoặc `right` (default) |
-| `iconTransform`, `iconTransformOpen` | Transform khi đóng/mở |
-| `iconTransition` | Transition icon |
-| `dropdownContentWidth` | Min-width dropdown |
-| `dropdownBackgroundColor`, `dropdownBorder`, `dropdownBoxShadow` | Style container |
-| `dropdownTypography` | Typography container |
-| `dropdownTransition` | Transition open/close |
-| `dropdownZindex` | z-index (default: 1001) |
-| `dropdownPadding`, `dropdownItemBackground`, `dropdownItemBorder`, `dropdownItemTypography` | Style items trong dropdown |
-| `multiLevel` | Bật multilevel mode |
-| `multiLevelBackText` | Text nút back |
-
-### Mobile Menu Group
-
-| Key | Mô tả |
-|-----|-------|
-| `mobileMenu` | Breakpoint hiển thị mobile menu |
-| `mobileMenuWidth`, `mobileMenuHeight` | Kích thước `.brx-nav-nested-items` khi open |
-| `mobileMenuAlignItems`, `mobileMenuJustifyContent` | Alignment khi open |
-| `mobileMenuPosition` | Position khi open |
-| `mobileMenuBackgroundColor` | BG khi open |
+| `logo` | image | Logo image |
+| `logoWidth` | text | Logo width |
+| `logoHeight` | text | Logo height |
+| `mobileBreakpoint` | text | Breakpoint mobile (px) |
+| `mobileMenuBuilder` | boolean | Dùng Bricks builder cho mobile menu |
 
 ---
 
-## Nestable Structure
+## Nestable Structure (Bắt buộc — Phức tạp nhất)
 
 ```
-Nav Nested (nav.brxe-nav-nested)
-├── Block (.brx-nav-nested-items) ← ul thực sự
-│   ├── Li item 1 → link
-│   ├── Li dropdown → .brx-submenu-toggle → link + button
-│   │   └── .brx-dropdown-content (div)
-│   │       ├── Li sub-item
-│   │       └── Li sub-item
-│   └── Toggle (hamburger button)
+nav-nested [root]
+├── block (.brx-nav-nested-items) [tag="ul"]   ← FIXED: cloneable:false, deletable:false
+│   ├── text-link "Home" (Nav link)
+│   ├── text-link "About" (Nav link)
+│   ├── dropdown "Dropdown"                    ← widget type: dropdown
+│   │   └── div (.brx-dropdown-content) [tag="ul"]  ← FIXED: cloneable:false, deletable:false
+│   │       ├── text-link "Dropdown link 1"
+│   │       └── text-link "Dropdown link 2"
+│   └── toggle (.brx-toggle-div)              ← Close button: Mobile
+└── toggle [label="Toggle (Open: Mobile)"]    ← Hamburger: Open mobile menu
 ```
 
 ---
 
-## Ví dụ JSON
+## ⚠️ CRITICAL RULES
+
+### 1. Hai element FIXED — KHÔNG được xóa hoặc clone
+
+| Element | ID/class | `cloneable`/`deletable` |
+|---------|-----------|------------------------|
+| Nav items block | `.brx-nav-nested-items` | `cloneable: false`, `deletable: false` |
+| Dropdown content | `.brx-dropdown-content` | `cloneable: false`, `deletable: false` |
+
+> Khi push qua API, bắt buộc phải include `"cloneable": false, "deletable": false` trên 2 elements này.
+
+### 2. Tag của Nav items block = `ul`
+
+```json
+"settings": {
+  "tag": "ul",
+  "_hidden": { "_cssClasses": "brx-nav-nested-items" }
+}
+```
+
+### 3. Nav links = `text-link` widget (KHÔNG dùng `text-basic` hay `button`)
+
+### 4. Dropdown element type = `dropdown`
 
 ```json
 {
-  "id": "navMain",
-  "name": "nav-nested",
-  "parent": "ctnHeader",
-  "settings": {
-    "ariaLabel": "Main navigation",
-    "mobileMenu": "mobile_landscape",
-    "gap": "8px",
-    "itemPadding": {"top": "8px", "right": "16px", "bottom": "8px", "left": "16px"},
-    "itemTypography": {
-      "font-size": "15px",
-      "font-weight": "500",
-      "color": {"hex": "#282829"}
-    },
-    "itemTypographyActive": {
-      "color": {"hex": "#007cfc"}
-    },
-    "dropdownBackgroundColor": {"hex": "#ffffff"},
-    "dropdownBorder": {
-      "radius": {"top": "8px", "right": "8px", "bottom": "8px", "left": "8px"}
-    },
-    "dropdownBoxShadow": {
-      "values": {"offsetX": "0", "offsetY": "8px", "blur": "24px", "spread": "0"},
-      "color": {"hex": "#00000026"}
-    },
-    "dropdownContentWidth": "200px",
-    "dropdownPadding": {"top": "8px", "right": "0", "bottom": "8px", "left": "0"},
-    "dropdownItemTypography": {
-      "font-size": "14px",
-      "color": {"hex": "#282829"}
-    }
-  }
+  "id": "...",
+  "name": "dropdown",
+  "settings": { "text": "Menu Label" }
 }
+```
+
+### 5. Dropdown content div = `div` với class `brx-dropdown-content`, `tag: "ul"`
+
+### 6. Toggle (Close) bên TRONG nav items block, Toggle (Open) ở ROOT level
+
+---
+
+## Classes Reference
+
+| Element | Class/Config |
+|---------|-------------|
+| Nav items wrapper | `brx-nav-nested-items` + `tag: "ul"` |
+| Dropdown content | `brx-dropdown-content` + `tag: "ul"` |
+| Mobile close toggle | `brx-toggle-div` |
+
+---
+
+## Ví dụ JSON — Full Element Tree (dùng với `update_content`)
+
+```json
+[
+  {
+    "id": "navroot",
+    "name": "nav-nested",
+    "parent": "0",
+    "children": ["navitms", "navtgl2"],
+    "settings": {}
+  },
+  {
+    "id": "navitms",
+    "name": "block",
+    "parent": "navroot",
+    "children": ["navlnk1", "navlnk2", "navdrop", "navtgl1"],
+    "settings": {
+      "tag": "ul",
+      "_hidden": { "_cssClasses": "brx-nav-nested-items" }
+    },
+    "label": "Nav items",
+    "cloneable": false,
+    "deletable": false
+  },
+  {
+    "id": "navlnk1",
+    "name": "text-link",
+    "parent": "navitms",
+    "children": [],
+    "settings": {
+      "text": "Home",
+      "link": { "type": "external", "url": "/" }
+    },
+    "label": "Nav link"
+  },
+  {
+    "id": "navlnk2",
+    "name": "text-link",
+    "parent": "navitms",
+    "children": [],
+    "settings": {
+      "text": "About",
+      "link": { "type": "external", "url": "/about" }
+    },
+    "label": "Nav link"
+  },
+  {
+    "id": "navdrop",
+    "name": "dropdown",
+    "parent": "navitms",
+    "children": ["navdrcn"],
+    "settings": {
+      "text": "Services"
+    },
+    "label": "Dropdown"
+  },
+  {
+    "id": "navdrcn",
+    "name": "div",
+    "parent": "navdrop",
+    "children": ["navdrl1", "navdrl2"],
+    "settings": {
+      "_hidden": { "_cssClasses": "brx-dropdown-content" },
+      "tag": "ul"
+    },
+    "label": "Content",
+    "cloneable": false,
+    "deletable": false
+  },
+  {
+    "id": "navdrl1",
+    "name": "text-link",
+    "parent": "navdrcn",
+    "children": [],
+    "settings": {
+      "text": "Service 1",
+      "link": { "type": "external", "url": "/service-1" }
+    },
+    "label": "Nav link"
+  },
+  {
+    "id": "navdrl2",
+    "name": "text-link",
+    "parent": "navdrcn",
+    "children": [],
+    "settings": {
+      "text": "Service 2",
+      "link": { "type": "external", "url": "/service-2" }
+    },
+    "label": "Nav link"
+  },
+  {
+    "id": "navtgl1",
+    "name": "toggle",
+    "parent": "navitms",
+    "children": [],
+    "settings": {
+      "_hidden": { "_cssClasses": "brx-toggle-div" }
+    },
+    "label": "Toggle (Close: Mobile)"
+  },
+  {
+    "id": "navtgl2",
+    "name": "toggle",
+    "parent": "navroot",
+    "children": [],
+    "settings": {},
+    "label": "Toggle (Open: Mobile)"
+  }
+]
 ```
