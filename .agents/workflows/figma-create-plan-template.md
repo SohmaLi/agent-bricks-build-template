@@ -69,6 +69,7 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
 
 > **Đọc component:** `.agents/components/figma-section-analysis.md`
 > Dùng hướng dẫn trong đó để: đánh giá độ phức tạp, detect Slider/Tab, validate CSS properties.
+> **SHIFT-LEFT RESPONSIVE:** Luôn so sánh Desktop Node ID với Mobile Node ID để chọn cấu trúc HTML/Flexbox có thể "sống sót" khi wrap trên mobile mà không cần đập đi build lại. (Ví dụ: dùng Block bao bọc thay vì Grid cứng).
 
 ### A5 — Báo cáo & DỪNG
 
@@ -84,7 +85,7 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
   Widgets : section > block > [widgets]
   Elements: [N] | depth: [D]
   Images  : [N] ảnh
-  Gotchas : [nếu có]
+  Gotchas : [nếu có] | Placeholder : [Có/Không - Nếu có thì hỏi user]
   ❓ Thắc mắc: [câu hỏi kỹ thuật nếu có]
   → Status : ___
 

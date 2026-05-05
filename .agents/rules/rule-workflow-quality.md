@@ -23,11 +23,11 @@ description: Quality gates cho Bricks Builder workflow — No CSS guessing, Elem
 
 ---
 
-## RULE 8 — Element ID: đúng 6 ký tự `[a-z0-9]`, không trùng
+## RULE 8 — Element ID: 6-8 ký tự `[a-z0-9]`, không trùng
 
-Pattern: `[s{n}][role2][idx2]` → `s4hd10`, `s5bg20`, `s6cd34`
+Pattern gợi ý: `[s{n}][role2][idx2+]` → `s4hd10`, `s15bg20`, `s6cd345`
 
-Validate trước push: `id.length===6`, `/^[a-z0-9]{6}$/.test(id)`, không trùng, parent↔children khớp 2 chiều.
+Validate trước push: `id.length >= 6 && id.length <= 8`, `/^[a-z0-9]+$/.test(id)`, không trùng, parent↔children khớp 2 chiều.
 
 ---
 

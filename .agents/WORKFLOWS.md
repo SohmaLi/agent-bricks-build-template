@@ -60,6 +60,7 @@ Gọi song song **trước khi bắt đầu bất kỳ flow nào**:
 - **KHÔNG** đổi text tĩnh sang dynamic tag (`{post_title}`, `{post_date}`...) khi Figma dùng text cố định
 - **KHÔNG** giảm số lượng elements so Figma (Figma có 6 cards → build đủ 6)
 - **Dynamic data** chỉ khi user yêu cầu rõ ràng hoặc plan đánh dấu `[DYNAMIC]`
+- **Placeholder Detection**: AI phải cảnh báo khi phát hiện "Lorem Ipsum" để user quyết định dùng dynamic data sớm.
 
 ### RULE 4 — Kỹ thuật Build Nâng Cao
 
@@ -120,12 +121,12 @@ Thiếu → flex container co bóp → kích thước thực nhỏ hơn giá tr�
 
 Với gradient, box-shadow, border-radius phức tạp, hex color → **BẮT BUỘC** tra cứu từ `mcp_figma_get_design_context`, không tự đoán.
 
-### RULE 8 — Element ID: đúng 6 ký tự `[a-z0-9]`, không trùng
+### RULE 8 — Element ID: 6-8 ký tự `[a-z0-9]`, không trùng
 
-- Format: 6 ký tự `[a-z0-9]` — ví dụ: `s4hd10`, `s5bg20`
+- Format: 6-8 ký tự `[a-z0-9]` — ví dụ: `s4hd10`, `s15bg20`, `s6cd345`
 - Root element: `"parent": 0` (integer, không phải string)
 - Children: mảng IDs con trực tiếp — khớp 2 chiều với `parent`
-- Validate: `id.length === 6` và `/^[a-z0-9]{6}$/.test(id)`
+- Validate: `id.length >= 6 && id.length <= 8` và `/^[a-z0-9]+$/.test(id)`
 
 ### RULE 9 — Build TỪNG section, DỪNG chờ user
 
@@ -144,14 +145,12 @@ Với gradient, box-shadow, border-radius phức tạp, hex color → **BẮT BU
 **Khi được yêu cầu:**
 1. Gọi `mcp_bricks-mcp_bricks(action: "get_breakpoints")` để lấy breakpoint keys chính xác của site
 2. Chỉ ghi breakpoint key khi giá trị **khác với desktop** — không lặp lại giá trị giống
-3. `_cssCustom` responsive → tự viết `@media (max-width: Xpx)` bên trong string, không dùng composite key
+3. `_cssCustom` responsive → Dùng composite key (ví dụ: `_cssCustom:mobile_portrait`), **TUYỆT ĐỐI KHÔNG** viết `@media` thủ công bên trong string.
 
-```
 ✅ User: "build responsive, thu nhỏ padding trên mobile portrait"
    → Thêm "_padding:mobile_portrait": {...}
 
 ❌ Tự thêm "_padding:tablet_portrait" khi không được yêu cầu
-```
 
 ---
 
@@ -169,7 +168,8 @@ PHASE A:
   A1: [Song song] get_design_context + get_screenshot + get_site_info
   A2: Trích xuất tổng quan (tên trang, viewport, sections, design variables, images)
   A3: Đọc Widget Library (widgets/README.md + các widget cần dùng)
-  A4: Đánh giá từng section (complexity, slider/tab detection, CSS validation)
+  A4: Đánh giá từng section (complexity, slider/tab, placeholder discovery, SHIFT-LEFT Responsive evaluation)
+       → Luôn đánh giá mobile node trước khi chốt HTML structure cho desktop.
        → Tham khảo: .agents/components/figma-section-analysis.md
   A5: Báo cáo chat → DỪNG chờ user review
   A6: Ghi .agents/plans/[slug].md (không chờ user)

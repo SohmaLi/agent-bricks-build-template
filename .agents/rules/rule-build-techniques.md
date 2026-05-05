@@ -199,3 +199,17 @@ Khi flex-row parent có `_alignItems: "flex-end"`:
 - Column muốn stretch theo chiều cao phải có `_alignSelf: "stretch"`
 - KHÔNG dùng `_heightMin: "100%"` (không hiệu quả khi parent không có explicit height)
 - Nếu thiếu → column collapsed → content absolute bên trong vô hình
+
+---
+
+## RULE 11 — Special Setting Objects (Quick Ref)
+
+| Loại | Cấu trúc JSON |
+|------|---------------|
+| **Padding/Margin** | `{"top": "20px", "right": "10px", "bottom": "20px", "left": "10px"}` |
+| **Link** | `{"type": "external", "url": "https://...", "newTab": true}` |
+| **Background Color** | `{"color": {"hex": "#ffffff", "id": "token-id"}}` |
+| **Border** | `{"width": "1px", "style": "solid", "color": {"hex": "#000"}, "radius": "8px"}` |
+| **Shadow** | `{"x": "0", "y": "4px", "blur": "10px", "spread": "0", "color": {"hex": "#0000001a"}}` |
+
+> **Lưu ý:** Luôn ưu tiên dùng Hex Code hoặc Token ID từ Figma. Không tự đoán màu.

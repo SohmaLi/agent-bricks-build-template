@@ -87,6 +87,7 @@ Không âm thầm gọi browser. Báo user rõ: **cần làm gì**, **lý do kh�
 2. **Copy text y chang từ Figma** — không paraphrase, không rút gọn
 3. **Dynamic data chỉ khi user yêu cầu rõ ràng** trong request hoặc plan file đánh dấu `[DYNAMIC]`
 4. **Nếu plan file ghi static prototype** → build static, không tự convert sang Query Loop
+5. **Placeholder Detection**: Nếu phát hiện text là "Lorem Ipsum" hoặc placeholder hiển nhiên, phải flag trong plan/chat để hỏi user có muốn dùng Dynamic Data không.
 
 ### Ví dụ đúng / sai
 

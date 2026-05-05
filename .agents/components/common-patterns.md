@@ -300,3 +300,58 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 | Desktop ngang, mobile dọc (xoay 90°) | PATTERN 8 — 2 ảnh riêng |
 | Desktop và mobile cùng 1 ảnh, chỉ khác position | PATTERN 1 + `_objectPosition:mobile_portrait` |
 | BG là gradient CSS | PATTERN 1 + `_cssCustom:mobile_portrait` (KHÔNG dùng `@media` thủ công) |
+
+---
+
+## PATTERN 9 — Auto-Responsive Grid (Features Grid)
+
+> Dùng cho danh sách các thẻ (cards) tự động xuống hàng mà không cần set breakpoint phức tạp.
+
+```json
+{
+  "id": "grdXXX",
+  "name": "container",
+  "parent": "ctnXXX",
+  "settings": {
+    "_direction": "row",
+    "_flexWrap": "wrap",
+    "_gap": "24px",
+    "_justifyContent": "center"
+  }
+},
+{
+  "id": "crdXXX",
+  "name": "container",
+  "parent": "grdXXX",
+  "settings": {
+    "_flexGrow": "1",
+    "_flexShrink": "1",
+    "_widthMin": "280px",
+    "_widthMax": "400px"
+  }
+}
+```
+
+> `_widthMin: "280px"` đảm bảo card không bao giờ nhỏ hơn 280px, tự động wrap khi không đủ chỗ.
+> `_flexGrow: "1"` giúp các card lấp đầy space còn trống trong row.
+
+---
+
+## PATTERN 10 — Aspect Ratio Container (Fixed Ratio)
+
+> Dùng khi muốn container giữ tỉ lệ khung hình (ví dụ 16:9) bất kể nội dung bên trong.
+
+```json
+{
+  "id": "ratXXX",
+  "name": "block",
+  "parent": "ctnXXX",
+  "settings": {
+    "_aspectRatio": "16/9",
+    "_width": "100%",
+    "_overflow": "hidden"
+  }
+}
+```
+
+> `_aspectRatio` là cách hiện đại nhất để giữ tỉ lệ mà không cần padding-top hack.
