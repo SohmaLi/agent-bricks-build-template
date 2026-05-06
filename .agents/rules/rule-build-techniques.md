@@ -14,12 +14,23 @@ description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioni
 
 ### 4A — Image Positioning (Bắt buộc kiểm tra)
 
-| Câu hỏi | Kiểm tra |
-|---------|---------|
-| Ảnh có `position: absolute` không? | Xem parent có `position: relative` không? → Parent dùng `_position: "relative"` (native key) |
-| Ảnh có kích thước cố định không? | Dùng `_width` + `_height` (native — apply đúng vào `<img>` tag) |
-| Image cần `object-fit` + `object-position` không? | Dùng `_objectFit` + `_objectPosition` (native) |
-| Ảnh có `mask-image` trên block wrapper? | `_cssCustom` trên **block wrapper** (không phải `<img>` tag). Xem PATTERN 4 |
+| Câu hỏi                                           | Kiểm tra                                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Ảnh có `position: absolute` không?                | Xem parent có `position: relative` không? → Parent dùng `_position: "relative"` (native key) |
+| Ảnh có kích thước cố định không?                  | Dùng `_width` + `_height` (native — apply đúng vào `<img>` tag)                              |
+| Image cần `object-fit` + `object-position` không? | Dùng `_objectFit` + `_objectPosition` (native)                                               |
+| Ảnh có `mask-image` trên block wrapper?           | `_cssCustom` trên **block wrapper** (không phải `<img>` tag). Xem PATTERN 4                  |
+
+### 4D — Illustration Placeholder (Quy chuẩn gộp ảnh phức tạp)
+
+Khi gặp Frame có nhiều layer/vector lồng nhau, tôi sẽ không tách nhỏ mà build placeholder để user upload ảnh composite:
+
+| Cấu trúc | Cài đặt Desktop | Cài đặt Mobile |
+| :--- | :--- | :--- |
+| **Block (Wrapper)** | Set cứng `_width` + `_height` (px). Flex center. | `_width: "100%"`, `_height: "auto"`. |
+| **Image (Widget)** | `_width: "100%"`, `_height: "100%"`. | `_objectFit: "contain"`. |
+
+> **Mục tiêu**: Đảm bảo tốc độ build và khả năng tùy biến cao cho người dùng sau này.
 
 > ✔️ `_position` là **Shared CSS Key có trên mọi widget** (từ `base.php`). Dùng trực tiếp trong settings, không cần `_cssCustom`.
 
@@ -27,12 +38,12 @@ description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioni
 
 Khi Figma thiết kế có **slider** hoặc **tabs**:
 
-| Loại | Widget bắt buộc | KHÔNG dùng |
-|------|----------------|-----------|
-| Slider / Carousel | `slider-nested` | `block` giả slider |
-| Tabs | `tabs-nested` | Nhiều block ẩn/hiện |
-| Accordion | `accordion-nested` | Block collapse CSS |
-| Nav prev/next | Con của `slider-nested` | HTML button tự build |
+| Loại              | Widget bắt buộc         | KHÔNG dùng           |
+| ----------------- | ----------------------- | -------------------- |
+| Slider / Carousel | `slider-nested`         | `block` giả slider   |
+| Tabs              | `tabs-nested`           | Nhiều block ẩn/hiện  |
+| Accordion         | `accordion-nested`      | Block collapse CSS   |
+| Nav prev/next     | Con của `slider-nested` | HTML button tự build |
 
 **Lý do:** Nếu dùng block thông thường → slider không có JS, click không hoạt động, không có prev/next functionality.
 
@@ -46,6 +57,7 @@ Với các section có CSS phức tạp (gradient background, pattern overlay, i
 ```
 
 Ví dụ section có gradient background:
+
 ```json
 {
   "name": "section",
@@ -59,162 +71,29 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 
 ---
 
-## RULE 5 — CSS Property Lookup (tra cứu khi viết `_cssCustom`)
+## RULE 5 — CSS Property Lookup (Native vs Custom)
 
 **Nguyên tắc:** Native key trước, `_cssCustom` chỉ khi không có native.
 
-**Native keys phổ biến:** `_width/_height`, `_widthMin/_widthMax/_heightMin/_heightMax`, `_padding/_margin`, `_display/_direction`, `_alignItems/_justifyContent`, `_rowGap/_columnGap`, `_flexGrow/_flexShrink`, `_position/_top/_right/_bottom/_left`, `_zIndex/_overflow/_opacity`, `_border/_background`, `_objectFit/_objectPosition`, `_cssTransition/_aspectRatio`
+> 📚 **Tra cứu chi tiết tại**: `rule-css-lookup.md`
 
-**Chỉ dùng `_cssCustom` cho:** gradient bg, inset box-shadow, grid-template-columns, clip-path, filter, transform, :hover/:focus, ::before/::after, mask-image
-
-> ⚡ **QUAN TRỌNG — `_cssCustom` cũng hỗ trợ responsive:**
-> `_cssCustom:mobile_portrait`, `_cssCustom:tablet` ... là các key hợp lệ.
-> **KHÔNG cần** viết `@media (max-width: 478px) {...}` thủ công bên trong `_cssCustom`.
-> Mỗi breakpoint = 1 key riêng → sạch hơn, dễ quản lý hơn, đúng cách Bricks xử lý.
->
-> ```json
-> "_cssCustom": "#brxe-xxx { mask-image: url('[desktop.svg]'); ... }",
-> "_cssCustom:mobile_portrait": "#brxe-xxx { mask-image: url('[mobile.svg]'); ... }"
-> ```
-
-**Format `_cssCustom`:**
-
-| Context | Dùng | Lý do |
-|---------|------|-------|
-| Push qua API **không** Ctrl+S | `#brxe-[element-id]{...}` | `%root%` không được replace khi chỉ push API |
-| Push qua API **sau đó** Ctrl+S | Cả 2 đều OK | Bricks editor tự convert `#brxe-[id]` → `%root%` khi save |
-| Viết trực tiếp trong Bricks editor | `%root%{...}` | Editor UI dùng `%root%` chuẩn |
-
-> **Thực tế:** Sau Ctrl+S, Bricks convert tất cả về `%root%`. Vì workflow luôn cần Ctrl+S cho cssCustom → có thể dùng `%root%` trong `_cssCustom` khi biết user sẽ Ctrl+S. Nhưng để an toàn, **luôn dùng `#brxe-[id]`** khi push qua API.
-
-**Image widget:** `%root%` = `<figure>` wrapper | `#brxe-[id] img` = target `<img>` tag
-
-### 5A — Native Keys nhanh
-
-| CSS Property | Native Key | Giá trị ví dụ |
-|-------------|------------|---------------|
-| `width` | `_width` | `"100%"`, `"480px"` |
-| `height` | `_height` | `"400px"`, `"100vh"` |
-| `min/max-width` | `_widthMin`, `_widthMax` | `"320px"`, `"1200px"` |
-| `padding` | `_padding` | `{top,bottom,left,right}` |
-| `margin` | `_margin` | `{top,bottom,left,right}` |
-| `display` | `_display` | `"flex"`, `"grid"`, `"block"` |
-| `flex-direction` | `_direction` | `"row"`, `"column"` |
-| `align-items` | `_alignItems` | `"center"`, `"flex-start"` |
-| `justify-content` | `_justifyContent` | `"space-between"`, `"center"` |
-| `gap (row/col)` | `_rowGap`, `_columnGap` | `"24px"` |
-| `flex-grow/shrink` | `_flexGrow`, `_flexShrink` | `"1"`, `"0"` |
-| `position` | `_position` | `"relative"`, `"absolute"` |
-| `top/right/bottom/left` | `_top`, `_right`, `_bottom`, `_left` | `"0px"`, `"24px"` |
-| `z-index` | `_zIndex` | `1`, `10`, `-1` |
-| `overflow` | `_overflow` | `"hidden"`, `"auto"` |
-| `object-fit` | `_objectFit` | `"cover"`, `"contain"` |
-| `object-position` | `_objectPosition` | `"50% 30%"`, `"center"` |
-| `border` | `_border` | `{width, style, color, radius}` |
-| `background-color` | `_background` | `{color: {hex: "#fff"}}` |
-| `box-shadow` (normal) | `_boxShadow` | object settings |
-| `grid-template-columns` | `_gridTemplateColumns` | `"repeat(3,1fr)"`, `"1fr 2fr"` |
-| `grid-template-rows` | `_gridTemplateRows` | `"auto 1fr auto"` |
-| `grid-gap` | `_gridGap` | `"24px"` |
-
-### 5B — `_cssCustom` patterns
-
-> ✅ `_gridTemplateColumns` là **native key** — KHÔNG cần `_cssCustom` cho grid columns.
-
-| CSS cần | Pattern |
-|---------|---------|
-| Gradient bg | `"#brxe-[id]{ background: linear-gradient(...) }"` |
-| Inset shadow | `"#brxe-[id]{ box-shadow: inset 0 0 24px rgba(...) }"` |
-| `:hover` | `"#brxe-[id]:hover{ transform: translateY(-4px) }"` |
-| `::before` | `"#brxe-[id]::before{ content: ''; ... }"` |
-| Mask trên block | `"#brxe-[id]{ mask-image: url(...); mask-size: Wpx Hpx; }"` — KHÔNG target `img` |
-| Mask trên `<img>` tag | `"#brxe-[id] img{ -webkit-mask-image: url(...) }"` — chỉ khi mask apply lên thẻ img |
-| clip-path / filter | `"#brxe-[id]{ clip-path: polygon(...) }"` |
-
-### 5C — Object-position Formula (Figma crop → CSS)
-
-```
-Figma: left: -X%, top: -Y%, width: W%, height: H%
-→ object-position-x = X / (W - 100) * 100 %
-→ object-position-y = Y / (H - 100) * 100 %
-```
-
-### 5D — Figma MCP Fallback khi `unknown_tool`
-
-Khi `mcp_figma_get_design_context` lỗi `unknown_tool`:
-1. Đọc plan file đã có → lấy design data từ đó
-2. Dùng image URLs `localhost:3845` đã được ghi trong plan
-3. Ghi rõ trong report: "Figma MCP không khả dụng — audit dựa 100% trên plan file"
-4. **Không được** gọi browser agent thay thế Figma MCP
-
-> Ví dụ JSON: `.agents/references/widget-map-examples.md`
+### 5A — Phân bổ CSS Custom theo Breakpoint
+`_cssCustom:mobile_portrait`, `_cssCustom:tablet` ... là các key hợp lệ. KHÔNG cần viết `@media` thủ công bên trong nếu chỉ đổi cho 1 breakpoint.
 
 ---
 
-## RULE 6 — `flex-shrink: 0` cho fixed-size elements trong flex row
+## RULE 6 — `flex-shrink: 0` cho fixed-size elements
 
-**MỌI element** có `_width`+`_height` cố định trong flex row → **BẮT BUỘC `_flexShrink: "0"`**.
-Thiếu → flex container co bóp → kích thước thực nhỏ hơn giá trị set.
-
-Áp dụng: icon circles, avatar, badge container, logo, thumbnail fixed-size.
+**BẮT BUỘC** cho icon circles, avatar, logo trong flex row.
 
 ---
 
-## RULE 10 — Common Patterns (bắt buộc tra trước khi build)
+## RULE 10 — Common Patterns (Quy trình kiểm tra nhanh)
 
-> **Đọc:** `.agents/components/common-patterns.md` trước khi build section có các tình huống sau.
+> 📚 **Xem chi tiết các mẫu layout tại**: `.agents/components/common-patterns.md`
 
-### 10A — Background Block: KHÔNG copy Figma fixed px
-
-```
-❌ SAI: _width: "1361px", _height: "577px", _top: "50%", _left: "50%"
-✅ ĐÚNG: _position: "absolute", _top: "0px", _left: "0px", _width: "100%", _height: "100%"
-```
-
-Figma dùng fixed px vì frame tĩnh. Bricks cần relative sizing để responsive.
-
-### 10B — Section Layout Engine Root
-
-```
-❌ SAI: section → block (trực tiếp)
-✅ ĐÚNG: section → container → block → widgets
-```
-
-`container` là direct child duy nhất của `section`. Container CÓ THỂ mang visual styles (bg, rounded, overflow).
-
-### 10C — Mobile Centering: KHÔNG dùng translateX(negative%)
-
-```
-❌ SAI: transform: translateX(-20.15%)   → % của element width
-✅ ĐÚNG: left: 50%; transform: translateX(-50%)  → center chuẩn theo parent
-```
-
-`translateX(X%)` tính X% của **element's own width**, không phải parent. Dùng `left:50% + translateX(-50%)` để horizontally center bất kỳ element nào.
-
-### 10D — Mobile Gap: Trace flex-parent trước khi set
-
-Trước khi set `_rowGap:mobile_portrait`, trace:
-1. Flex-parent nào đổi direction thành column trên mobile?
-2. Gap cần nằm trên **đúng flex-parent đó**
-3. Element `position:absolute` không chiếm flex space → không ảnh hưởng gap
-
-### 10E — Right Column Self-Stretch
-
-Khi flex-row parent có `_alignItems: "flex-end"`:
-- Column muốn stretch theo chiều cao phải có `_alignSelf: "stretch"`
-- KHÔNG dùng `_heightMin: "100%"` (không hiệu quả khi parent không có explicit height)
-- Nếu thiếu → column collapsed → content absolute bên trong vô hình
-
----
-
-## RULE 11 — Special Setting Objects (Quick Ref)
-
-| Loại | Cấu trúc JSON |
-|------|---------------|
-| **Padding/Margin** | `{"top": "20px", "right": "10px", "bottom": "20px", "left": "10px"}` |
-| **Link** | `{"type": "external", "url": "https://...", "newTab": true}` |
-| **Background Color** | `{"color": {"hex": "#ffffff", "id": "token-id"}}` |
-| **Border** | `{"width": "1px", "style": "solid", "color": {"hex": "#000"}, "radius": "8px"}` |
-| **Shadow** | `{"x": "0", "y": "4px", "blur": "10px", "spread": "0", "color": {"hex": "#0000001a"}}` |
-
-> **Lưu ý:** Luôn ưu tiên dùng Hex Code hoặc Token ID từ Figma. Không tự đoán màu.
+### 10A — Tóm tắt các lỗi thường gặp:
+- **Background**: Tránh fixed px, dùng absolute 100%. (Xem 10A)
+- **Centering**: Dùng `left:50% + translateX(-50%)`. (Xem 10C)
+- **Responsive Stacking**: Ưu tiên 991px. (Xem 10E)
+- **Padding 1180px**: Luôn có CSS Custom lề 16px. (Xem 10E)
