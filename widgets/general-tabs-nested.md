@@ -18,39 +18,62 @@ Tabs nestable — tab menu và content area là các nestable blocks tùy chỉn
 | Tab content wrapper | `block` + class `tab-content` | Bricks JS tìm `.tab-content` |
 | Tab pane (từng panel) | `block` + class `tab-pane` | Bricks JS control visibility |
 
-### 2. KHÔNG bao giờ đặt CSS display lên `tab-pane`
+### 2. `div` widget KHÔNG có `text` property — BẮT BUỘC dùng `text-basic` con
+
+```
+❌ SAI (div không render text):
+  div.tab-title { "text": "Chat" }   ← bị bỏ qua hoàn toàn, không hiển thị
+
+✅ ĐÚNG:
+  div.tab-title (children: ["lbl01"])
+    text-basic [lbl01] { "tag": "span", "text": "Chat" }
+```
+
+> **Lý do:** `div` = container widget, KHÔNG phải text widget.
+> Mistake này khó phát hiện vì push API không báo lỗi dù property bị bỏ qua.
+
+### 3. KHÔNG bao giờ đặt CSS `display` lên `tab-pane`
 
 ```
 ❌ SAI: tab-pane._cssCustom = "#brxe-xxx { display: grid; }"
 ❌ SAI: tab-pane._display = "grid"
+❌ SAI: _cssCustom root: ".tab-pane { display: flex; justify-content: center; }"
 ✅ ĐÚNG: Thêm inner wrapper BÊN TRONG tab-pane, đặt display lên inner wrapper
 ```
 
 Lý do: Bricks JS tự control `display` của `tab-pane` (show/hide). Override sẽ break JS.
+**⚠️ Kể cả đặt trong `_cssCustom` của tabs-nested root nhắm vào `.tab-pane` — vẫn SAI.**
+Kết quả khi vi phạm: tất cả tab-pane hiển thị đồng thời.
 
-### 3. Dùng `.brx-open` selector cho styling khi pane active
-
-```css
-/* Nếu inner wrapper cần display:grid khi active */
-#brxe-innerWrp.brx-open { display: grid; }  /* ❌ SAI — brx-open ở pane, không phải wrapper */
-
-/* ĐÚNG: Dùng selector từ parent pane */
-#brxe-paneId.brx-open #brxe-innerWrp { display: grid; }
-/* hoặc đơn giản hơn: inner wrapper luôn display:grid, tab-pane ẩn/hiện nó */
-```
-
-### 4. Active state CSS đặt trên `tabs-nested` root (centralize)
+### 4. Active state CSS và tab-menu layout đặt trên `tabs-nested` root
 
 ```css
-/* Trong _cssCustom của tabs-nested root */
-#brxe-rootId .tab-title { padding: 8px 16px; border-radius: 12px 12px 0 0; }
-#brxe-rootId .tab-title.brx-open { background: #242424; border-radius: 16px 16px 0 0; }
+/* Trong _cssCustom của tabs-nested root — tập trung toàn bộ tab styling ở đây */
 #brxe-rootId .tab-menu { display: flex; flex-direction: row; flex-wrap: nowrap; }
+#brxe-rootId .tab-title { padding: 8px 16px; cursor: pointer; }
+#brxe-rootId .tab-title.brx-open { background: #242424; }
+
+/* Dùng selector từ parent pane để target inner wrapper khi active */
+#brxe-paneId.brx-open #brxe-innerWrp { display: grid; }
 ```
 
 ### 5. `flex-wrap: nowrap` bắt buộc cho tab-menu
 
-Tab menu phải có `flex-wrap: nowrap` để tránh wrap thành nhiều dòng (especially mobile).
+Tab menu phải có `flex-wrap: nowrap` để tránh wrap thành nhiều dòng.
+Mobile: thêm `overflow-x: auto` + `scrollbar-width: none` để scroll ngang.
+
+### 6. Bricks auto-inject block wrapper bên trong `tab-pane` — PHẢI verify sau push
+
+Khi push JSON, Bricks có thể tự thêm 1 block wrapper trung gian (ID ngẫu nhiên) giữa `tab-pane` và inner-wrap.
+
+**Hệ quả:** Block này không có `_width: 100%` → inner-wrap bị lệch trái dù đã set `_alignItems: center`.
+
+**Quy trình bắt buộc sau push:**
+```
+1. mcp_bricks-mcp_content(action: "get", view: "detail") → kiểm tra parent của inner-wrap
+2. Nếu có block trung gian auto-inject → bulk_update với _width:100%, _direction:column, _alignItems:center
+3. Dùng actual IDs (không phải IDs ta đặt ban đầu) cho mọi update tiếp theo
+```
 
 ---
 
@@ -95,45 +118,17 @@ tabs-nested [root]
 │   │   └── text-basic (label)
 │   └── div (.tab-title)
 │       └── text-basic (label)
-└── block (.tab-content)          — KHÔNG style ở đây
-    ├── block (.tab-pane)         — Bricks JS control: ĐỂ TRỐNG settings
+└── block (.tab-content)          — KHÔNG style display ở đây
+    ├── block (.tab-pane)         — Bricks JS control: ĐỂ TRỐNG settings (chỉ có class)
     │   └── block (inner-wrap)    — Layout thực sự ở đây: display, grid, padding...
-    ├── block (.tab-pane)         — same pattern
+    ├── block (.tab-pane)
     │   └── block (inner-wrap)
     └── block (.tab-pane)
         └── block (inner-wrap)
 ```
 
-> **Pattern "Inner Wrapper"**: `tab-pane` để trống hoàn toàn (không settings). Mọi layout (display:grid, padding, background, border-radius) đặt trên block inner-wrap bên trong.
-
----
-
-### 6. ⛔ `div` widget KHÔNG có `text` property — BẮT BUỘC dùng `text-basic` con
-
-```
-❌ SAI (div không render text):
-  div.tab-title { "text": "Chat" }   ← bị bỏ qua hoàn toàn, không hiển thị
-
-✅ ĐÚNG:
-  div.tab-title (children: ["lbl01"])
-    text-basic [lbl01] { "tag": "span", "text": "Chat" }
-```
-
-> **Lý do:** `div` = container widget (giống `block`), KHÔNG phải text widget.  
-> Text-based widget cần `text-basic`, `text`, `heading` để render text content.  
-> Mistake này khó phát hiện vì push API không báo lỗi dù property bị bỏ qua.
-
----
-
-## Lưu ý
-
-- Số `.tab-title` PHẢI bằng số `.tab-pane` (Bricks match theo index)
-- Classes `tab-menu`, `tab-title`, `tab-content`, `tab-pane` set qua `_hidden._cssClasses`
-- Bricks JS tự add `brx-open` class vào active tab-title và active tab-pane
-- `tab-title` là `div` widget, KHÔNG phải `block` — rất quan trọng
-- **`div` không render text** — luôn thêm `text-basic` child để hiện label
-- Mặc định tab đầu tiên (index 0) active — đổi `openTab` để thay default
-- **Ctrl+S bắt buộc** sau khi push API để CSS generator chạy
+> **Quy tắc:** Số `.tab-title` PHẢI bằng số `.tab-pane` (Bricks match theo index).
+> Classes set qua `_hidden._cssClasses`.
 
 ---
 
@@ -148,6 +143,7 @@ tabs-nested [root]
     "children": ["tabmenu", "tabcont"],
     "settings": {
       "_width": "100%",
+      "openTab": "0",
       "_cssCustom": "#brxe-tabroot .tab-menu { display: flex; flex-direction: row; flex-wrap: nowrap; width: 100%; } #brxe-tabroot .tab-title { padding: 8px 16px; border-radius: 12px 12px 0 0; cursor: pointer; white-space: nowrap; transition: background 0.2s ease; } #brxe-tabroot .tab-title.brx-open { background: #242424; border-radius: 16px 16px 0 0; }",
       "_cssCustom:mobile_portrait": "#brxe-tabroot .tab-menu { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; } #brxe-tabroot .tab-menu::-webkit-scrollbar { display: none; } #brxe-tabroot .tab-title { padding: 8px 10px; }"
     }
@@ -243,8 +239,8 @@ tabs-nested [root]
     "parent": "tabp01",
     "children": [],
     "settings": {
-      "_cssCustom": "#brxe-tabw01 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 20px; border-radius: 0 0 16px 16px; }",
-      "_cssCustom:mobile_portrait": "#brxe-tabw01 { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; border-radius: 16px; }"
+      "_cssCustom": "#brxe-tabw01 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 20px; }",
+      "_cssCustom:mobile_portrait": "#brxe-tabw01 { grid-template-columns: repeat(2, 1fr); gap: 8px; }"
     }
   },
   {

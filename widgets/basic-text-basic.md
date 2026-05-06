@@ -34,6 +34,14 @@ Kế thừa từ `base.php`. Key hay dùng nhất:
 | `_padding` | `{"top": "4px", "bottom": "4px"}` |
 | `_cssCustom` | Custom CSS với `%root%` |
 
+> ⚠️ **CRITICAL — `text-align` PHẢI nằm trong `_typography`:**
+> ```json
+> // ❌ SAI
+> { "_textAlign": "center" }
+> // ✅ ĐÚNG
+> { "_typography": { "text-align": "center", "font-size": "16px", "color": {"hex": "#fff"} } }
+> ```
+
 ---
 
 ## Ví dụ JSON

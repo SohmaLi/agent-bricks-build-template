@@ -47,24 +47,7 @@ Mỗi lần gọi `/figma-create-plan-template` là phiên phân tích HOÀN TO�
 ```
 Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user, dừng.
 
-> 📸 **LƯU SCREENSHOT NGAY SAU KHI CHỤP — BẮT BUỘC:**
->
-> **Bước 1:** `mcp_figma_get_screenshot` trả về image data trong response.
-> **Bước 2:** Chạy ngay lệnh sau để copy vào thư mục persistent:
-> ```bash
-> mkdir -p .agents/plans/image/
-> # Tìm file PNG vừa được tạo trong brain artifacts:
-> # /Users/truongduylinh/.gemini/antigravity/brain/[conv-id]/*.png
-> cp [latest_brain_artifact.png] .agents/plans/image/[slug]-s[N]-desktop.png
-> cp [latest_brain_artifact.png] .agents/plans/image/[slug]-s[N]-mobile.png
-> ```
-> **Convention tên file:**
-> ```
-> [slug]-s[N]-desktop.png   → ví dụ: vps-landing-s1-desktop.png
-> [slug]-s[N]-mobile.png    → ví dụ: vps-landing-s1-mobile.png
-> ```
-> ⚠️ **Brain paths (`/brain/.../steps/N/output.png`) là EPHEMERAL** — mất sau khi đóng session.
-> ✅ **`plans/image/` là PERMANENT** — dùng path này trong plan file.
+> 📸 Screenshot từ `mcp_figma_get_screenshot` dùng để **compare visual trong session** — không cần lưu persistent.
 
 ### A2 — Trích xuất tổng quan
 

@@ -56,6 +56,16 @@ Kế thừa từ `base.php`. Các key hay dùng nhất:
 }
 ```
 
+> ⚠️ **CRITICAL — `text-align` PHẢI nằm trong `_typography`, KHÔNG dùng `_textAlign` standalone:**
+> ```json
+> // ❌ SAI — không render
+> { "_textAlign": "center" }
+>
+> // ✅ ĐÚNG
+> { "_typography": { "text-align": "center", "font-size": "36px", ... } }
+> ```
+> `_textAlign` là key layout (flexbox align-items), không phải CSS text-align.
+
 Các sub-keys của `_typography`:
 | Sub-key | Ví dụ |
 |---------|-------|

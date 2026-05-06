@@ -59,6 +59,17 @@ Những key này đến từ `base.php` → `set_controls_before()` và `set_con
 | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `_typography` | Object:`font-size`, `font-weight`, `font-family`, `color`, `line-height`, `text-align`, `text-transform`, `letter-spacing` |
 
+> ⚠️ **CRITICAL — `text-align` phải nằm BÊN TRONG `_typography`, KHÔNG phải key riêng:**
+> ```json
+> // ❌ SAI — _textAlign standalone không render text-align trong Bricks
+> { "_textAlign": "center" }
+>
+> // ✅ ĐÚNG — text-align là sub-key của _typography
+> { "_typography": { "text-align": "center", "font-size": "18px" } }
+> ```
+> `_textAlign` là flexbox `align-items` key (dùng để align children trong flex container), KHÔNG phải CSS `text-align`.
+> Áp dụng cho: **`heading`**, **`text-basic`**, **`text`**, **`button`**.
+
 ### Background (Style tab)
 
 | Key           | Mô tả                                                                        |

@@ -83,7 +83,7 @@ Sau khi đọc section files, với **MỖI section** có bất kỳ dấu hiệ
 > **Không được bỏ qua** — nếu Figma MCP không available, dừng và báo user.
 
 ```
-[0] mcp_figma_get_screenshot(desktop_node_id)  → Lưu artifact path — dùng để compare khi verify
+[0] mcp_figma_get_screenshot(desktop_node_id)  → Xem visual reference trong session (không cần lưu)
 
 [1] mcp_figma_get_design_context(desktop_node_id) → Verify:
     □ Exact px values: padding, gap, font-size, icon size, border-radius
@@ -183,11 +183,8 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 ✅ Section [N]: "[Tên]" xong!
 🔗 [site_url]/wp-admin/post.php?post=[id]&action=bricks
 
-📸 So sánh Figma vs kết quả:
-   [nhúng screenshot artifact từ A.0 vào đây]
-   Figma design → kiểm tra: Layout | Spacing | Colors | Images | Text content
-
 ⚠️ Nếu có `_cssCustom`: nhớ Ctrl+S trong Bricks editor trước khi so sánh.
+✔️ So sánh với Figma: mở link Figma — Layout | Spacing | Colors | Images | Text content
 👉 "ok [tên section]" → tiếp | "fix [mô tả]" → chỉnh trước
 ```
 

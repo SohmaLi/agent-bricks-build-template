@@ -54,6 +54,17 @@ Bricks Performance → CSS loading method = "External files" (user đang dùng s
 **Elements cần Ctrl+S:** mọi element có `_cssCustom` (gradient text, mask-image, ::before/::after, keyframes)
 **Quy trình:** Push xong → Mở template trong Bricks editor → Ctrl+S → Đóng (KHÔNG click element trước khi Save)
 
+### G5 — `_textAlign` standalone KHÔNG hoạt động cho text widgets
+```json
+// ❌ SAI — _textAlign không map sang CSS text-align
+{ "_textAlign": "center" }
+
+// ✅ ĐÚNG — phải nằm trong _typography
+{ "_typography": { "text-align": "center", "font-size": "18px", "color": {"hex": "#fff"} } }
+```
+`_textAlign` là flexbox key (align children trong flex), không phải `text-align`.
+Áp dụng cho: `heading`, `text-basic`, `text`, `button` — **MỌI text widget**.
+
 ---
 
 ## 📋 Figma Verification Bắt Buộc (trước khi viết JSON)
