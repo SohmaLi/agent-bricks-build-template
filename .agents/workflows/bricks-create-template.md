@@ -62,12 +62,14 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 > Trước mỗi section: Đọc `.agents/template/[prefix]-s[N]-[name].md`
 
-### Sub-bước A.0 — Figma Spot-Check (BẮT BUỘC trước khi viết JSON)
+### Sub-bước A.0 — Figma Spot-Check + Screenshot (BẮT BUỘC trước khi viết JSON)
 
-> **Mục đích:** Bắt buộc verify exact values từ Figma trước khi viết bất kỳ JSON nào.
+> **Mục đích:** Verify exact values và lưu visual reference trước khi viết bất kỳ JSON nào.
 > **Không được bỏ qua** — nếu Figma MCP không available, dừng và báo user.
 
 ```
+[0] mcp_figma_get_screenshot(desktop_node_id)  → Lưu artifact path — dùng để compare khi verify
+
 [1] mcp_figma_get_design_context(desktop_node_id) → Verify:
     □ Exact px values: padding, gap, font-size, icon size, border-radius
     □ align-items, flex-direction per element (copy exact, không tự đổi)
@@ -159,7 +161,12 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 ```
 ✅ Section [N]: "[Tên]" xong!
 🔗 [site_url]/wp-admin/post.php?post=[id]&action=bricks
-⚠️ Kiểm tra: Layout | Spacing | Images | Text content
+
+📸 So sánh Figma vs kết quả:
+   [nhúng screenshot artifact từ A.0 vào đây]
+   Figma design → kiểm tra: Layout | Spacing | Colors | Images | Text content
+
+⚠️ Nếu có `_cssCustom`: nhớ Ctrl+S trong Bricks editor trước khi so sánh.
 👉 "ok [tên section]" → tiếp | "fix [mô tả]" → chỉnh trước
 ```
 

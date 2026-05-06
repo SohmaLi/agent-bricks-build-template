@@ -93,6 +93,15 @@ Mỗi item là một bảng giá:
 | `gutter` | number+unit | Gap giữa các bảng |
 | `horizontalAlign` | align-items | Align `.pricing-tables` |
 
+> ⚠️ **`_boxShadow` format đúng (từ data thực):**
+> ```json
+> "_boxShadow": {
+>   "values": {"offsetX": 5, "offsetY": 10, "blur": 30, "spread": 0},
+>   "color": {"hex": "#212121", "hsl": "hsla(0,0,13%,0.1)", "rgb": "rgba(33,33,33,0.1)"}
+> }
+> ```
+> `values` là **object** với `offsetX`, `offsetY`, `blur`, `spread` (số hoặc string+unit) — KHÔNG phải CSS string.
+
 ### Tabs (Monthly/Yearly toggle)
 | Key | Type | Mô tả |
 |-----|------|-------|
@@ -146,7 +155,15 @@ Mỗi item là một bảng giá:
         "ribbonText": "PHỔ BIẾN",
         "ribbonPosition": "right",
         "ribbonBackgroundColor": {"hex": "#007cfc"},
-        "tableBoxShadow": {"values": "0 8px 30px rgba(0,124,252,0.2)"}
+        "tableBoxShadow": {
+          "values": {
+            "offsetX": "0",
+            "offsetY": "8px",
+            "blur": "30px",
+            "spread": "0",
+            "color": "rgba(0,124,252,0.2)"
+          }
+        }
       },
       {
         "title": "Enterprise",

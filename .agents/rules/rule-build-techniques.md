@@ -29,10 +29,10 @@ Khi Figma thiết kế có **slider** hoặc **tabs**:
 
 | Loại | Widget bắt buộc | KHÔNG dùng |
 |------|----------------|-----------|
-| Slider / Carousel | `slider-nestable` | `block` giả slider |
-| Tabs | `tabs-nestable` | Nhiều block ẩn/hiện |
-| Accordion | `accordion-nestable` | Block collapse CSS |
-| Nav prev/next | Con của `slider-nestable` | HTML button tự build |
+| Slider / Carousel | `slider-nested` | `block` giả slider |
+| Tabs | `tabs-nested` | Nhiều block ẩn/hiện |
+| Accordion | `accordion-nested` | Block collapse CSS |
+| Nav prev/next | Con của `slider-nested` | HTML button tự build |
 
 **Lý do:** Nếu dùng block thông thường → slider không có JS, click không hoạt động, không có prev/next functionality.
 
@@ -113,18 +113,23 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 | `border` | `_border` | `{width, style, color, radius}` |
 | `background-color` | `_background` | `{color: {hex: "#fff"}}` |
 | `box-shadow` (normal) | `_boxShadow` | object settings |
+| `grid-template-columns` | `_gridTemplateColumns` | `"repeat(3,1fr)"`, `"1fr 2fr"` |
+| `grid-template-rows` | `_gridTemplateRows` | `"auto 1fr auto"` |
+| `grid-gap` | `_gridGap` | `"24px"` |
 
 ### 5B — `_cssCustom` patterns
+
+> ✅ `_gridTemplateColumns` là **native key** — KHÔNG cần `_cssCustom` cho grid columns.
 
 | CSS cần | Pattern |
 |---------|---------|
 | Gradient bg | `"#brxe-[id]{ background: linear-gradient(...) }"` |
 | Inset shadow | `"#brxe-[id]{ box-shadow: inset 0 0 24px rgba(...) }"` |
-| Grid columns | `"#brxe-[id]{ grid-template-columns: repeat(3,1fr); }"` |
 | `:hover` | `"#brxe-[id]:hover{ transform: translateY(-4px) }"` |
 | `::before` | `"#brxe-[id]::before{ content: ''; ... }"` |
 | Mask trên block | `"#brxe-[id]{ mask-image: url(...); mask-size: Wpx Hpx; }"` — KHÔNG target `img` |
 | Mask trên `<img>` tag | `"#brxe-[id] img{ -webkit-mask-image: url(...) }"` — chỉ khi mask apply lên thẻ img |
+| clip-path / filter | `"#brxe-[id]{ clip-path: polygon(...) }"` |
 
 ### 5C — Object-position Formula (Figma crop → CSS)
 

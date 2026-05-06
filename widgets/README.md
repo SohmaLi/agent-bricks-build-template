@@ -147,13 +147,29 @@ Những key này đến từ `base.php` → `set_controls_before()` và `set_con
 
 ### `_cssCustom` với responsive
 
-`_cssCustom` không hỗ trợ composite key — tự viết media query bên trong:
+> ⚠️ **`_cssCustom` HỖ TRỢ composite key** — TUYỆT ĐỐI không viết `@media` thủ công bên trong string.
+> Mỗi breakpoint = 1 key riêng → sạch hơn, đúng cách Bricks xử lý, tránh conflict.
 
+**Ví dụ với native key `_gridTemplateColumns`** *(nên dùng để sạch hơn)*:
 ```json
 {
-  "_cssCustom": "#brxe-abc123 { grid-template-columns: repeat(3,1fr); } @media (max-width: 767px) { #brxe-abc123 { grid-template-columns: 1fr; } }"
+  "_display": "grid",
+  "_gridTemplateColumns": "repeat(3, 1fr)",
+  "_gridTemplateColumns:tablet_portrait": "repeat(2, 1fr)",
+  "_gridTemplateColumns:mobile_portrait": "1fr"
 }
 ```
+
+**Ví dụ với `_cssCustom`** *(dùng khi cần CSS không có native key)*:
+```json
+{
+  "_cssCustom": "#brxe-abc123 { clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%); }",
+  "_cssCustom:mobile_portrait": "#brxe-abc123 { clip-path: none; }"
+}
+```
+
+> ✅ Breakpoint keys: `tablet_portrait` | `mobile_landscape` | `mobile_portrait` | `mobile`
+> ❌ SAI: `"_cssCustom": "... @media (max-width: 767px) { ... }"` — không dùng cách này.
 
 ---
 

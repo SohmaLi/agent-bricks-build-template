@@ -74,7 +74,10 @@ Dropdown menu nestable — chứa trigger (text/link + icon) và content panel (
       "color": {"hex": "#E5E5E5"},
       "radius": {"top": "8px", "right": "8px", "bottom": "8px", "left": "8px"}
     },
-    "contentBoxShadow": {"values": "0 8px 24px rgba(0,0,0,0.1)"},
+    "contentBoxShadow": {
+      "values": {"offsetX": 0, "offsetY": 8, "blur": 24, "spread": 0},
+      "color": {"hex": "rgba(0,0,0,0.1)"}
+    },
     "contentItemPadding": {"top": "10px", "right": "20px", "bottom": "10px", "left": "20px"},
     "contentWidth": "200px",
     "caretSize": "6px",

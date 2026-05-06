@@ -41,10 +41,13 @@ Mỗi lần gọi `/figma-create-plan-template` là phiên phân tích HOÀN TO�
 ```
 [1a] mcp_figma_get_design_context(nodeId, artifactType: "WEB_PAGE_OR_APP_SCREEN",
        clientFrameworks: "bricks-builder", clientLanguages: "html,css,javascript,php")
-[1b] mcp_figma_get_screenshot(nodeId)
+[1b] mcp_figma_get_screenshot(nodeId)  → Lưu artifact path được trả về
 [1c] mcp_bricks-mcp_get_site_info(action: "info")
 ```
 Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user, dừng.
+
+> 📸 **Screenshot path:** `mcp_figma_get_screenshot` trả về artifact path dạng `/Users/.../artifacts/[name].png`.
+> Ghi lại path này → dùng để nhúng vào plan file tại bước A6.
 
 ### A2 — Trích xuất tổng quan
 
@@ -100,6 +103,8 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
 
 Ghi `.agents/plans/[slug].md` ngay sau báo cáo.
 > **Template:** `.agents/components/output-file-templates.md` → mục "Overview Plan File"
+> **BẮT BUỘC:** Nhúng screenshot toàn trang (artifact path từ A1) vào cuối plan file mà không lưu tình trạng.
+> Nhúng bằng cú pháp: `![Figma Screenshot](artifact_path)`
 
 ---
 

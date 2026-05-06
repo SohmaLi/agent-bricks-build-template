@@ -32,9 +32,12 @@ Hiển thị danh sách bài viết liên quan theo taxonomy. Layout grid tùy c
 | `columns` | number (1-6) → `ul` grid-template-columns | Số cột |
 | `gap` | number+unit → `ul` gap | Khoảng cách |
 
-### Fields Group (repeater)
+### Content Group — repeater key: `content`
+> ⚠️ JSON key là **`content`** (không phải `fields`). Mỗi item trong array cần có `id` duy nhất.
+
 | Sub-key | Type | Mô tả |
 |---------|------|-------|
+| `id` | text | ID duy nhất cho mỗi field (bắt buộc) |
 | `dynamicData` | text | Dynamic data tag vd: `{post_title:link}`, `{post_date}`, `{post_excerpt:20}` |
 | `tag` | select | HTML tag: `div`, `p`, `h1`-`h6` |
 | `dynamicMargin/Padding/Background/Border/Typography` | — | Styling field |

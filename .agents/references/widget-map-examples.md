@@ -67,9 +67,11 @@
   "_display": "grid",
   "_columnGap": "24px",
   "_rowGap": "24px",
-  "_cssCustom": "%root% { grid-template-columns: repeat(3, 1fr); }"
+  "_gridTemplateColumns": "repeat(3, 1fr)"
 }
 ```
+> ✅ `_gridTemplateColumns` là **native key** của `container`/`block`/`div` (cùng extend `Element_Container`).
+> ✔ Dùng native key thay vì `_cssCustom` — sạch hơn, không cần `#brxe-[id]`.
 
 ### `block` — Card với inset box-shadow (bắt buộc dùng `_cssCustom`)
 ```json
@@ -417,9 +419,9 @@ badge-container (position: absolute — để float trên card)
 }
 ```
 
-### Block — Grid responsive (dùng `_cssCustom` với breakpoint keys)
+### Block — Grid responsive (dùng native key `_gridTemplateColumns` + composite key)
 
-> ✅ ĐÚNG theo RULE 5: dùng `_cssCustom:mobile_portrait` — KHÔNG dùng `@media` thủ công bên trong `_cssCustom`.
+> ✅ `_gridTemplateColumns` là native key — hỗ trợ composite key cho responsive, KHÔNG cần `_cssCustom`.
 
 ```json
 {
@@ -431,9 +433,9 @@ badge-container (position: absolute — để float trên card)
     "_display": "grid",
     "_columnGap": "24px",
     "_rowGap": "24px",
-    "_cssCustom": "#brxe-grdblk { grid-template-columns: repeat(3, 1fr); }",
-    "_cssCustom:tablet_portrait": "#brxe-grdblk { grid-template-columns: repeat(2, 1fr); }",
-    "_cssCustom:mobile_portrait": "#brxe-grdblk { grid-template-columns: 1fr; }"
+    "_gridTemplateColumns": "repeat(3, 1fr)",
+    "_gridTemplateColumns:tablet_portrait": "repeat(2, 1fr)",
+    "_gridTemplateColumns:mobile_portrait": "1fr"
   }
 }
 ```

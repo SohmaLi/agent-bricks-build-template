@@ -80,10 +80,14 @@ Widget form đa năng với nhiều field types, actions, và spam protection.
 ### Email action
 | Key | Mô tả |
 |-----|-------|
-| `emailTo` | Địa chỉ nhận |
+| `emailTo` | Địa chỉ nhận — dùng `"admin_email"` để gửi về email admin WordPress |
 | `emailSubject` | Tiêu đề email |
 | `emailContent` | Nội dung (support {field_name} tags) |
 | `emailHeaders` | Custom headers |
+| `htmlEmail` | `true` — gửi email dạng HTML |
+| `fromName` | Tên người gửi hiển thị |
+| `successMessage` | Thông báo khi submit thành công |
+| `emailErrorMessage` | Thông báo khi gửi email lỗi |
 
 ### Redirect action
 | Key | Mô tả |

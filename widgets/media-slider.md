@@ -50,12 +50,15 @@ Hero slider với background image/color, title, content, button. Hỗ trợ que
 
 ### Arrows Group
 | Key | Mô tả |
-|-----|-------|
+|-----|---------|
 | `arrows` | Bật arrows |
 | `arrowHeight/Width` | Kích thước arrow buttons |
 | `arrowBackground/Border/Typography` | Styling arrow |
 | `prevArrow/nextArrow` | Custom icons |
 | `prevArrowTop/Right/Bottom/Left` | Vị trí prev arrow |
+| `nextArrowTop/Right/Bottom/Left` | Vị trí next arrow |
+
+> ✅ **Template thực tế (ID 7557):** `prevArrowLeft: "50px"`, `nextArrowRight: "50px"` — đầy là 2 keys phổ biến nhất.
 
 ### Dots Group
 | Key | Mô tả |
@@ -114,6 +117,16 @@ Hero slider với background image/color, title, content, button. Hỗ trợ que
     "contentTextAlign": "center",
     "contentWidth": "700px",
     "arrows": true,
+    "prevArrow": {
+      "library": "ionicons",
+      "icon": "ion-ios-arrow-back"
+    },
+    "prevArrowLeft": "50px",
+    "nextArrow": {
+      "library": "ionicons",
+      "icon": "ion-ios-arrow-forward"
+    },
+    "nextArrowRight": "50px",
     "dots": true,
     "dotsActiveColor": {"hex": "#007cfc"},
     "titleTypography": {

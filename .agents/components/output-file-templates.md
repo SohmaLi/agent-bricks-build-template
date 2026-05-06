@@ -16,6 +16,14 @@
 - Viewport: [px] | Max-width: [px]
 - Figma node: [node-id]
 
+## Screenshots
+| Loại | Artifact Path |
+|------|---------------|
+| Toàn trang | `[artifact_path_tử_A1]` |
+
+> Nhúng toàn trang: `![Figma Full Page](artifact_path)`
+> Dùng khi: kiểm tra tổng thể trước khi bắt đầu build.
+
 ## Design Variables
 | Token | Hex | Dùng cho |
 |-------|-----|---------|
@@ -49,6 +57,14 @@
 
 ```markdown
 # S[N]: [Tên Section] | Node: `[id]` | Desktop: `[node-id]` | Mobile: `[node-id]` | [SIMPLE/MEDIUM/COMPLEX]
+
+## Screenshot
+| Desktop | Mobile |
+|---------|--------|
+| `[artifact_path_desktop]` | `[artifact_path_mobile / none]` |
+
+> Nhúng để so sánh khi verify:
+> `![Desktop Design](artifact_path_desktop)`
 
 ## Layout
 [Mô tả ngắn: 2 cols flex, image trái / text phải, gap 40px]

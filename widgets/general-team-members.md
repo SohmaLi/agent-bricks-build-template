@@ -11,8 +11,8 @@ Grid thành viên nhóm với ảnh, tên, chức danh và mô tả.
 
 ### Items (repeater)
 | Sub-key | Type | Mô tả |
-|---------|------|-------|
-| `image` | image | Ảnh thành viên (render as background-image) |
+|---------|------|---------|
+| `image` | image | Ảnh thành viên. 2 format hợp lệ: `{id, url}` (WP Media) hoặc `{full, url}` (external URL) |
 | `title` | text | Tên thành viên |
 | `subtitle` | text | Chức danh |
 | `description` | textarea | Mô tả ngắn |
@@ -75,13 +75,19 @@ Grid thành viên nhóm với ảnh, tên, chức danh và mô tả.
   "settings": {
     "items": [
       {
-        "image": {"id": 501, "url": "https://site.com/team1.jpg"},
+        "image": {
+          "full": "https://source.unsplash.com/random/600x600?woman",
+          "url": "https://source.unsplash.com/random/600x600?woman"
+        },
         "title": "Nguyễn Văn An",
         "subtitle": "CEO & Co-Founder",
         "description": "10 năm kinh nghiệm trong lĩnh vực hosting và cloud."
       },
       {
-        "image": {"id": 502, "url": "https://site.com/team2.jpg"},
+        "image": {
+          "full": "https://source.unsplash.com/random/600x600?man",
+          "url": "https://source.unsplash.com/random/600x600?man"
+        },
         "title": "Trần Thị Bình",
         "subtitle": "CTO",
         "description": "Chuyên gia về hạ tầng đám mây và bảo mật."
@@ -111,7 +117,10 @@ Grid thành viên nhóm với ảnh, tên, chức danh và mô tả.
     "contentBorder": {
       "radius": {"top": "12px", "right": "12px", "bottom": "12px", "left": "12px"}
     },
-    "contentBoxShadow": {"values": "0 4px 16px rgba(0,0,0,0.08)"}
+    "contentBoxShadow": {
+      "values": {"offsetX": 0, "offsetY": 4, "blur": 16, "spread": 0},
+      "color": {"hex": "rgba(0,0,0,0.08)"}
+    }
   }
 }
 ```

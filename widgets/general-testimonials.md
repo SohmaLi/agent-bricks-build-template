@@ -40,6 +40,15 @@ Slider testimonials với avatar, tên, chức danh và điều hướng.
 | `imageBorder` | Border của `.image` |
 | `imageBoxShadow` | Shadow của `.image` |
 
+### Arrows Group
+| Key | Mô tả |
+|-----|-------|
+| `prevArrow` | Icon prev `{library, icon}` |
+| `prevArrowLeft` | Vị trí left của prev arrow (e.g. `"50px"`) |
+| `nextArrow` | Icon next `{library, icon}` |
+| `nextArrowRight` | Vị trí right của next arrow (e.g. `"50px"`) |
+| `arrowTypography` | Màu arrow: `{color: {hex: "#616161"}}` |
+
 ### Typography (Style tab)
 | Key | Selector | Mô tả |
 |-----|----------|-------|

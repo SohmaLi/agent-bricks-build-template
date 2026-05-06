@@ -25,9 +25,58 @@ Panel trượt từ cạnh màn hình — dùng cho mobile menu, sidebar, mega p
 
 ## Nestable Structure
 
-Mặc định sẽ có 2 children:
-1. **Content** (`block` với class `.brx-offcanvas-inner`) — chứa nội dung menu
-2. **Backdrop** (`block` với class `.brx-offcanvas-backdrop`) — có thể xóa
+Mặc định Bricks tạo 2 children cố định:
+1. **Content** (`block` / class `brx-offcanvas-inner`) — `cloneable: false`, `deletable: false`
+2. **Backdrop** (`block` / class `brx-offcanvas-backdrop`) — có thể xóa
+
+```json
+[
+  {
+    "id": "ocMain",
+    "name": "offcanvas",
+    "parent": 0,
+    "children": ["ocInner", "ocBackdrop"],
+    "settings": {"direction": "right", "width": "320px"}
+  },
+  {
+    "id": "ocInner",
+    "name": "block",
+    "parent": "ocMain",
+    "children": ["ocText", "ocClose"],
+    "settings": {
+      "_hidden": {"_cssClasses": "brx-offcanvas-inner"}
+    },
+    "label": "Content",
+    "cloneable": false,
+    "deletable": false
+  },
+  {
+    "id": "ocText",
+    "name": "text-basic",
+    "parent": "ocInner",
+    "children": [],
+    "settings": {"text": "Add your offcanvas content in here"}
+  },
+  {
+    "id": "ocClose",
+    "name": "toggle",
+    "parent": "ocInner",
+    "children": [],
+    "settings": {},
+    "label": "Toggle (Close)"
+  },
+  {
+    "id": "ocBackdrop",
+    "name": "block",
+    "parent": "ocMain",
+    "children": [],
+    "settings": {
+      "_hidden": {"_cssClasses": "brx-offcanvas-backdrop"}
+    },
+    "label": "Backdrop"
+  }
+]
+```
 
 ---
 

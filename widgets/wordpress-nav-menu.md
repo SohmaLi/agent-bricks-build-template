@@ -96,7 +96,10 @@ Navigation menu từ WordPress menu, hỗ trợ dropdown, mega menu, mobile menu
       "style": "solid",
       "color": {"hex": "#E0E0E0"}
     },
-    "subMenuBoxShadow": {"values": "0 8px 24px rgba(0,0,0,0.1)"},
+    "subMenuBoxShadow": {
+      "values": {"offsetX": 0, "offsetY": 8, "blur": 24, "spread": 0},
+      "color": {"hex": "rgba(0,0,0,0.1)"}
+    },
     "subMenuPadding": {"top": "10px", "right": "20px", "bottom": "10px", "left": "20px"},
     "subMenuTypography": {
       "font-size": "14px",

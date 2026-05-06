@@ -11,8 +11,8 @@ Số đếm animated từ giá trị X đến Y khi element xuất hiện trong 
 
 | Key | Type | Ví dụ | Mô tả |
 |-----|------|-------|-------|
-| `countFrom` | text | `"0"` | Giá trị bắt đầu (default: 0) |
-| `countTo` | text | `"1000"` | Giá trị kết thúc (default: 1000) |
+| `countFrom` | number|text | `0` | Giá trị bắt đầu (default: 0) |
+| `countTo` | number|text | `1000` | Giá trị kết thúc — có thể là number hoặc string số |
 | `duration` | number | `2000` | Thời gian animation (ms, default: 1000) |
 | `prefix` | text | `"+"`, `"$"` | Text trước số |
 | `suffix` | text | `"%"`, `" users"` | Text sau số |

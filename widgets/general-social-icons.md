@@ -19,7 +19,7 @@ Widget danh sách các mạng xã hội / icon với link. Thực chất là m�
 | `label` | text | Text label |
 | `labelSize` | number+unit | Font-size label |
 | `color` | color | Color override cho `.has-link a` và `.no-link` |
-| `background` | color | Background riêng cho item |
+| `background` | color | Background riêng cho item — dạng `{"hex": "#4cc2ff"}` |
 | `link` | link | Link URL |
 
 ### Global Icon Style
@@ -27,6 +27,7 @@ Widget danh sách các mạng xã hội / icon với link. Thực chất là m�
 |-----|------|-------|
 | `iconColor` | color | Màu icon chung cho tất cả items |
 | `iconSize` | number+unit | Size icon chung |
+| `brandColors` | boolean | Dùng màu thương hiệu chính thức (true = bỏ qua `iconColor` và `background` per-item) |
 
 ### Layout
 | Key | Type | Mô tả |
@@ -36,6 +37,22 @@ Widget danh sách các mạng xã hội / icon với link. Thực chất là m�
 | `justifyIcons` | justify-content | Justify items theo main axis |
 | `gap` | number+unit | Gap giữa các items |
 | `gapItem` | number+unit | Gap giữa icon và label trong item |
+
+---
+
+## Icon Library Names (Tên Thực Tế)
+
+> ⚠️ **Tên library trong JSON khác với UI** — dùng đúng tên JSON kũ hoặc API báo lỗi im lặng.
+
+| Library UI | Tên JSON (dùng trong API) |
+|------------|----------------------------|
+| Font Awesome Brands | `fontawesomeBrands` |
+| Font Awesome Free | `fontawesome` |
+| Ionicons | `ionicons` |
+| Themify | `themify` |
+| Font Awesome 6 Brands | `font-awesome-6-brands` |
+
+> **Ví dụ thực tế từ template:** `{"library": "fontawesomeBrands", "icon": "fab fa-twitter"}`
 
 ---
 
@@ -50,38 +67,33 @@ Widget danh sách các mạng xã hội / icon với link. Thực chất là m�
 
 ## Ví dụ JSON
 
-### Social bar ngang
+### Social bar ngang (với brand colors)
 ```json
 {
   "id": "siSocial",
   "name": "social-icons",
   "parent": "blkHeader",
   "settings": {
+    "brandColors": true,
     "icons": [
       {
-        "icon": {"library": "font-awesome-6-brands", "icon": "fa-facebook"},
-        "link": {"url": "https://facebook.com/...", "newTab": true},
-        "background": {"hex": "#1877F2"}
+        "label": "Twitter",
+        "icon": {"library": "fontawesomeBrands", "icon": "fab fa-twitter"},
+        "background": {"hex": "#4cc2ff"}
       },
       {
-        "icon": {"library": "font-awesome-6-brands", "icon": "fa-youtube"},
-        "link": {"url": "https://youtube.com/...", "newTab": true},
-        "background": {"hex": "#FF0000"}
+        "label": "Facebook",
+        "icon": {"library": "fontawesomeBrands", "icon": "fab fa-facebook-square"},
+        "background": {"hex": "#3b5998"}
       },
       {
-        "icon": {"library": "font-awesome-6-brands", "icon": "fa-tiktok"},
-        "link": {"url": "https://tiktok.com/...", "newTab": true},
-        "background": {"hex": "#000000"}
+        "label": "Instagram",
+        "icon": {"library": "fontawesomeBrands", "icon": "fab fa-instagram"},
+        "background": {"hex": "#4E433C"}
       }
     ],
-    "iconColor": {"hex": "#ffffff"},
-    "iconSize": "18px",
-    "direction": "row",
-    "gap": "8px",
-    "_padding": {"top": "10px", "right": "10px", "bottom": "10px", "left": "10px"},
-    "_border": {
-      "radius": {"top": "8px", "right": "8px", "bottom": "8px", "left": "8px"}
-    }
+    "_padding": {"top": 15, "right": 15, "bottom": 15, "left": 15},
+    "_typography": {"color": {"hex": "#ffffff"}}
   }
 }
 ```

@@ -111,3 +111,35 @@ Widget carousel/slider hình ảnh hoặc posts, dùng Swiper.js.
   }
 }
 ```
+
+### Carousel với fields dynamic data + arrow positioning
+
+> ⚠️ **Thực tế:** Khi carousel hiển thị dynamic data (posts), dùng `fields` repeater thay vì `items`. Các key arrow arrow positioning cũng khác với carousel media.
+
+```json
+{
+  "id": "carBlog",
+  "name": "carousel",
+  "parent": "ctnBlog",
+  "settings": {
+    "infinite": true,
+    "fields": [
+      {
+        "dynamicData": "{post_title:link}",
+        "tag": "h3",
+        "dynamicMargin": {"top": 20, "right": 0, "bottom": 20, "left": 0},
+        "id": "f001"
+      },
+      {
+        "dynamicData": "{post_excerpt:20}",
+        "id": "f002"
+      }
+    ],
+    "arrows": true,
+    "prevArrow": {"library": "ionicons", "icon": "ion-ios-arrow-back"},
+    "prevArrowLeft": "50px",
+    "nextArrow": {"library": "ionicons", "icon": "ion-ios-arrow-forward"},
+    "nextArrowRight": "50px"
+  }
+}
+```
