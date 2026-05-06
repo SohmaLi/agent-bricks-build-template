@@ -88,14 +88,17 @@ Tab menu phải có `flex-wrap: nowrap` để tránh wrap thành nhiều dòng (
 
 ```
 tabs-nested [root]
-├── block (.tab-menu)          — flex row, nowrap
-│   ├── div (.tab-title)       — Tab 1 content
-│   ├── div (.tab-title)       — Tab 2 content
-│   └── div (.tab-title)       — Tab 3 content
-└── block (.tab-content)       — KHÔNG style ở đây
-    ├── block (.tab-pane)      — Bricks JS control: ĐỂ TRỐNG settings
-    │   └── block (inner-wrap) — Layout thực sự ở đây: display, grid, padding...
-    ├── block (.tab-pane)      — same pattern
+├── block (.tab-menu)              — flex row, nowrap
+│   ├── div (.tab-title)           — KHÔNG set text trực tiếp ở đây
+│   │   └── text-basic (label)     ← ✅ Text phải là text-basic con của div
+│   ├── div (.tab-title)
+│   │   └── text-basic (label)
+│   └── div (.tab-title)
+│       └── text-basic (label)
+└── block (.tab-content)          — KHÔNG style ở đây
+    ├── block (.tab-pane)         — Bricks JS control: ĐỂ TRỐNG settings
+    │   └── block (inner-wrap)    — Layout thực sự ở đây: display, grid, padding...
+    ├── block (.tab-pane)         — same pattern
     │   └── block (inner-wrap)
     └── block (.tab-pane)
         └── block (inner-wrap)
@@ -105,13 +108,31 @@ tabs-nested [root]
 
 ---
 
+### 6. ⛔ `div` widget KHÔNG có `text` property — BẮT BUỘC dùng `text-basic` con
+
+```
+❌ SAI (div không render text):
+  div.tab-title { "text": "Chat" }   ← bị bỏ qua hoàn toàn, không hiển thị
+
+✅ ĐÚNG:
+  div.tab-title (children: ["lbl01"])
+    text-basic [lbl01] { "tag": "span", "text": "Chat" }
+```
+
+> **Lý do:** `div` = container widget (giống `block`), KHÔNG phải text widget.  
+> Text-based widget cần `text-basic`, `text`, `heading` để render text content.  
+> Mistake này khó phát hiện vì push API không báo lỗi dù property bị bỏ qua.
+
+---
+
 ## Lưu ý
 
 - Số `.tab-title` PHẢI bằng số `.tab-pane` (Bricks match theo index)
 - Classes `tab-menu`, `tab-title`, `tab-content`, `tab-pane` set qua `_hidden._cssClasses`
 - Bricks JS tự add `brx-open` class vào active tab-title và active tab-pane
 - `tab-title` là `div` widget, KHÔNG phải `block` — rất quan trọng
-- Mặc định tab đầu tiên (index 0) active — đừng thêm class thủ công
+- **`div` không render text** — luôn thêm `text-basic` child để hiện label
+- Mặc định tab đầu tiên (index 0) active — đổi `openTab` để thay default
 - **Ctrl+S bắt buộc** sau khi push API để CSS generator chạy
 
 ---
@@ -145,9 +166,18 @@ tabs-nested [root]
     "id": "tabt01",
     "name": "div",
     "parent": "tabmenu",
+    "children": ["tabl01"],
+    "settings": {
+      "_hidden": { "_cssClasses": "tab-title" }
+    }
+  },
+  {
+    "id": "tabl01",
+    "name": "text-basic",
+    "parent": "tabt01",
     "children": [],
     "settings": {
-      "_hidden": { "_cssClasses": "tab-title" },
+      "tag": "span",
       "text": "Tab 1"
     }
   },
@@ -155,9 +185,18 @@ tabs-nested [root]
     "id": "tabt02",
     "name": "div",
     "parent": "tabmenu",
+    "children": ["tabl02"],
+    "settings": {
+      "_hidden": { "_cssClasses": "tab-title" }
+    }
+  },
+  {
+    "id": "tabl02",
+    "name": "text-basic",
+    "parent": "tabt02",
     "children": [],
     "settings": {
-      "_hidden": { "_cssClasses": "tab-title" },
+      "tag": "span",
       "text": "Tab 2"
     }
   },
@@ -165,9 +204,18 @@ tabs-nested [root]
     "id": "tabt03",
     "name": "div",
     "parent": "tabmenu",
+    "children": ["tabl03"],
+    "settings": {
+      "_hidden": { "_cssClasses": "tab-title" }
+    }
+  },
+  {
+    "id": "tabl03",
+    "name": "text-basic",
+    "parent": "tabt03",
     "children": [],
     "settings": {
-      "_hidden": { "_cssClasses": "tab-title" },
+      "tag": "span",
       "text": "Tab 3"
     }
   },

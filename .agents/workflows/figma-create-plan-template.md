@@ -39,15 +39,32 @@ Mỗi lần gọi `/figma-create-plan-template` là phiên phân tích HOÀN TO�
 
 ### A1 — Gọi đồng thời
 ```
-[1a] mcp_figma_get_design_context(nodeId, artifactType: "WEB_PAGE_OR_APP_SCREEN",
+[1a] mcp_figma_get_design_context(desktop_node_id, artifactType: "WEB_PAGE_OR_APP_SCREEN",
        clientFrameworks: "bricks-builder", clientLanguages: "html,css,javascript,php")
-[1b] mcp_figma_get_screenshot(nodeId)  → Lưu artifact path được trả về
-[1c] mcp_bricks-mcp_get_site_info(action: "info")
+[1b] mcp_figma_get_screenshot(desktop_node_id)   → screenshot desktop
+[1c] mcp_figma_get_screenshot(mobile_node_id)    → screenshot mobile (nếu có)
+[1d] mcp_bricks-mcp_get_site_info(action: "info")
 ```
 Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user, dừng.
 
-> 📸 **Screenshot path:** `mcp_figma_get_screenshot` trả về artifact path dạng `/Users/.../artifacts/[name].png`.
-> Ghi lại path này → dùng để nhúng vào plan file tại bước A6.
+> 📸 **LƯU SCREENSHOT NGAY SAU KHI CHỤP — BẮT BUỘC:**
+>
+> **Bước 1:** `mcp_figma_get_screenshot` trả về image data trong response.
+> **Bước 2:** Chạy ngay lệnh sau để copy vào thư mục persistent:
+> ```bash
+> mkdir -p .agents/plans/image/
+> # Tìm file PNG vừa được tạo trong brain artifacts:
+> # /Users/truongduylinh/.gemini/antigravity/brain/[conv-id]/*.png
+> cp [latest_brain_artifact.png] .agents/plans/image/[slug]-s[N]-desktop.png
+> cp [latest_brain_artifact.png] .agents/plans/image/[slug]-s[N]-mobile.png
+> ```
+> **Convention tên file:**
+> ```
+> [slug]-s[N]-desktop.png   → ví dụ: vps-landing-s1-desktop.png
+> [slug]-s[N]-mobile.png    → ví dụ: vps-landing-s1-mobile.png
+> ```
+> ⚠️ **Brain paths (`/brain/.../steps/N/output.png`) là EPHEMERAL** — mất sau khi đóng session.
+> ✅ **`plans/image/` là PERMANENT** — dùng path này trong plan file.
 
 ### A2 — Trích xuất tổng quan
 
@@ -107,8 +124,17 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
 
 Ghi `.agents/plans/[slug].md` ngay sau báo cáo.
 > **Template:** `.agents/components/output-file-templates.md` → mục "Overview Plan File"
-> **BẮT BUỘC:** Nhúng screenshot toàn trang (artifact path từ A1) vào cuối plan file.
-> Nhúng bằng cú pháp: `![Figma Screenshot](artifact_path)`
+>
+> **BẮT BUỘC — Screenshot trong plan file:**
+> ```markdown
+> ### Desktop (Node XXXX-YYYY)
+> ![Desktop - [Tên Section]](.agents/plans/image/[slug]-s[N]-desktop.png)
+>
+> ### Mobile (Node XXXX-YYYY)
+> ![Mobile - [Tên Section]](.agents/plans/image/[slug]-s[N]-mobile.png)
+> ```
+> ⛔ **KHÔNG dùng** brain step path `/brain/cdbd.../steps/N/output.png` — sẽ mất sau session.
+> ✅ **CHỈ dùng** path `plans/image/` sau khi đã copy từ A1.
 
 ---
 
@@ -175,10 +201,12 @@ Thứ tự: S1 → S2 → ... → SN. Section `[SKIP]` → bỏ qua.
 ## Tóm tắt flow
 
 ```
-A1: [Song song] get_design_context + get_screenshot + get_site_info
+A1: [Song song] get_design_context + get_screenshot(desktop) + get_screenshot(mobile) + get_site_info
+     └─ NGAY SAU ĐÓ: cp brain_artifact → .agents/plans/image/[slug]-s[N]-desktop/mobile.png
 A2-A4: Phân tích (tham khảo .agents/components/figma-section-analysis.md)
 A5: Báo cáo chat → DỪNG chờ user
 A6: Ghi plan file (không chờ)
+     └─ Screenshot nhúng từ plans/image/ (KHÔNG dùng brain path)
     ↓ (user confirm)
 B0: Đọc plan → thu thập Status
 B1: Ghi section files (dùng .agents/components/output-file-templates.md)
