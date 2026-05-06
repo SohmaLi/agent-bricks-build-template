@@ -22,7 +22,7 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 | Container rule | `container` là con trực tiếp duy nhất của `section` | `block` là con trực tiếp của `section` |
 | Settings keys | Đọc từ `widgets/[widget].md` | Tự đặt key từ trí nhớ |
 | CSS ưu tiên | Native key trước, `_cssCustom` khi không có native | `_cssCustom` cho mọi thứ |
-| Slider / Tab | `slider-nestable` / `tabs-nestable` | Block giả slider |
+| Slider / Tab | `slider-nested` / `tabs-nested` | Block giả slider |
 | Image URL | `{"id":0,"url":"localhost:3845/..."}` | `src: ""` rỗng |
 | Nội dung text | Copy y chang từ section file, đủ số lượng | Tự dùng dynamic tag |
 | Push format | Native Flat Format (`id+parent+children`) → push 1 lần | Simplified → phải restore |

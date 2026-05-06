@@ -72,7 +72,7 @@ Cả hai có đầy đủ settings của `container`.
       "style": "solid",
       "color": {"hex": "rgba(0,124,252,0.5)"}
     },
-    "_cssCustom": "%root% {\n  box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.15);\n  transition: transform 0.2s ease;\n}\n%root%:hover {\n  transform: translateY(-4px);\n}"
+    "_cssCustom": "/* API: dùng #brxe-blkCard */ #brxe-blkCard {\n  box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.15);\n  transition: transform 0.2s ease;\n}\n#brxe-blkCard:hover {\n  transform: translateY(-4px);\n}"
   }
 }
 ```

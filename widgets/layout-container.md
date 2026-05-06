@@ -129,7 +129,7 @@ Kế thừa từ `base.php` — xem [README.md](README.md) để biết đầy �
     "_width": "100%",
     "_height": "100%",
     "_zIndex": "1",
-    "_cssCustom": "%root% {\n  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%);\n}"
+    "_cssCustom": "/* Editor: %root% / API: #brxe-blkOverlay */ #brxe-blkOverlay {\n  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 100%);\n}"
   }
 }
 ```
@@ -165,7 +165,7 @@ Kế thừa từ `base.php` — xem [README.md](README.md) để biết đầy �
       "style": "solid",
       "color": {"hex": "rgba(0,124,252,0.5)"}
     },
-    "_cssCustom": "%root% {\n  box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.2);\n}"
+    "_cssCustom": "/* API push: dùng #brxe-ctnCard thay %root% */ #brxe-ctnCard {\n  box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.2);\n}"
   }
 }
 ```

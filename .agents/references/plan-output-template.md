@@ -80,18 +80,26 @@ Section wrapper
 | Tiêu đề | `heading` | `{"tag":"h2","text":"..."}` | — |
 
 **Behavior & Gotchas:**
+
+> ⚠️ Giá trị `_cssCustom` dưới đây dùng `%root%` — đây là format của **Bricks Editor**. Khi push MCP API, thay bằng `#brxe-[element-id]`.
+
 | Vấn đề | Giải pháp |
 |--------|-----------|
-| Hover effect | `_cssCustom: "%root%:hover { transform: translateY(-4px); }"` |
-| Gradient bg | `_cssCustom: "%root% { background: linear-gradient(...); }"` |
+| Hover effect | `_cssCustom: "#brxe-[id]:hover { transform: translateY(-4px); }"` |
+| Gradient bg | `_cssCustom: "#brxe-[id] { background: linear-gradient(...); }"` |
 | Image absolute | Parent: `_position: "relative"`. Image: `_position: "absolute"`, `_top`, `_left` |
 
 **`_cssCustom` phức tạp (nếu có):**
+
+> ⚠️ **CRITICAL:** Khi push qua MCP API, dùng `#brxe-[element-id]` thay vì `%root%`.
+> `%root%` chỉ hoạt động trong Bricks Editor UI (sau Ctrl+S editor tự convert).
+
 ```css
-%root% {
+/* ✔ Đúng khi push MCP API */
+#brxe-[id] {
   background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
 }
-%root%::before {
+#brxe-[id]::before {
   content: '';
   /* overlay */
 }

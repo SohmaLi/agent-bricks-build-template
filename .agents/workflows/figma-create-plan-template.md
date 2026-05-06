@@ -101,9 +101,13 @@ Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user
 
 ### A6 — Ghi plan file ngay (không chờ user)
 
+> ✅ **Không mâu thuẫn với A5:** A5 báo cáo các section + DỪNG chờ user điền Status (ok/note).
+> A6 ghi file plan ngay — file này là OUTPUT của Phase A, chứa các `→ Status: ___` chờ user điền.
+> User không cần confirm trước khi ghi plan file — chỉ cần confirm trước khi bước vào Phase B.
+
 Ghi `.agents/plans/[slug].md` ngay sau báo cáo.
 > **Template:** `.agents/components/output-file-templates.md` → mục "Overview Plan File"
-> **BẮT BUỘC:** Nhúng screenshot toàn trang (artifact path từ A1) vào cuối plan file mà không lưu tình trạng.
+> **BẮT BUỘC:** Nhúng screenshot toàn trang (artifact path từ A1) vào cuối plan file.
 > Nhúng bằng cú pháp: `![Figma Screenshot](artifact_path)`
 
 ---

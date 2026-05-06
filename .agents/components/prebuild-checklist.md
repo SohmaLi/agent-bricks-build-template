@@ -11,7 +11,7 @@
 | # | Kiểm tra | Hành động |
 |---|---------|----------|
 | 1 | Số item lặp | Build đúng số — không bớt |
-| 2 | Slider / Tab? | Verify `→ Status:` plan file **trước** → `slider-nestable` / `tabs-nestable` |
+| 2 | Slider / Tab? | Verify `→ Status:` plan file **trước** → `slider-nested` / `tabs-nested` |
 | 3 | Image absolute? | Parent: `_position: "relative"` |
 | 4 | Gradient / shadow? | Lấy **exact CSS từ Figma DevMode** — KHÔNG tự đoán |
 | 5 | Slider images? | `_height` cố định + `object-fit: cover` — KHÔNG dùng `_aspectRatio` |

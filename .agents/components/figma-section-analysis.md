@@ -28,9 +28,9 @@ mcp_figma_get_metadata(nodeId: "[section_node_id]")
 
 | Tên layer chứa | Widget xác nhận |
 |---------------|----------------|
-| `Slider`, `Carousel`, `Swiper`, `Gallery`, `Slide N` | `slider-nestable` |
-| `Tab`, `Tabs`, `TabPanel`, `Tab N`, `Tab Item` | `tabs-nestable` |
-| `Accordion`, `FAQ`, `Collapse`, `Expand` | `accordion-nestable` |
+| `Slider`, `Carousel`, `Swiper`, `Gallery`, `Slide N` | `slider-nested` |
+| `Tab`, `Tabs`, `TabPanel`, `Tab N`, `Tab Item` | `tabs-nested` |
+| `Accordion`, `FAQ`, `Collapse`, `Expand` | `accordion-nested` |
 
 **Bước 3 — Nếu tên layer KHÔNG rõ ràng:**
 > ❌ Không được đoán. Không được dùng safe default.
@@ -38,7 +38,7 @@ mcp_figma_get_metadata(nodeId: "[section_node_id]")
 → Đưa vào câu hỏi trong **Bước A5**, bắt buộc user xác nhận:
 ```
 ❓ Section [Tên]: Có [N] item lặp + nav buttons. Đây là:
-   A) Slider (dùng slider-nestable với JS)
+   A) Slider (dùng `slider-nested` với JS)
    B) Static layout (dùng block thông thường)
 ```
 

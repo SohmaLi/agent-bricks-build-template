@@ -70,8 +70,8 @@ Gọi song song **trước khi bắt đầu bất kỳ flow nào**:
 | Image có kích thước cố định | Dùng `_width` + `_height` (native) |
 | `object-fit` / `object-position` | Dùng `_objectFit` + `_objectPosition` (native) |
 | Mask/transform trên `<img>` | `_cssCustom: "#brxe-[id] img { mask-image: ... }"` |
-| Slider / Carousel | **Bắt buộc** `slider-nestable` — KHÔNG dùng block giả |
-| Tabs | **Bắt buộc** `tabs-nestable` — KHÔNG dùng block ẩn/hiện |
+| Slider / Carousel | **Bắt buộc** `slider-nested` — KHÔNG dùng block giả |
+| Tabs | **Bắt buộc** `tabs-nested` — KHÔNG dùng block ẩn/hiện |
 | CSS phức tạp (gradient, inset shadow) | Ghi vào `_cssCustom` của chính element đó |
 
 ### RULE 5 — CSS Native Keys trước, `_cssCustom` sau

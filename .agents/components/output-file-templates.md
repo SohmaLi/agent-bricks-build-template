@@ -42,7 +42,7 @@
 ### Đã xác nhận với user
 | Section | Thắc mắc | Trả lời | Quyết định |
 |---------|----------|---------|------------|
-| S2 | Slider hay static? | Dùng slider | `slider-nestable` |
+| S2 | Slider hay static? | Dùng slider | `slider-nested` |
 
 ### Ghi chú nhắc nhở (cho /bricks-create-template)
 - [S1] Hero image: object-fit cover, _objectPosition "50% 0%"
@@ -112,7 +112,7 @@ Section
 
 ## ❓ Quyết định đã xác nhận với user
 <!-- Chỉ ghi nếu có Q&A với user trong Phase A5 -->
-- [Q1] Widget: slider-nestable (đã xác nhận, không phải static)
+- [Q1] Widget: `slider-nested` (đã xác nhận, không phải static)
 ```
 
 ---

@@ -89,14 +89,21 @@ Những key này đến từ `base.php` → `set_controls_before()` và `set_con
 
 ### CSS Custom — Cú pháp
 
+> ⚠️ **CRITICAL khi push MCP API:** Thay `%root%` bằng `#brxe-[element-id]`.
+> `%root%` chỉ hoạt động trong Bricks Editor UI. Sau Ctrl+S editor tự convert.
+
 ```css
+/* Editor UI — sau Ctrl+S */
 %root% {
   background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
   box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.2);
-  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
 }
 
-%root%:hover {
+/* ✔ MCP API push — luôn dùng cách này */
+#brxe-abc123 {
+  background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
+}
+#brxe-abc123:hover {
   transform: translateY(-4px);
   opacity: 0.9;
 }
@@ -175,64 +182,18 @@ Những key này đến từ `base.php` → `set_controls_before()` và `set_con
 
 ## Danh sách Widget Files
 
-| File                                                                       | Widget                      | Category   |
-| -------------------------------------------------------------------------- | --------------------------- | ---------- |
-| File                                                                       | Widget                      | Category   |
-| ------                                                                     | --------                    | ---------- |
-| **LAYOUT**                                                                 |                             |            |
-| [layout-section.md](layout-section.md)                                     | `section`                   | Layout     |
-| [layout-container.md](layout-container.md)                                 | `container`                 | Layout     |
-| [layout-block.md](layout-block.md)                                         | `block`                     | Layout     |
-| [layout-div.md](layout-div.md)                                             | `div`                       | Layout     |
-| **BASIC**                                                                  |                             |            |
-| [basic-heading.md](basic-heading.md)                                       | `heading`                   | Basic      |
-| [basic-text-basic.md](basic-text-basic.md)                                 | `text-basic`                | Basic      |
-| [basic-text.md](basic-text.md)                                             | `text` (Rich Text)          | Basic      |
-| [basic-button.md](basic-button.md)                                         | `button`                    | Basic      |
-| [basic-image.md](basic-image.md)                                           | `image`                     | Basic      |
-| [basic-icon.md](basic-icon.md)                                             | `icon`                      | Basic      |
-| [basic-icon-box.md](basic-icon-box.md)                                     | `icon-box`                  | Basic      |
-| [basic-animated-heading.md](basic-animated-heading.md)                     | `animated-heading`          | Basic      |
-| **GENERAL**                                                                |                             |            |
-| [general-accordion-nested.md](general-accordion-nested.md)                 | `accordion-nested`          | General    |
-| [general-tabs-nested.md](general-tabs-nested.md)                           | `tabs-nested`               | General    |
-| [general-nav-nested.md](general-nav-nested.md)                             | `nav-nested`                | General    |
-| [general-slider.md](general-slider.md)                                     | `slider`                    | General    |
-| [general-back-to-top.md](general-back-to-top.md)                           | `back-to-top`               | General    |
-| [general-breadcrumbs.md](general-breadcrumbs.md)                           | `breadcrumbs`               | General    |
-| [general-search.md](general-search.md)                                     | `search`                    | General    |
-| [general-social-icons.md](general-social-icons.md)                         | `social-icons`              | General    |
-| [general-dropdown.md](general-dropdown.md)                                 | `dropdown`                  | General    |
-| [general-offcanvas.md](general-offcanvas.md)                               | `offcanvas`                 | General    |
-| [general-template.md](general-template.md)                                 | `template`                  | General    |
-| **MEDIA**                                                                  |                             |            |
-| [media-slider-nested.md](media-slider-nested.md)                           | `slider-nested`             | Media      |
-| [media-gallery.md](media-gallery.md)                                       | `gallery`                   | Media      |
-| [media-video.md](media-video.md)                                           | `video`                     | Media      |
-| [media-audio.md](media-audio.md)                                           | `audio`                     | Media      |
-| **SINGLE POST**                                                            |                             |            |
-| [single-post-title.md](single-post-title.md)                               | `post-title`                | Single     |
-| [single-post-content.md](single-post-content.md)                           | `post-content`              | Single     |
-| [single-post-excerpt.md](single-post-excerpt.md)                           | `post-excerpt`              | Single     |
-| [single-post-meta.md](single-post-meta.md)                                 | `post-meta`                 | Single     |
-| [single-post-author.md](single-post-author.md)                             | `post-author`               | Single     |
-| [single-post-taxonomy.md](single-post-taxonomy.md)                         | `post-taxonomy`             | Single     |
-| [single-post-toc.md](single-post-toc.md)                                   | `post-toc`                  | Single     |
-| [single-post-reading-time.md](single-post-reading-time.md)                 | `post-reading-time`         | Single     |
-| [single-post-reading-progress-bar.md](single-post-reading-progress-bar.md) | `post-reading-progress-bar` | Single     |
-| [single-post-comments.md](single-post-comments.md)                         | `post-comments`             | Single     |
-| [single-post-sharing.md](single-post-sharing.md)                           | `post-sharing`              | Single     |
-| [single-post-navigation.md](single-post-navigation.md)                     | `post-navigation`           | Single     |
-| [single-related-posts.md](single-related-posts.md)                         | `related-posts`             | Single     |
-| **QUERY / LOOP**                                                           |                             |            |
-| [query-pagination.md](query-pagination.md)                                 | `pagination`                | Query      |
-| [query-results-summary.md](query-results-summary.md)                       | `query-results-summary`     | Query      |
-| [query-filter-system.md](query-filter-system.md)                           | `filter-*` (system)         | Query      |
-| [query-filter-active-filters.md](query-filter-active-filters.md)           | `filter-active-filters`     | Query      |
-| **WORDPRESS**                                                              |                             |            |
-| [wordpress-sidebar.md](wordpress-sidebar.md)                               | `sidebar`                   | WordPress  |
-| [wordpress-posts.md](wordpress-posts.md)                                   | `posts`                     | WordPress  |
-| [wordpress-shortcode.md](wordpress-shortcode.md)                           | `shortcode`                 | WordPress  |
+> ⚠️ **DANH SÁCH CHÍNH XÁC:** Xem trực tiếp các file trong thư mục `widgets/`.
+> Bảng phía dưới chỉ liệt kê các nhóm chính — không phải toàn bộ.
+
+| Nhóm | Files |
+|------|-------|
+| **Layout** | `layout-section.md`, `layout-container.md`, `layout-block.md`, `layout-div.md` |
+| **Basic** | `basic-heading.md`, `basic-text-basic.md`, `basic-text.md`, `basic-button.md`, `basic-image.md`, `basic-icon.md`, `basic-video.md`, `basic-text-link.md` |
+| **General** | `general-accordion.md`, `general-accordion-nested.md`, `general-tabs.md`, `general-tabs-nested.md`, `general-nav-nested.md`, `general-dropdown.md`, `general-toggle.md`, `general-offcanvas.md`, `general-form.md`, `general-alert.md`, `general-countdown.md`, `general-counter.md`, `general-pricing-tables.md`, `general-progress-bar.md`, `general-pie-chart.md`, `general-team-members.md`, `general-testimonials.md`, `general-social-icons.md`, `general-icon-box.md`, `general-list.md`, `general-map.md`, `general-code.md`, `general-logo.md`, `general-breadcrumbs.md`, `general-back-to-top.md`, `general-rating.md`, `general-animated-typing.md`, `general-divider.md`, `general-template.md`, `general-facebook-page.md`, `general-instagram-feed.md` |
+| **Media** | `media-slider.md`, `media-slider-nested.md`, `media-carousel.md`, `media-image-gallery.md`, `media-audio.md`, `media-svg.md` |
+| **Single Post** | `single-post-title.md`, `single-post-content.md`, `single-post-excerpt.md`, `single-post-meta.md`, `single-post-author.md`, `single-post-taxonomy.md`, `single-post-toc.md`, `single-post-reading-time.md`, `single-post-reading-progress-bar.md`, `single-post-comments.md`, `single-post-sharing.md`, `single-post-navigation.md`, `single-related-posts.md` |
+| **WordPress** | `wordpress-nav-menu.md`, `wordpress-posts.md`, `wordpress-sidebar.md`, `wordpress-search.md`, `wordpress-shortcode.md`, `wordpress-widget.md` |
+| **Query** | `query-pagination.md`, `query-results-summary.md`, `query-filter-system.md`, `query-filter-active-filters.md` |
 
 ## Khi nào dùng `_cssCustom` vs `html` element
 

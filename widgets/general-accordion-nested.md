@@ -96,9 +96,10 @@ Set qua `_hidden._cssClasses`.
   {
     "id": "acroot",
     "name": "accordion-nested",
-    "parent": "0",
+    "parent": 0,
     "children": ["acitm1", "acitm2"],
     "settings": {
+      "openItemIndex": 0,
       "titleHeight": "56px",
       "titlePadding": {"top": "16px", "right": "24px", "bottom": "16px", "left": "24px"},
       "contentPadding": {"top": "16px", "right": "24px", "bottom": "16px", "left": "24px"},

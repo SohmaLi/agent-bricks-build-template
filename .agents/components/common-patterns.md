@@ -356,6 +356,8 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 
 > `_aspectRatio` là cách hiện đại nhất để giữ tỉ lệ mà không cần padding-top hack.
 
+> ⚠️ **Note:** PATTERN 11 (Text Gradient / Clip-path) và PATTERN 12 (Sticky Header) đã được lược bỏ — ít dùng trong lấp landing page. Không có gap số.
+
 ---
 
 ## PATTERN 13 — Flex Equal Columns: Dùng CSS Shorthand, Tránh Nhiều Native Keys
@@ -407,7 +409,7 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 | Item 2 | `1` |
 | Item 3 | `2` |
 
-> Widget docs ghi "1-based, default: 1" nhưng thực tế là 0-based. Đây là bug trong docs.
+> **Đã xác nhận (0-based):** Widget docs trong `general-accordion-nested.md` đã được cập nhật đúng. Dùng `openItemIndex: 0` để mở item đầu tiên.
 
 ---
 

@@ -36,7 +36,7 @@
 ```json
 {
   "_padding": {"top": "80px", "bottom": "80px", "left": "0px", "right": "0px"},
-  "_cssCustom": "%root% { background: linear-gradient(135deg, #007cfc 0%, #5b4fcf 100%); }"
+  "_cssCustom": "/* ⚠️ API: đổi %root% → #brxe-[id] */ %root% { background: linear-gradient(135deg, #007cfc 0%, #5b4fcf 100%); }"
 }
 ```
 
@@ -82,7 +82,7 @@
     "style": "solid",
     "color": {"hex": "rgba(0,124,252,0.5)"}
   },
-  "_cssCustom": "%root% { box-shadow: inset 0px 0px 24px 0px rgba(0,124,252,0.2); }"
+  "_cssCustom": "/* ⚠️ API: đổi %root% → #brxe-[id] */ %root% { box-shadow: inset 0px 0px 24px 0px rgba(0,124,252,0.2); }"
 }
 ```
 > ⚠️ Native `_boxShadow` **không hỗ trợ `inset`** → bắt buộc dùng `_cssCustom`.
@@ -187,7 +187,7 @@
   "style": "outline",
   "_background": {"color": {"hex": "#007cfc"}},
   "_border": {"radius": "12px"},
-  "_cssCustom": "%root%:hover { background-color: #0056b3; }"
+  "_cssCustom": "/* ⚠️ API: đổi %root% → #brxe-[id] */ %root%:hover { background-color: #0056b3; }"
 }
 ```
 
