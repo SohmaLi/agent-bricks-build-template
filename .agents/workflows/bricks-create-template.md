@@ -46,6 +46,21 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 [2] Mỗi widget trong plan → widgets/[tên-file].md
 ```
 
+### Bước 1.3 — Nhận diện section phức tạp (BẮT BUỘC)
+
+Sau khi đọc section files, với **MỖI section** có bất kỳ dấu hiệu nào dưới đây:
+
+| Dấu hiệu | Hành động |
+|----------|----------|
+| Section chứa `slider-nested` | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN A/B) |
+| Section chứa `tabs-nested` | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN C) |
+| Section dự kiến depth > 5 | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 5 (Depth Worksheet) |
+| Section có tabs + slider lồng nhau | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN C) + PHẦN 3 |
+| Section có > 50 elements | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 6 (Build Order) |
+| Banner với background images | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN D) |
+
+> **Nếu không có dấu hiệu nào:** Bỏ qua bước này, tiếp tục bình thường.
+
 ---
 
 ## GIAI ĐOẠN 2: Chuẩn bị Images
@@ -103,6 +118,12 @@ Section                               ← depth 0
     ├── Block header (flex row)       ← depth 2
     └── Block grid (3 cols)           ← depth 2
 ```
+
+**Khi vẽ tree cho section có slider/tabs, áp dụng quy tắc từ complex-template-reasoning.md:**
+- Slide item LUÔN có block wrapper trước content
+- Tab nav item trong slider dùng `div` (không phải `block`)
+- Tính depth bằng worksheet (PHẦN 5) trước khi build
+- Anti-patterns (PHẦN 4): kiểm tra 5 lỗi phổ biến trước khi push
 
 ### Sub-bước B — Build JSON (Native Flat Format)
 
@@ -204,9 +225,13 @@ Bắt buộc: Mở template → Ctrl+S → đóng (KHÔNG click element trước
 ```
 Đọc plan → Widget library
   ↓
+Nhận diện section phức tạp? → Đọc complex-template-reasoning.md (Bước 1.3)
+  ↓
 [Mỗi section]
   A.0: Figma Spot-Check (desktop + mobile node) → Quick-reference table
   A.1: Checklist + Gotchas G1–G4
+       ↳ slider/tabs? → Verify anti-patterns (PHẦN 4 trong complex-template-reasoning.md)
+       ↳ Tính depth bằng Worksheet (PHẦN 5) trước khi code
   B:   Build JSON (từ quick-reference, không assumption)
   C:   Push → Verify → Capture actual IDs
   Báo user → CHỜ confirm

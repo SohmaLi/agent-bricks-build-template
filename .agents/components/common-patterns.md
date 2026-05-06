@@ -451,3 +451,86 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 - Tăng DOM size (không đáng kể với landing page)
 
 > **Áp dụng khi:** Desktop = accordion list + right glow / Mobile = 3 full cards riêng biệt (verified trong S06 AI Model section)
+
+---
+
+## PATTERN 16 — Feature Card Slider (Image + Text per slide)
+
+> **Source:** OpenClaw "Tại sao chọn" (ID: 463160) — Verified production pattern.
+> Dùng khi: Slider mỗi slide = 1 feature card có icon/image + title + description.
+
+```
+⚠️ KEY RULE: Mỗi slide có 2 levels block wrapper:
+   1. block (slide wrapper) — Bricks structural slide container
+   2. block (card inner) — Visual card container, có thể có bg/padding riêng
+   Thiếu "card inner" → không thể style card độc lập với slide wrapper.
+```
+
+**JSON pattern (6 slides):**
+```json
+{"id": "sldrXXX", "name": "slider-nested", "parent": "slwrXXX", "children": ["sl1bXXX", "sl2bXXX", "sl3bXXX", "sl4bXXX", "sl5bXXX", "sl6bXXX"]},
+
+{"id": "sl1bXXX", "name": "block", "parent": "sldrXXX", "children": ["sl1iXXX"]},
+{"id": "sl1iXXX", "name": "block", "parent": "sl1bXXX", "children": ["sl1imgXX", "sl1txtXX"],
+ "settings": {"_display": "flex", "_direction": "column", "_rowGap": "16px"}},
+{"id": "sl1imgXX", "name": "image", "parent": "sl1iXXX",
+ "settings": {"image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"}, "_width": "48px", "_height": "48px", "_flexShrink": "0"}},
+{"id": "sl1txtXX", "name": "block", "parent": "sl1iXXX", "children": ["sl1hdgXX", "sl1dscXX"],
+ "settings": {"_display": "flex", "_direction": "column", "_rowGap": "8px"}},
+{"id": "sl1hdgXX", "name": "heading", "parent": "sl1txtXX",
+ "settings": {"tag": "h3", "text": "Feature Title", "_typography": {"font-weight": "700"}}},
+{"id": "sl1dscXX", "name": "text-basic", "parent": "sl1txtXX",
+ "settings": {"text": "Feature description text here."}}
+```
+
+> **Build tất cả N slides** — không bớt. Đếm chính xác từ Figma.
+> **Depth** từ section: 0(section)→1(container)→2(block)→3(slider)→4(slide)→5(card-inner)→6(image/text-group)→7(heading/text-basic) = **depth 7**
+
+---
+
+## PATTERN 17 — Tabs-nested với Slider Navigation
+
+> **Source:** OpenClaw "Mô hình hoạt động" (ID: 463174) — Verified production pattern.
+> Dùng khi: Tab có nhiều tabs và nav cần scroll/swipe (mobile-friendly tab navigation).
+
+```
+⚠️ CRITICAL RULES:
+   1. Tab nav items PHẢI là `div` (không phải `block`) để tabs-nested JS nhận click
+   2. Tab labels dùng `text-basic` (không phải `heading`)
+   3. tabs-nested có đúng 2 direct children:
+      - slider-nested (tab nav)
+      - block (panels container)
+```
+
+**Structure:**
+```
+tabs-nested
+  ├─ slider-nested (tab nav)
+  │    ├─ div → text-basic ("Tab 1")  ← MỖI TAB NAV = div > text-basic
+  │    ├─ div → text-basic ("Tab 2")
+  │    ├─ div → text-basic ("Tab 3")
+  │    └─ div → text-basic ("Tab 4")
+  └─ block (panels)
+       ├─ block (panel 1)   ← MỖI PANEL = 1 block
+       │    └─ [panel content]
+       ├─ block (panel 2)
+       ├─ block (panel 3)
+       └─ block (panel 4)
+```
+
+**JSON pattern (4 tabs):**
+```json
+{"id": "tabsXXX", "name": "tabs-nested", "parent": "tbwrXXX", "children": ["tnvXXXX", "tpnXXXX"]},
+
+{"id": "tnvXXXX", "name": "slider-nested", "parent": "tabsXXX", "children": ["tn1dXXX", "tn2dXXX", "tn3dXXX", "tn4dXXX"]},
+{"id": "tn1dXXX", "name": "div", "parent": "tnvXXXX", "children": ["tn1tXXX"]},
+{"id": "tn1tXXX", "name": "text-basic", "parent": "tn1dXXX", "settings": {"text": "Tab Label 1"}},
+{"id": "tn2dXXX", "name": "div", "parent": "tnvXXXX", "children": ["tn2tXXX"]},
+{"id": "tn2tXXX", "name": "text-basic", "parent": "tn2dXXX", "settings": {"text": "Tab Label 2"}},
+
+{"id": "tpnXXXX", "name": "block", "parent": "tabsXXX", "children": ["tp1bXXX", "tp2bXXX", "tp3bXXX", "tp4bXXX"]},
+{"id": "tp1bXXX", "name": "block", "parent": "tpnXXXX", "children": ["[panel-1-content]"]},
+{"id": "tp2bXXX", "name": "block", "parent": "tpnXXXX", "children": ["[panel-2-content]"]}
+```
+
+> **Panel content** có thể phức tạp đến depth 9 — build từng panel một, verify sau mỗi panel.
