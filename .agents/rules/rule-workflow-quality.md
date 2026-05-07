@@ -49,11 +49,11 @@ Validate trước push: `id.length = 6`, `/^[a-z0-9]+$/.test(id)`, không trùng
 
 Áp dụng: Giai đoạn Phase 1 — Plan phân tích.
 
-1. **Search giới hạn**: Tối đa 03 lệnh truy vấn qua API (Ưu tiên: `[Dự án] -> [Widget Key] -> [Tác giả Key Dev]`). 
+1. **Search giới hạn**: Tối đa 03 lệnh truy vấn qua API (Ưu tiên: `[Dự án] -> [Widget Key] -> [Tác giả Key Dev]`).
 2. **Quy tắc dừng**: Nếu sau 03 lần tìm không thấy mẫu ưng ý, **DỪNG LẠI** và build thuần dựa trên Figma + Bricks Native. Không sa đà vào việc tìm kiếm làm chậm tiến độ.
 3. **Tham chiếu Hybrid**: Có thể tách một mẫu để lấy "Khung xương" (Container, Typography) và một mẫu khác để lấy "Động cơ" (JSON cấu hình Slider/Tabs).
 4. **Báo cáo mẫu trong Plan**: Phải ghi rõ:
    - Tham chiếu Layout: [ID/Tên mẫu]
    - Tham chiếu Widget: [ID/Tên mẫu]
-   (Nếu không có mẫu, ghi rõ "Tự build thuần").
+     (Nếu không có mẫu, ghi rõ "Tự build thuần").
 5. **Visual Evidence**: Mọi file Plan phải nhúng ảnh chụp màn hình chính xác của Section đó từ Figma (cả Desktop và Mobile) để người dùng đối soát trực quan các thông số đã phân tích.
