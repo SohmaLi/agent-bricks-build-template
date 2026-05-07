@@ -534,3 +534,108 @@ tabs-nested
 ```
 
 > **Panel content** có thể phức tạp đến depth 9 — build từng panel một, verify sau mỗi panel.
+
+---
+
+## PATTERN 18 — Default Slider Arrow Settings (Splide — BẮT BUỘC áp dụng)
+
+> **Áp dụng:** Mọi `slider-nested` có arrow/navigation trong dự án này.
+> **Source:** Verified từ S1 VPS Landing 2026 (template 473482).
+
+> ⚠️ Bricks Nestable Slider dùng **Splide.js** — KHÔNG phải Swiper.
+> CSS class đúng: `.splide__slide`, `.splide__arrows`, `button.splide__arrow`
+> CSS class SAI: `.swiper-slide`, `.swiper-pagination`, `.bricks-button-prev`
+
+### Default Arrow JSON Settings
+```json
+{
+  "arrows": true,
+  "arrowHeight": "48px",
+  "arrowWidth": "48px",
+  "arrowSize": "28px",
+  "prevArrow": {"library": "ionicons", "icon": "ion-ios-arrow-back"},
+  "nextArrow": {"library": "ionicons", "icon": "ion-ios-arrow-forward"},
+  "arrowBorder": {
+    "width": {"top": "1.5px", "right": "1.5px", "bottom": "1.5px", "left": "1.5px"},
+    "style": "solid",
+    "color": {"hex": "#f2f3f5"},
+    "radius": {"top": "999px", "right": "999px", "bottom": "999px", "left": "999px"}
+  },
+  "arrowDisabledOpacity": "0.24",
+  "arrowColor": {"hex": "#f2f3f5"},
+  "prevArrowTop": "auto",
+  "nextArrowBottom": "0px",
+  "prevArrowBottom": "0px"
+}
+```
+
+### Arrows bên dưới slider (CSS bắt buộc đi kèm)
+```css
+/* Đặt trong _cssCustom của slider-nested */
+#brxe-[ID] .splide__arrows.custom.splide__arrows--ltr {
+  display: flex !important;
+  justify-content: flex-end;
+  height: 48px;
+  align-items: flex-end;
+  margin-top: 24px;
+  gap: 32px;
+  z-index: 10;
+  position: relative;
+}
+#brxe-[ID] button.splide__arrow {
+  position: static !important;
+  transform: none;
+}
+```
+
+### Slider 1.5 view (card peek) — CSS
+```css
+/* Desktop: width fit-content per slide */
+#brxe-[ID] .splide__slide {
+  width: fit-content !important;
+}
+/* Mobile: 80% width per slide */
+/* → dùng _cssCustom:mobile_portrait */
+```
+
+### Slider 1.5 view — JSON Settings
+```json
+{
+  "type": "slide",
+  "autoHeight": true,
+  "gap": "24px",
+  "gap:mobile_portrait": "16px",
+  "loop": true,
+  "_cssCustom": "#brxe-[ID] .splide__slide { width: fit-content !important; } #brxe-[ID] .splide__arrows.custom.splide__arrows--ltr { display: flex !important; justify-content: flex-end; height: 48px; align-items: flex-end; margin-top: 24px; gap: 32px; z-index: 10; position: relative; } #brxe-[ID] button.splide__arrow { position: static !important; transform: none; }",
+  "_cssCustom:mobile_portrait": "#brxe-[ID] .splide__slide { width: 80% !important; }"
+}
+```
+
+### Gradient Mask (parent col — khi slider overflow sang col bên)
+```css
+/* Đặt trong _cssCustom của parent block chứa slider */
+#brxe-[colID]::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 120px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, [section-bg-color]);
+  z-index: 2;
+  pointer-events: none;
+}
+```
+> Parent block cần: `_position: "relative"`, `_overflow: "hidden"`
+
+### Summary checklist khi build slider-nested
+```
+□ arrows: true + arrowBorder circle + arrowDisabledOpacity: 0.24
+□ type: "slide" + autoHeight: true + gap: "24px"
+□ CSS: .splide__arrows → display:flex + position:relative + margin-top:24px
+□ CSS: button.splide__arrow → position:static + transform:none
+□ Nếu 1.5 view: CSS .splide__slide { width: fit-content !important }
+□ Nếu có mask: _cssCustom ::after gradient trên parent block
+□ KHÔNG bao giờ dùng block giả để làm prev/next button
+□ KHÔNG dùng class .swiper-* (Bricks dùng Splide, không phải Swiper)
+```

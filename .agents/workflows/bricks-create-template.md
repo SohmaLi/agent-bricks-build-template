@@ -61,6 +61,31 @@ Sau khi đọc section files, với **MỖI section** có bất kỳ dấu hiệ
 
 > **Nếu không có dấu hiệu nào:** Bỏ qua bước này, tiếp tục bình thường.
 
+### Bước 1.4 — Search Template Cũ (RULE 12 — BẮT BUỘC)
+
+> ❌ **Lỗi phổ biến:** Build từ đầu mà không kiểm tra template cũ → reinvent pattern sai (ví dụ: nhầm Swiper/Splide).
+
+Với mỗi section có widget phức tạp (`slider-nested`, `tabs-nested`, `accordion-nested`):
+
+```
+[1] mcp_bricks-mcp_content(action:"search", post_type:"bricks_template", search:"[widget-type]")
+    → Tìm template có slider / tabs / accordion tương tự
+
+[2] Nếu tìm thấy → mcp_bricks-mcp_content(action:"get", post_id:[id], view:"detail")
+    → Đọc settings của widget đó: arrow keys, CSS class, _cssCustom pattern
+
+[3] Tối đa 3 lần search. Không tìm thấy → tiếp tục, ghi chú "tự build thuần".
+```
+
+**Kết quả ghi vào plan/chat:**
+```
+Tham chiếu Layout: [ID template nếu có]
+Tham chiếu Widget: [ID template + widget name nếu có]
+Hoặc: "Tự build thuần — không tìm thấy mẫu phù hợp"
+```
+
+> ⚠️ **Ví dụ thực tế (S1 VPS Landing 2026):** Nếu đã search `slider` trước, đã thấy template `413338 — LDP VPC Slider hiệu suất` → biết ngay Bricks dùng **Splide.js** (class `.splide__*`), không nhầm sang Swiper → tiết kiệm 3 vòng fix.
+
 ---
 
 ## GIAI ĐOẠN 2: Chuẩn bị Images

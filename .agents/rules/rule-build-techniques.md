@@ -69,6 +69,50 @@ Ví dụ section có gradient background:
 
 Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (reset, animation keyframes, utility classes chung).
 
+### 4E — Multi-Column Layout → LUÔN set explicit `_width` ❌
+
+> **Verified từ IMP-04:** `flex-grow + flex-basis` không đảm bảo width chính xác trong Bricks panel.
+
+| Layout | ✅ ĐÚNG | ❌ SAI |
+|--------|--------|-------|
+| 2 cột bằng nhau | `_width: "50%"` | `_flexGrow: "1"` + `_flexBasis: "0%"` |
+| 2 cột không đều | `_width: "60%"` / `_width: "40%"` | `_flexGrow: "3"` / `_flexGrow: "2"` |
+| Cột cố định + cột mở rộng | `_width: "300px"` + `_cssCustom: "flex:1"` | Chỉ flex keys |
+
+```json
+// ✅ ĐÚNG — 2 cột 50/50
+{ "_width": "50%", "_flexGrow": "0", "_flexShrink": "0", "_flexBasis": "auto" }
+
+// Responsive mobile:
+{ "_width:mobile_portrait": "100%" }
+```
+
+> `_flexShrink: "0"` tránh cột bị squish khi parent hẹp.
+> `_flexBasis: "auto"` để `_width` là nguồn truth duy nhất.
+
+### 4F — Grid > 5 items → Dùng `display:grid`, không dùng `flex-wrap`
+
+> **Verified từ IMP-05:** `flex-wrap` phụ thuộc vào available width của parent → dễ bị single-column nếu parent bị constrain.
+
+| Trường hợp | ✅ Dùng | ❌ Tránh |
+|-----------|--------|---------|
+| Logo grid (≥6 items, N cột cố định) | `display:grid` + `repeat(N, 1fr)` | `flex-wrap` |
+| Card grid tự responsive | `flex-wrap` + `min-width` per card | `grid` cứng |
+| Icon row < 6 items | `flex-wrap` OK | - |
+
+```json
+// ✅ Grid 5 cột desktop, 3 cột mobile
+{
+  "_display": "grid",
+  "_gridTemplateColumns": "repeat(5, 1fr)",
+  "_columnGap": "20px",
+  "_rowGap": "20px",
+  "_gridTemplateColumns:mobile_portrait": "repeat(3, 1fr)",
+  "_columnGap:mobile_portrait": "12px",
+  "_rowGap:mobile_portrait": "12px"
+}
+```
+
 ---
 
 ## RULE 5 — CSS Property Lookup (Native vs Custom)
