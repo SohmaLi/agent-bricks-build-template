@@ -5,246 +5,193 @@ description: Phan tich thiet ke Figma va tao plan trien khai vao Bricks Builder.
 # Workflow: Figma → Bricks Builder Plan Template
 
 ## Input
-
 - Figma URL hoặc node-id (ví dụ: `3641-1142`)
-- Tên file output slug (ví dụ: `blog-author-profile`)
+- Tên plan slug (ví dụ: `plan-author-template`)
 
 ## Output
-
-- File `[slug].md` lưu tại: `.agents/plans/[slug].md`
-- Nội dung: page info, số sections, cấu trúc + variables từng section, trạng thái images, Bricks widget mapping
-
-## Quy tắc cố định
-
-> **Header và Footer luôn bỏ qua** — đánh dấu `[SKIP – Global Template]`, không phân tích chi tiết.
-> **Images Figma** có URL dạng `localhost:3845/assets/[hash]` — WP không fetch được trực tiếp. Chiến lược: download về `.agents/images/[slug]/` rồi upload WP qua browser.
-> **Không dùng Dangerous Actions** — mọi styling phải qua element settings hoặc `html` element với inline style.
+- **Overview file:** `.agents/plans/[slug].md`
+- **Section files:** `.agents/template/[slug-prefix]-s[N]-[section-name].md`
 
 ---
 
-## GIAI ĐOẠN 1: Thu thập dữ liệu
+## ⚠️ FRESH START — Bắt buộc đầu mỗi lần chạy
 
-### Bước 1.1 — Đọc Figma (song song)
-
-```
-mcp_figma_get_design_context(
-  nodeId: "[node-id]",
-  artifactType: "WEB_PAGE_OR_APP_SCREEN",
-  clientFrameworks: "bricks-builder",
-  clientLanguages: "html,css,javascript,php"
-)
-mcp_figma_get_screenshot(nodeId: "[node-id]")
-```
-
-Từ output ghi lại:
-
-- Tên trang, loại trang (landing/profile/blog/archive/...)
-- Viewport chính, max-width container
-- Số sections, tên + Node ID từng section
-- Mỗi section: layout (1col / 2cols / grid NxM), elements con chính
-- **Design variables** từ dòng "These styles are contained in the design":
-  - Colors: token → hex value
-  - Typography: font, size, weight, line-height
-  - Spacing: padding, gap, border-radius
-- **Images**: mỗi `<img src="localhost:3845/assets/...">` → đánh dấu ✅ lấy được. Ghi URL + tên mô tả.
-
-### Bước 1.2 — Đọc thông tin site
+Mỗi lần gọi `/figma-create-plan-template` là phiên phân tích HOÀN TOÀN MỚI.
+1. Không dùng lại context, plan file, hay dữ liệu Figma từ session trước
+2. Ghi đè file plan cũ nếu cùng slug — không append
 
 ```
-mcp_bricks-mcp_get_site_info(action: "info")
-```
-
-Ghi: site URL, Bricks version.
-
-### Bước 1.3 — Lấy Bricks elements catalog
-
-```
-mcp_bricks-mcp_bricks(action: "get_element_schemas", catalog_only: true)
-```
-
-Dùng ở Giai đoạn 2.
-
----
-
-## GIAI ĐOẠN 2: Mapping Bricks Widgets
-
-Với mỗi section, đối chiếu catalog để chọn element phù hợp:
-
-### Bảng mapping tham khảo
-
-| Nhu cầu design         | Bricks element                                 |
-| ---------------------- | ---------------------------------------------- |
-| Wrapper/section chính  | `section` / `container` / `div`                |
-| Row / flex columns     | `block` hoặc `div`                             |
-| Tiêu đề H1–H6          | `heading`                                      |
-| Rich text / paragraphs | `text`                                         |
-| Text đơn giản          | `text-basic`                                   |
-| Ảnh                    | `image`                                        |
-| SVG                    | `svg`                                          |
-| Icon (Font Awesome)    | `icon`                                         |
-| Nút / CTA              | `button`                                       |
-| Link text              | `text-link`                                    |
-| Icon + title + desc    | `icon-box`                                     |
-| Danh sách bài viết WP  | `vnx-custom-posts-list-v2` hoặc `vnx-posts`    |
-| Bài viết có filter     | `vnx-posts-filter` hoặc `vnx-posts-fillter-v2` |
-| Navigation menu        | `nav-menu` hoặc `nav-nested`                   |
-| Slider / carousel      | `slider-nested` hoặc `carousel`                |
-| HTML tùy chỉnh         | `html`                                         |
-
-### Quy tắc chọn widget
-
-1. Layout → chọn container element
-2. Elements con → map từng cái theo bảng trên
-3. Không có element phù hợp → dùng `div` + `html` + ghi chú Custom CSS
-4. Danh sách bài thật từ WP → ưu tiên `vnx-custom-posts-list-v2`
-5. Ghi rõ phần nào cần Custom CSS thêm (gradient bg, inset shadow, clip-path, absolute positioning...)
-
----
-
-## GIAI ĐOẠN 3: Ghi file plan
-
-Ghi file ra:
-
-```
-/Users/truongduylinh/Documents/Web/project_mcp/bricks_mcp/.agents/plans/[slug].md
-```
-
-### Cấu trúc file output
-
-```markdown
-# Plan: [Tên trang]
-
-**Figma Node:** [node-id]
-**Figma Link:** [URL]
-**Site:** [URL] | Bricks [version]
-**Ngày tạo:** [YYYY-MM-DD]
-
----
-
-## 1. Thông tin Page
-
-- Loại trang: ...
-- Viewport: Desktop | max-width: ...px
-- Tổng số sections: N
-
----
-
-## 2. Design Variables (Global)
-
-### Colors
-
-| Token | Hex | Dùng trong |
-| ----- | --- | ---------- |
-
-### Typography
-
-| Token | Font | Size | Weight | Line Height |
-| ----- | ---- | ---- | ------ | ----------- |
-
-### Spacing & Radius
-
-| Giá trị | Dùng trong |
-| ------- | ---------- |
-
----
-
-## 3. Sections
-
-### Section N: [Tên] | Node: [ID]
-
-**Layout:** [2 cols / grid 3x2 / 1 col / ...]
-
-**Variables của section này:**
-| Loại | Value | Ghi chú |
-|------|-------|---------|
-| Background | ... | ... |
-| Border | ... | ... |
-| Shadow | ... | Cần Custom CSS |
-| Gap | ... | ... |
-| Border-radius | ... | ... |
-
-**Cấu trúc elements:**
-```
-
-Section wrapper
-├── Row (flex, gap: Xpx)
-│ ├── Col left
-│ │ ├── Heading: "..."
-│ │ └── Text: "..."
-│ └── Col right
-│ └── Image: [tên ảnh]
-
-````
-
-**Images trong section này:**
-| Tên mô tả | URL Figma | Lấy được? |
-|-----------|----------|----------|
-| ... | localhost:3845/assets/[hash].png | ✅ |
-
-**Bricks Widgets:**
-| Element trong design | Bricks widget | Ghi chú kỹ thuật |
-|---------------------|--------------|-----------------|
-| Section wrapper | `section` | padding: 40px |
-| Row 2 cột | `block` | display: flex, gap: 24px |
-| Tiêu đề | `heading` | H4, 36px/600 Inter |
-| Text content | `text` | Rich Text, 18px/400 |
-| Button | `button` | bg: #007cfc, border-radius: 12px |
-| Ảnh | `image` | object-fit: cover |
-
-**Styling phức tạp (không qua Bricks settings):**
-
-> ❌ **Không dùng Custom CSS** (Dangerous Actions disabled)
-> ✅ **Dùng `html` element với inline style** cho các layout cần: absolute positioning, gradient bg, inset shadow, clip-path
-
-Ví dụ:
-```html
-<div style="position:relative; background:linear-gradient(...); border-radius:24px; overflow:hidden;">
-  ...
-</div>
-````
-
----
-
-## [Lặp lại block Section cho mỗi section]
-
-## 4. Tổng hợp Images cần Download & Upload
-
-| Tên mô tả | URL Figma (localhost:3845) | File local (.agents/images/[slug]/) | Dùng trong Section |
-| --------- | -------------------------- | ----------------------------------- | ------------------ |
-
-> **Chiến lược upload:** Download ảnh về `.agents/images/[slug]/` bằng curl → Upload thủ công lên WP Media Library qua browser → Lấy `attachment_id` → Dùng trong `image` element settings.
-
-## 5. Câu hỏi còn lại
-
-- [ ] Mobile layout có cần không?
-- [ ] Danh sách bài: static hay dynamic Query Loop?
-- [ ] ...
-
-## 6. Pre-build Checklist (kiểm tra trước khi chạy `/bricks-create-template`)
-
-- [ ] Đã tải tất cả images về `.agents/images/[slug]/` chưa?
-- [ ] Đã upload images lên WP Media Library và có `attachment_id` chưa?
-- [ ] Đã xác nhận `working_example` của từng Bricks element sẽ dùng chưa?
-- [ ] Layout phức tạp đã chuẩn bị fallback bằng `html` element inline style chưa?
-
+🆕 Bắt đầu phân tích MỚI cho: [Figma URL / node-id]
+📄 Output: .agents/plans/[slug].md
 ```
 
 ---
 
-## Ví dụ gọi workflow
+## ⚡ TOKEN LIMIT GUARD — 3 Phase bắt buộc
 
+- **Phase A**: Thu thập + Phân tích → Báo cáo chat + Ghi plan file
+- **[User action]**: Review sections, điền Status
+- **Phase B**: Đọc plan đã confirm → Ghi từng section template file
+
+---
+
+## PHASE A — Thu thập & Phân tích
+
+### A1 — Gọi đồng thời
+```
+[1a] mcp_figma_get_design_context(desktop_node_id, artifactType: "WEB_PAGE_OR_APP_SCREEN",
+       clientFrameworks: "bricks-builder", clientLanguages: "html,css,javascript,php")
+[1b] mcp_figma_get_screenshot(desktop_node_id)   → screenshot desktop
+[1c] mcp_figma_get_screenshot(mobile_node_id)    → screenshot mobile (nếu có)
+[1d] mcp_bricks-mcp_get_site_info(action: "info")
+```
+Nếu `get_design_context` lỗi → thử lại tối đa 2 lần → báo user, dừng.
+
+> 📸 Screenshot từ `mcp_figma_get_screenshot` dùng để **compare visual trong session** — không cần lưu persistent.
+
+### A2 — Trích xuất tổng quan
+
+| Thông tin | Ghi nhận |
+|-----------|---------|
+| Tên trang, loại trang | landing / profile / blog / ... |
+| Viewport chính, max-width | px |
+| Số sections, tên + Desktop Node ID + **Mobile Node ID** | List cả 2 |
+| Design variables | Colors (token → hex), Typography, Spacing |
+| Images `localhost:3845/assets/...` | URL + tên mô tả |
+
+> ⚠️ **Scope A2:** Chỉ capture page-level tokens và Node IDs.
+> **KHÔNG** tự suy luận per-element values — per-element exact values extract tại **B1.0**.
+
+### A3 — Đọc Widget Library
+```
+[1] widgets/README.md
+[2] Widget files cần dùng: widgets/[tên-file].md
 ```
 
-User: "/figma-create-plan-template https://figma.com/design/ABC/Blog?node-id=3641-1142"
+### A4 — Đánh giá từng section
 
-AI thực hiện:
-[Giai đoạn 1] get_design_context + get_screenshot (song song)
-get_site_info + get_element_schemas (song song)
-[Giai đoạn 2] Map sections → Bricks widgets
-[Giai đoạn 3] Ghi file .agents/plans/blog-author-profile.md
+> **Đọc component:** `.agents/components/figma-section-analysis.md`
+> Dùng hướng dẫn trong đó để: đánh giá độ phức tạp, detect Slider/Tab, validate CSS properties.
+> **SHIFT-LEFT RESPONSIVE:** Luôn so sánh Desktop Node ID với Mobile Node ID để chọn cấu trúc HTML/Flexbox có thể "sống sót" khi wrap trên mobile mà không cần đập đi build lại. (Ví dụ: dùng Block bao bọc thay vì Grid cứng).
 
-Kết quả: "Đã tạo plan: .agents/plans/blog-author-profile.md"
+### A5 — Báo cáo & DỪNG
 
 ```
+✅ PHASE A hoàn thành:
+📄 Trang: [tên] | Loại: [loại] | Viewport: [px] | Max-width: [px]
+📦 Widgets: [list] | 🖼 Images: [N]
 
+[SKIP] Header/Menu — bỏ qua
+
+[S1] Tên Section — SIMPLE/MEDIUM/COMPLEX
+  Layout  : [mô tả ngắn]
+  Widgets : section > block > [widgets]
+  Elements: [N] | depth: [D]
+  Images  : [N] ảnh
+  Gotchas : [nếu có] | Placeholder : [Có/Không - Nếu có thì hỏi user]
+  ❓ Thắc mắc: [câu hỏi kỹ thuật nếu có]
+  → Status : ___
+
+... (lặp cho tất cả sections)
+
+👉 Điền "ok" hoặc note vào ô Status, gửi lại để tôi ghi file.
+```
+
+> **DỪNG.** Không ghi file cho đến khi user xác nhận. "ok all" → xác nhận nhanh toàn bộ.
+
+### A6 — Ghi plan file ngay (không chờ user)
+
+> ✅ **Không mâu thuẫn với A5:** A5 báo cáo các section + DỪNG chờ user điền Status (ok/note).
+> A6 ghi file plan ngay — file này là OUTPUT của Phase A, chứa các `→ Status: ___` chờ user điền.
+> User không cần confirm trước khi ghi plan file — chỉ cần confirm trước khi bước vào Phase B.
+
+Ghi `.agents/plans/[slug].md` ngay sau báo cáo.
+> **Template:** `.agents/components/output-file-templates.md` → mục "Overview Plan File"
+>
+> **BẮT BUỘC — Screenshot trong plan file:**
+> ```markdown
+> ### Desktop (Node XXXX-YYYY)
+> ![Desktop - [Tên Section]](.agents/plans/image/[slug]-s[N]-desktop.png)
+>
+> ### Mobile (Node XXXX-YYYY)
+> ![Mobile - [Tên Section]](.agents/plans/image/[slug]-s[N]-mobile.png)
+> ```
+> ⛔ **KHÔNG dùng** brain step path `/brain/cdbd.../steps/N/output.png` — sẽ mất sau session.
+> ✅ **CHỈ dùng** path `plans/image/` sau khi đã copy từ A1.
+
+---
+
+## [USER ACTION] — Confirm trong file plan
+
+User mở `.agents/plans/[slug].md`, điền Status cho từng section:
+- `ok` — build theo plan
+- note / câu trả lời — điều chỉnh hoặc trả lời thắc mắc kỹ thuật
+
+---
+
+## PHASE B — Ghi section template files
+
+> Trigger: User báo "đã confirm" / "xong".
+
+### B0 — Đọc plan file đã confirm
+```
+view_file: .agents/plans/[slug].md
+→ Thu thập Status từng section + Q&A từ note của user
+```
+
+### B1 — Ghi từng section file (mỗi section = 1 response)
+
+> **Template:** `.agents/components/output-file-templates.md` → mục "Section File"
+> **BẮT BUỘC:** Đọc lại `→ Status:` trong plan trước mỗi section. Nếu Status có A/B → copy y chang quyết định.
+
+**B1.0 — Figma Extraction (BẮT BUỘC trước khi ghi file):**
+```
+[1] mcp_figma_get_design_context(desktop_node_id)  → extract exact desktop values
+[2] mcp_figma_get_design_context(mobile_node_id)   → extract exact mobile values
+    (nếu không có mobile node → ghi rõ: "no mobile breakpoint",
+     nhưng vẫn flag các element cần flex-wrap: nowrap fix)
+```
+
+**B1.1 — Với mỗi element type, extract và ghi vào section file:**
+```
+Per element:  width/height px | padding/gap px | font-size/weight/line-height
+              color hex | align-items | flex-direction | flex-wrap
+              image url + alt | border-radius | opacity
+Per mobile:   Giá trị thay đổi so với desktop | element này có tồn tại không?
+```
+
+**B1.2 — Flag bắt buộc trong section file:**
+```
+[G2-RISK] block có flex-row → ghi "flex-wrap: nowrap required"
+[ABSENT-MOBILE] element không có trong mobile Figma → ghi "_display:mobile_portrait: none"
+[EXACT-FROM-FIGMA] mọi giá trị lấy từ Figma DevMode, không assumption
+```
+
+Thứ tự: S1 → S2 → ... → SN. Section `[SKIP]` → bỏ qua.
+
+### B2 — Báo cáo hoàn thành
+
+```
+✅ Đã tạo plan:
+  📄 .agents/plans/[slug].md
+  📁 .agents/template/[prefix]-s1-*.md → ... → SN
+📊 [N] sections | [M] widgets | [K] images
+▶️ Sẵn sàng cho /bricks-create-template
+```
+
+---
+
+## Tóm tắt flow
+
+```
+A1: [Song song] get_design_context + get_screenshot(desktop) + get_screenshot(mobile) + get_site_info
+     └─ NGAY SAU ĐÓ: cp brain_artifact → .agents/plans/image/[slug]-s[N]-desktop/mobile.png
+A2-A4: Phân tích (tham khảo .agents/components/figma-section-analysis.md)
+A5: Báo cáo chat → DỪNG chờ user
+A6: Ghi plan file (không chờ)
+     └─ Screenshot nhúng từ plans/image/ (KHÔNG dùng brain path)
+    ↓ (user confirm)
+B0: Đọc plan → thu thập Status
+B1: Ghi section files (dùng .agents/components/output-file-templates.md)
+B2: Báo cáo hoàn thành → /bricks-create-template
 ```
