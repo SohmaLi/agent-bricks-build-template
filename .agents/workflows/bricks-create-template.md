@@ -5,11 +5,10 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 # Workflow: Bricks Create Template
 
 ## Input
-- Overview plan: `.agents/plans/[slug].md`
-- Section files: `.agents/template/[prefix]-s[N]-[name].md`
+- Section file: `.agents/template/[prefix]-s[N]-[name].md`
 
 ## Output
-- N Bricks templates trên site (mỗi section = 1 template)
+- 1 Bricks template trên site (1 section = 1 template)
 - Note file: `.agents/notes/[slug]-templates.md`
 
 ---
@@ -18,213 +17,154 @@ description: Doc file plan tu figma-create-plan-template va tao Bricks templates
 
 | Rule | ✅ Đúng | ❌ Sai |
 |------|--------|--------|
-| Layout engine | `section → container → block → [widgets]` | `html` cho layout, hoặc bỏ `container` |
-| Container rule | `container` là con trực tiếp duy nhất của `section` | `block` là con trực tiếp của `section` |
-| Settings keys | Đọc từ `widgets/[widget].md` | Tự đặt key từ trí nhớ |
+| Layout engine | `section → block → [widgets]` | `container` cấp 2+, `html` cho layout |
+| Direct child của section | `block` (bg-card wrapper) hoặc `container` | Không có gì, hoặc nhét widget thẳng vào section |
+| Settings keys | **Đọc từ `widgets/[widget].md` TRƯỚC** | Tự đặt key từ trí nhớ |
+| `_borderRadius` | ❌ KHÔNG TỒN TẠI | Phải dùng `_border: {radius: {top, right, bottom, left}}` |
+| `_gap` | ❌ KHÔNG TỒN TẠI | Phải dùng `_columnGap` và/hoặc `_rowGap` |
+| `_flexDirection` | ❌ (block/container dùng `_direction`) | Chỉ dùng cho `_cssCustom` raw |
+| `_flexWrap` | ✅ native key tồn tại | Không cần `_cssCustom` cho wrap |
 | CSS ưu tiên | Native key trước, `_cssCustom` khi không có native | `_cssCustom` cho mọi thứ |
 | Slider / Tab | `slider-nested` / `tabs-nested` | Block giả slider |
 | Image URL | `{"id":0,"url":"localhost:3845/..."}` | `src: ""` rỗng |
-| Nội dung text | Copy y chang từ section file, đủ số lượng | Tự dùng dynamic tag |
-| Push format | Native Flat Format (`id+parent+children`) → push 1 lần | Simplified → phải restore |
 | `parent` root | `"parent": 0` (integer) | `"parent": "0"` hay `""` |
 | `children` | Mảng IDs con trực tiếp, khớp 2 chiều | Bỏ trống / bỏ qua |
 
-> CSS lookup: `rule-build-techniques.md` RULE 5 | Ví dụ JSON: `.agents/references/widget-map-examples.md`
+---
+
+## GIAI ĐOẠN 1: Đọc Widget Docs (BẮT BUỘC — TRƯỚC KHI VIẾT JSON)
+
+> ❌ **Lỗi phổ biến nhất:** Bỏ qua bước này → dùng key sai → section build ra sai 100%.
+
+### Bước 1.1 — Đọc section file
+```
+view_file: .agents/template/[prefix]-s[N]-[name].md
+→ Liệt kê TỪNG widget type sẽ dùng
+```
+
+### Bước 1.2 — Đọc widget docs [SONG SONG] cho tất cả widget trong section
+
+```
+[Song song]
+view_file: widgets/layout-block.md       ← nếu section dùng block
+view_file: widgets/layout-container.md   ← nếu section dùng container
+view_file: widgets/basic-text-basic.md   ← nếu section dùng text-basic
+view_file: widgets/basic-image.md        ← nếu section dùng image
+view_file: widgets/basic-button.md       ← nếu section dùng button
+view_file: widgets/basic-heading.md      ← nếu section dùng heading
+... (các widget khác tương tự)
+```
+
+> ✅ Đọc README.md nếu chưa rõ tên file widget nào cần đọc.
+
+### Bước 1.3 — Tạo KEY VALIDATION TABLE (BẮT BUỘC trước khi viết JSON)
+
+Sau khi đọc widget docs, tạo bảng này trong chat:
+
+```
+WIDGET KEY TABLE — Verified từ widget docs
+===========================================
+Widget    | Key cần dùng          | Source file            | ✅/❌
+----------|----------------------|------------------------|------
+block     | _direction: "column" | layout-container.md    | ✅
+block     | _rowGap: "24px"      | layout-container.md    | ✅
+block     | _border: {radius:{}} | layout-container.md    | ✅ (KHÔNG phải _borderRadius)
+block     | _flexWrap: "nowrap"  | layout-container.md    | ✅ (KHÔNG cần _cssCustom)
+button    | _border: {radius:{}} | basic-button.md        | ✅
+image     | image: {id:0, url:}  | basic-image.md         | ✅
+text-basic| text: "..."          | basic-text-basic.md    | ✅
+```
+
+> ⚠️ Bảng này là **checkpoint bắt buộc** — KHÔNG được viết JSON nếu chưa có bảng này.
+
+### Bước 1.4 — Slider/Tab phức tạp
+
+Với mỗi section có `slider-nested` / `tabs-nested`:
+```
+view_file: .agents/references/complex-template-reasoning.md
+```
 
 ---
 
-## GIAI ĐOẠN 1: Đọc & Chuẩn bị
+## GIAI ĐOẠN 2: Build từng Section
 
-### Bước 1.1 — Đọc overview plan
-Đọc `.agents/plans/[slug].md`, ghi lại:
-- Danh sách sections + file tương ứng (bỏ `[SKIP]`)
-- Thứ tự build: `[SIMPLE] → [MEDIUM] → [COMPLEX]`
+> Đọc section file → Tạo Key Validation Table → MỚI viết JSON
 
-### Bước 1.2 — Đọc Widget Library
-```
-[1] widgets/README.md
-[2] Mỗi widget trong plan → widgets/[tên-file].md
-```
+### Sub-bước A — Build JSON (Native Flat Format)
 
-### Bước 1.3 — Nhận diện section phức tạp (BẮT BUỘC)
+**Nguyên tắc viết JSON:**
+1. **Mỗi key** → kiểm tra trong Key Validation Table trước khi dùng
+2. **Không có trong table** → tra lại widget doc, KHÔNG tự đoán
+3. `_cssCustom` chỉ dùng khi **thực sự không có native key** (mask-image, clip-path, transform phức tạp)
+4. `_cssCustom` format khi push API: `"#brxe-[id] { ... }"` (KHÔNG dùng `%root%`)
+5. `_cssCustom:mobile_portrait` là key riêng — KHÔNG viết `@media` trong string
 
-Sau khi đọc section files, với **MỖI section** có bất kỳ dấu hiệu nào dưới đây:
-
-| Dấu hiệu | Hành động |
-|----------|----------|
-| Section chứa `slider-nested` | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN A/B) |
-| Section chứa `tabs-nested` | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN C) |
-| Section dự kiến depth > 5 | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 5 (Depth Worksheet) |
-| Section có tabs + slider lồng nhau | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN C) + PHẦN 3 |
-| Section có > 50 elements | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 6 (Build Order) |
-| Banner với background images | Đọc `.agents/references/complex-template-reasoning.md` — PHẦN 2 (PATTERN D) |
-
-> **Nếu không có dấu hiệu nào:** Bỏ qua bước này, tiếp tục bình thường.
-
-### Bước 1.4 — Search Template Cũ (RULE 12 — BẮT BUỘC)
-
-> ❌ **Lỗi phổ biến:** Build từ đầu mà không kiểm tra template cũ → reinvent pattern sai (ví dụ: nhầm Swiper/Splide).
-
-Với mỗi section có widget phức tạp (`slider-nested`, `tabs-nested`, `accordion-nested`):
-
-```
-[1] mcp_bricks-mcp_content(action:"search", post_type:"bricks_template", search:"[widget-type]")
-    → Tìm template có slider / tabs / accordion tương tự
-
-[2] Nếu tìm thấy → mcp_bricks-mcp_content(action:"get", post_id:[id], view:"detail")
-    → Đọc settings của widget đó: arrow keys, CSS class, _cssCustom pattern
-
-[3] Tối đa 3 lần search. Không tìm thấy → tiếp tục, ghi chú "tự build thuần".
-```
-
-**Kết quả ghi vào plan/chat:**
-```
-Tham chiếu Layout: [ID template nếu có]
-Tham chiếu Widget: [ID template + widget name nếu có]
-Hoặc: "Tự build thuần — không tìm thấy mẫu phù hợp"
-```
-
-> ⚠️ **Ví dụ thực tế (S1 VPS Landing 2026):** Nếu đã search `slider` trước, đã thấy template `413338 — LDP VPC Slider hiệu suất` → biết ngay Bricks dùng **Splide.js** (class `.splide__*`), không nhầm sang Swiper → tiết kiệm 3 vòng fix.
-
----
-
-## GIAI ĐOẠN 2: Chuẩn bị Images
-
-**Cách 1 — Custom URL** *(ưu tiên)*
-```json
-{"image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"}}
-```
-**Cách 2 — Upload WP** *(fallback)*: Download → báo user upload → nhận WP URL.
-
----
-
-## GIAI ĐOẠN 3: Build từng Section (tuần tự)
-
-> Trước mỗi section: Đọc `.agents/template/[prefix]-s[N]-[name].md`
-
-### Sub-bước A.0 — Figma Spot-Check + Screenshot (BẮT BUỘC trước khi viết JSON)
-
-> **Mục đích:** Verify exact values và lưu visual reference trước khi viết bất kỳ JSON nào.
-> **Không được bỏ qua** — nếu Figma MCP không available, dừng và báo user.
-
-```
-[0] mcp_figma_get_screenshot(desktop_node_id)  → Xem visual reference trong session (không cần lưu)
-
-[1] mcp_figma_get_design_context(desktop_node_id) → Verify:
-    □ Exact px values: padding, gap, font-size, icon size, border-radius
-    □ align-items, flex-direction per element (copy exact, không tự đổi)
-    □ Colors: hex code exact (không estimate)
-    □ Image URLs từ localhost:3845/assets/
-
-[2] mcp_figma_get_design_context(mobile_node_id) → Verify:
-    □ Values thay đổi so desktop: padding, gap, font-size
-    □ Element absent trên mobile? → flag _display:mobile_portrait: none
-    □ Block flex-row có bị wrap? → flag [G2-RISK] → _cssCustom: flex-wrap: nowrap
-```
-
-**Output bắt buộc:** Tạo bảng quick-reference trước khi build:
-```
-Element    | Desktop           | Mobile
-s1tg08     | 18px/600/30px     | 16px
-s1h110     | 44px/700/56px     | 28px/800/40px
-s1f114     | center/8px [G2]   | same [G2 apply]
-s1ic15     | 24×24px            | 20×20px
-s1mq30     | visible           | [ABSENT]
-```
-
-### Sub-bước A.1 — Checklist & Element Tree
-
-> **Đọc component:** `.agents/components/prebuild-checklist.md` (bao gồm Gotchas G1–G4)
-
-Vẽ Element Tree **BẮT BUỘC** trước khi build (mọi section, kể cả section nhỏ):
-```
-Section                               ← depth 0
-└── Block inner (flex col, gap:40px)  ← depth 1
-    ├── Block header (flex row)       ← depth 2
-    └── Block grid (3 cols)           ← depth 2
-```
-
-**Khi vẽ tree cho section có slider/tabs, áp dụng quy tắc từ complex-template-reasoning.md:**
-- Slide item LUÔN có block wrapper trước content
-- Tab nav item trong slider dùng `div` (không phải `block`)
-- Tính depth bằng worksheet (PHẦN 5) trước khi build
-- Anti-patterns (PHẦN 4): kiểm tra 5 lỗi phổ biến trước khi push
-
-### Sub-bước B — Build JSON (Native Flat Format)
-
-> Settings JSON: Copy từ **quick-reference table (Sub-bước A.0)**. Native keys trước, `_cssCustom` khi không có native.
-> ❗ **Nếu value không có trong quick-reference → DừNG → gọi `mcp_figma_get_design_context`, KHÔNG tự điền.**
-> `_cssCustom` format: `"#brxe-[element-id]{"` khi push API. Sau Ctrl+S, Bricks tự convert về `%root%`.
-> Với mask/phức tạp: xem `.agents/components/common-patterns.md`.
-
-**Responsive (RULE 10 — chỉ khi được yêu cầu):**
-
+**Responsive:**
 | Tình huống | Hành động |
 |-----------|-----------|
-| Không có lệnh responsive | Build desktop-only, không thêm breakpoint key |
-| User yêu cầu rõ / plan có `[RESPONSIVE]` | Gọi `get_breakpoints` → dùng composite key `_prop:breakpoint` |
-| `_cssCustom` cần responsive | Dùng **`_cssCustom:mobile_portrait`** làm key riêng — KHÔNG viết `@media` thủ công trong string |
+| Section file có responsive values | Thêm breakpoint keys: `_prop:mobile_portrait` |
+| Section file KHÔNG đề cập mobile | Build desktop-only |
 
 **Quy tắc ID:**
-
 | Rule | Chi tiết |
 |------|---------|
-| ID format | 6 ký tự `[a-z0-9]` |
-| Root parent | `"parent": 0` (integer) |
-| Children | Mảng IDs con — leaf: `"children": []` |
-| Reciprocal | parent ↔ children khớp 2 chiều |
+| Format | 6 ký tự `[a-z0-9]` |
+| Root parent | `"parent": 0` (integer, KHÔNG phải string) |
+| Children leaf | `"children": []` |
+| Reciprocal | parent.children ↔ child.parent khớp 2 chiều |
 
-### Sub-bước C — Push & Verify
+### Sub-bước B — Push & Verify
 
-**C1 — Tạo template:**
+**B1 — Tạo template:**
 ```
 mcp_bricks-mcp_template(action: "create", type: "section",
-  title: "[slug]-[ten-section]", status: "publish")
+  title: "[Test] Template V4 - [Tên Section]", status: "publish")
 → Lưu template_id
 ```
-**C2 — Push:**
+
+**B2 — Push:**
 ```
 mcp_bricks-mcp_content(action: "update_content",
   post_id: [template_id], elements: [...])
 ```
-**C3 — Verify + Capture actual IDs:**
+
+**B3 — Verify tree:**
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
-→ depth:0 = section → ✅
-→ IDs khác với ta đặt → ghi lại actual IDs, dùng cho mọi bulk_update sau
+→ Kiểm tra: depth 0 = section, total = đúng số element
+→ Nếu sai → debug trước khi báo user
 ```
 
-**Debug khi tree sai:**
+**Debug checklist khi tree sai:**
 ```
 □ Root "parent": 0 (integer)?
 □ Mỗi element có đủ id + parent + children?
 □ children ↔ parent khớp 2 chiều?
 □ ID đúng 6 ký tự [a-z0-9]?
+□ Key dùng có trong widget doc không?
 ```
 
-### Bước 3.D — Báo user & CHỜ XÁC NHẬN
+### Sub-bước C — Báo user & CHỜ
 
 ```
 ✅ Section [N]: "[Tên]" xong!
-🔗 [site_url]/wp-admin/post.php?post=[id]&action=bricks
+🔗 Edit: [site_url]/wp-admin/post.php?post=[id]&action=bricks
 
-⚠️ Nếu có `_cssCustom`: nhớ Ctrl+S trong Bricks editor trước khi so sánh.
-✔️ So sánh với Figma: mở link Figma — Layout | Spacing | Colors | Images | Text content
-👉 "ok [tên section]" → tiếp | "fix [mô tả]" → chỉnh trước
+⚠️ Ctrl+S trong Bricks Editor trước khi xem kết quả (có _cssCustom).
+👉 "ok" → tiếp | "fix [mô tả]" → chỉnh trước
 ```
 
-> **AI DỪNG và CHỜ.** Không tự động sang section tiếp theo.
-> ⛔ "ok tiếp tục" = chỉ build section tiếp theo, KHÔNG build thêm.
+> **AI DỪNG và CHỜ.** ⛔ "ok" ≠ "build hết sections còn lại".
 
 ---
 
-## GIAI ĐOẠN 4: Ghi Note file
+## GIAI ĐOẠN 3: Ghi Note file
 
 `.agents/notes/[slug]-templates.md`
 
 ```markdown
 # Note: Templates – [Tên Page]
-**Plan:** `.agents/plans/[slug].md` | **Ngày:** [YYYY-MM-DD]
+**Ngày:** [YYYY-MM-DD]
 
 | # | Section | File | Template ID | Edit URL | Status |
 |---|---------|------|-------------|----------|--------|
@@ -233,30 +173,43 @@ mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
 
 ---
 
-## ⚠️ Cuối session có `_cssCustom`
+## ⚠️ Về `_cssCustom` và Ctrl+S
 
 ```
-Bricks cssLoading: "file" → _cssCustom KHÔNG tự render sau API update.
-Bắt buộc: Mở template → Ctrl+S → đóng (KHÔNG click element trước khi Save).
+Bricks cssLoading: "file" → _cssCustom KHÔNG render sau API update.
+Bắt buộc: Mở template → Ctrl+S → đóng.
 ```
 
 ---
 
-## Tóm tắt flow
+## Tóm tắt flow (3 bước thực tế)
 
 ```
-Đọc plan → Widget library
-  ↓
-Nhận diện section phức tạp? → Đọc complex-template-reasoning.md (Bước 1.3)
-  ↓
-[Mỗi section]
-  A.0: Figma Spot-Check (desktop + mobile node) → Quick-reference table
-  A.1: Checklist + Gotchas G1–G4
-       ↳ slider/tabs? → Verify anti-patterns (PHẦN 4 trong complex-template-reasoning.md)
-       ↳ Tính depth bằng Worksheet (PHẦN 5) trước khi code
-  B:   Build JSON (từ quick-reference, không assumption)
-  C:   Push → Verify → Capture actual IDs
-  Báo user → CHỜ confirm
-  ↓ (ok)
-Ghi note → Done
+BƯỚC 1 — Đọc widget docs [SONG SONG]
+  view_file: section file
+  view_file: widget docs (block, image, button...) — TẤT CẢ cùng lúc
+  → Tạo Key Validation Table
+
+BƯỚC 2 — Build & Push
+  Viết JSON từ Key Validation Table (không assumption)
+  create template → update_content → verify summary
+
+BƯỚC 3 — Báo user
+  Link editor + hướng dẫn Ctrl+S → CHỜ confirm
 ```
+
+---
+
+## Key Reference nhanh (tra cứu offline)
+
+### Các key HAY BỊ SAI nhất:
+
+| ❌ Key sai (từ trí nhớ) | ✅ Key đúng (từ widget doc) | Widget |
+|------------------------|---------------------------|--------|
+| `_borderRadius: "24px"` | `_border: {radius: {top:"24px", right:"24px", bottom:"24px", left:"24px"}}` | tất cả |
+| `_gap: "24px"` | `_columnGap: "24px"` + `_rowGap: "24px"` | container/block |
+| `_flexDirection: "column"` | `_direction: "column"` | container/block |
+| `_paddingTop: "40px"` | `_padding: {top: "40px"}` | tất cả |
+| `_flexWrap` trong `_cssCustom` | `_flexWrap: "nowrap"` (native key) | container/block |
+| `image: {url: "..."}` (thiếu id) | `image: {id: 0, url: "..."}` | image |
+| `"parent": "0"` (string) | `"parent": 0` (integer) | section root |
