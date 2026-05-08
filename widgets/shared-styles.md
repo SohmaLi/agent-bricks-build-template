@@ -90,6 +90,54 @@ Style Tab (STYLE):       → File này
 | `_flexBasis` | `flex-basis` | `"auto"`, `"50%"`, `"200px"` |
 | `_order` | `order` | `-1`, `0`, `1` |
 
+### 1.6 Grid Native Keys
+
+> Dùng khi `_display: "grid"` — tránh dùng `flex-wrap` cho grid nhiều cột (≥ 5 items).
+
+| Key | CSS | Ví dụ |
+|-----|-----|-------|
+| `_gridTemplateColumns` | `grid-template-columns` | `"repeat(3, 1fr)"`, `"200px 1fr"` |
+| `_gridTemplateRows` | `grid-template-rows` | `"auto"`, `"200px auto"` |
+| `_columnGap` | `column-gap` | `"24px"` |
+| `_rowGap` | `row-gap` | `"24px"` |
+| `_gridColumn` | `grid-column` | `"span 2"`, `"1 / 3"` |
+| `_gridRow` | `grid-row` | `"span 2"` |
+| `_gridAutoFlow` | `grid-auto-flow` | `"row"`, `"column"`, `"dense"` |
+
+```json
+// Grid 3 cột desktop → 2 cột tablet → 1 cột mobile
+{
+  "_display": "grid",
+  "_gridTemplateColumns": "repeat(3, 1fr)",
+  "_columnGap": "24px",
+  "_rowGap": "24px",
+  "_gridTemplateColumns:tablet_portrait": "repeat(2, 1fr)",
+  "_gridTemplateColumns:mobile_portrait": "1fr"
+}
+```
+
+---
+
+## ⚠️ Keys Cần BỎ QUA khi Build JSON
+
+Các key sau **không có effect** trong settings JSON — chỉ là UI helpers trong editor:
+
+| Pattern | Ví dụ | Bỏ qua vì |
+|---------|-------|----------|
+| `type: separator` | `iconSep`, `buttonSep`, `formTitleSep` | UI divider — không render |
+| `type: info` | `filterQueryIdInfo`, `submenuStaticInfo`, `titleInfo` | Help text trong editor |
+| Key kết thúc bằng `Sep` | `cookiesSep`, `fieldsSep`, `menuActiveSep` | Separator group |
+| Key kết thúc bằng `Info` | `megaMenuInfo`, `multiLevelInfo` | Info notice |
+| Key kết thúc bằng `Separator` | `linksSeparator`, `iconSeparator` | UI separator |
+
+```json
+// ❌ KHÔNG set separator/info keys:
+{ "iconSep": true, "filterQueryIdInfo": "...", "buttonSep": null }
+
+// ✅ CHỈ set actual value keys:
+{ "icon": {"library": "themify", "icon": "ti-search"}, "iconColor": {"hex": "#007cfc"} }
+```
+
 ---
 
 ## 2. TYPOGRAPHY Group

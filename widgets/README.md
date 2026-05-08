@@ -1,217 +1,173 @@
-# Bricks Widget Reference
+# Bricks Widget Reference — Kho Thông Tin Widget
 
-Thư mục này chứa tài liệu chi tiết cho từng Bricks widget được trích xuất trực tiếp từ source code.
+> **Bricks Version:** 2.3.4 (verified)
+> **PHP Source:** `bricks/includes/elements/[widget].php`
+> **Cập nhật lần cuối:** 2026-05-07
 
-> **Nguồn:** `/bricks/includes/elements/[widget].php` + `base.php`
-
-## Cách đọc
-
-Mỗi file widget ghi rõ:
-
-- **Settings keys** chính xác để dùng khi gọi `update_content`
-- **Shared keys** từ `base.php` có sẵn trên **tất cả widgets**
-- **`_cssCustom`** — key để inject raw CSS vào element, dùng `%root%` để target chính element
-- Ví dụ JSON đã verified
-
-## Shared CSS Keys (có trên MỌI widget)
-
-Những key này đến từ `base.php` → `set_controls_before()` và `set_controls_after()`:
-
-### Layout
-
-| Key            | CSS Property   | Giá trị ví dụ                                                 |
-| -------------- | -------------- | ------------------------------------------------------------- |
-| `_margin`      | `margin`       | `{"top":"0px","bottom":"0px","left":"auto","right":"auto"}`   |
-| `_padding`     | `padding`      | `{"top":"40px","bottom":"40px","left":"24px","right":"24px"}` |
-| `_width`       | `width`        | `"100%"`, `"684px"`                                           |
-| `_widthMin`    | `min-width`    | `"320px"`                                                     |
-| `_widthMax`    | `max-width`    | `"1200px"`                                                    |
-| `_height`      | `height`       | `"400px"`, `"100vh"`                                          |
-| `_heightMin`   | `min-height`   | `"200px"`                                                     |
-| `_heightMax`   | `max-height`   | `"600px"`                                                     |
-| `_aspectRatio` | `aspect-ratio` | `"16/9"`, `"1/1"`                                             |
-
-### Positioning
-
-| Key         | CSS Property | Giá trị ví dụ                                     |
-| ----------- | ------------ | ------------------------------------------------- |
-| `_position` | `position`   | `"relative"`, `"absolute"`, `"fixed"`, `"sticky"` |
-| `_top`      | `top`        | `"0px"`, `"50%"`                                  |
-| `_right`    | `right`      | `"0px"`                                           |
-| `_bottom`   | `bottom`     | `"0px"`                                           |
-| `_left`     | `left`       | `"24px"`                                          |
-| `_zIndex`   | `z-index`    | `1`, `10`, `-1`                                   |
-| `_order`    | `order`      | `0`, `1`, `-1`                                    |
-
-### Misc
-
-| Key           | CSS Property | Giá trị ví dụ                                             |
-| ------------- | ------------ | --------------------------------------------------------- |
-| `_display`    | `display`    | `"flex"`, `"grid"`, `"block"`, `"inline-block"`, `"none"` |
-| `_visibility` | `visibility` | `"visible"`, `"hidden"`                                   |
-| `_overflow`   | `overflow`   | `"hidden"`, `"visible"`, `"scroll"`, `"auto"`             |
-| `_opacity`    | `opacity`    | `0.5`, `1`                                                |
-| `_cursor`     | `cursor`     | `"pointer"`, `"default"`                                  |
-
-### Typography (Style tab)
-
-| Key           | Mô tả                                                                                                                      |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `_typography` | Object:`font-size`, `font-weight`, `font-family`, `color`, `line-height`, `text-align`, `text-transform`, `letter-spacing` |
-
-> ⚠️ **CRITICAL — `text-align` phải nằm BÊN TRONG `_typography`, KHÔNG phải key riêng:**
-> ```json
-> // ❌ SAI — _textAlign standalone không render text-align trong Bricks
-> { "_textAlign": "center" }
->
-> // ✅ ĐÚNG — text-align là sub-key của _typography
-> { "_typography": { "text-align": "center", "font-size": "18px" } }
-> ```
-> `_textAlign` là flexbox `align-items` key (dùng để align children trong flex container), KHÔNG phải CSS `text-align`.
-> Áp dụng cho: **`heading`**, **`text-basic`**, **`text`**, **`button`**.
-
-### Background (Style tab)
-
-| Key           | Mô tả                                                                        |
-| ------------- | ---------------------------------------------------------------------------- |
-| `_background` | Object:`color.hex`, `color.rgb`, `image.url`, `image.position`, `image.size` |
-
-### Border (Style tab)
-
-| Key          | Mô tả                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| `_border`    | Object:`width.top/right/bottom/left`, `style`, `color.hex`, `radius.top/right/bottom/left` |
-| `_boxShadow` | Object: shadow settings                                                                    |
-
-### Gradient (Style tab)
-
-| Key         | Mô tả                             |
-| ----------- | --------------------------------- |
-| `_gradient` | Object: gradient overlay settings |
-
-### CSS (Style tab) — **Dùng thay thế `html` element**
-
-| Key              | Mô tả                                                                  |
-| ---------------- | ---------------------------------------------------------------------- |
-| `_cssCustom`     | String: raw CSS, dùng `%root%` target element. **Có trên MỌI widget**. |
-| `_cssClasses`    | String: class names cách nhau bởi space                                |
-| `_cssId`         | String: CSS ID (không có `#`)                                          |
-| `_cssTransition` | String: transition value, ví dụ `"all 0.3s ease"`                      |
-
-### CSS Custom — Cú pháp
-
-> ⚠️ **CRITICAL khi push MCP API:** Thay `%root%` bằng `#brxe-[element-id]`.
-> `%root%` chỉ hoạt động trong Bricks Editor UI. Sau Ctrl+S editor tự convert.
-
-```css
-/* Editor UI — sau Ctrl+S */
-%root% {
-  background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
-  box-shadow: inset 0 0 24px rgba(0, 124, 252, 0.2);
-}
-
-/* ✔ MCP API push — luôn dùng cách này */
-#brxe-abc123 {
-  background: linear-gradient(135deg, #007cfc 0%, #0056b3 100%);
-}
-#brxe-abc123:hover {
-  transform: translateY(-4px);
-  opacity: 0.9;
-}
-```
-
-## Responsive / Breakpoint Keys
-
-> ⛔ **RULE — Chỉ dùng khi user yêu cầu rõ ràng.**
-> Mặc định build desktop-only. **Không tự thêm** breakpoint keys vì nghĩ "nên có responsive".
-
-### Composite Key Format
-
-```
-{property}:{breakpoint}
-{property}:{breakpoint}:{pseudo}
-```
-
-### Breakpoints của site (lấy từ `mcp_bricks-mcp_bricks(action: "get_breakpoints")`)
-
-| Key | Label | Max-width | Base? |
-|-----|-------|-----------|-------|
-| `desktop` | Desktop | 1279px | ✅ Base (không cần suffix) |
-| `tablet_portrait` | Tablet portrait | 991px | — |
-| `mobile_landscape` | Mobile landscape | 767px | — |
-| `mobile_portrait` | Mobile portrait | 478px | — |
-| `mobile` | Mobile | 350px | — |
-
-> ⚠️ Site dùng **desktop-first** (max-width). Style không có suffix = áp dụng cho desktop.
-> Breakpoint nhỏ hơn override breakpoint lớn hơn.
-
-### Cách dùng composite key
-
-```json
-{
-  "_padding": {"top": "60px", "bottom": "60px"},
-  "_padding:tablet_portrait": {"top": "40px", "bottom": "40px"},
-  "_padding:mobile_portrait": {"top": "24px", "bottom": "24px"},
-
-  "_display": "flex",
-  "_display:mobile_portrait": "block",
-
-  "_background:hover": {"color": {"hex": "#0056b3"}},
-  "_background:mobile_portrait:hover": {"color": {"hex": "#0056b3"}}
-}
-```
-
-> ✅ Chỉ ghi breakpoint khi cần **override so với desktop** — không lặp lại giá trị giống desktop.
-
-### `_cssCustom` với responsive
-
-> ⚠️ **`_cssCustom` HỖ TRỢ composite key** — TUYỆT ĐỐI không viết `@media` thủ công bên trong string.
-> Mỗi breakpoint = 1 key riêng → sạch hơn, đúng cách Bricks xử lý, tránh conflict.
-
-**Ví dụ với native key `_gridTemplateColumns`** *(nên dùng để sạch hơn)*:
-```json
-{
-  "_display": "grid",
-  "_gridTemplateColumns": "repeat(3, 1fr)",
-  "_gridTemplateColumns:tablet_portrait": "repeat(2, 1fr)",
-  "_gridTemplateColumns:mobile_portrait": "1fr"
-}
-```
-
-**Ví dụ với `_cssCustom`** *(dùng khi cần CSS không có native key)*:
-```json
-{
-  "_cssCustom": "#brxe-abc123 { clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%); }",
-  "_cssCustom:mobile_portrait": "#brxe-abc123 { clip-path: none; }"
-}
-```
-
-> ✅ Breakpoint keys: `tablet_portrait` | `mobile_landscape` | `mobile_portrait` | `mobile`
-> ❌ SAI: `"_cssCustom": "... @media (max-width: 767px) { ... }"` — không dùng cách này.
+Đây là kho tham chiếu chính xác cho tất cả Bricks widget settings — được verify trực tiếp từ PHP source code.
 
 ---
 
-## Danh sách Widget Files
+## Cách Sử Dụng
 
-> ⚠️ **DANH SÁCH CHÍNH XÁC:** Xem trực tiếp các file trong thư mục `widgets/`.
-> Bảng phía dưới chỉ liệt kê các nhóm chính — không phải toàn bộ.
+### Khi cần build JSON cho 1 widget:
+1. Tìm widget trong bảng Index bên dưới → lấy đường dẫn file
+2. Đọc file đó để biết các `settings` key cần dùng
+3. Áp dụng [shared-styles.md](./shared-styles.md) cho các `_margin`, `_padding`, `_typography`...
 
-| Nhóm | Files |
-|------|-------|
-| **Layout** | `layout-section.md`, `layout-container.md`, `layout-block.md`, `layout-div.md` |
-| **Basic** | `basic-heading.md`, `basic-text-basic.md`, `basic-text.md`, `basic-button.md`, `basic-image.md`, `basic-icon.md`, `basic-video.md`, `basic-text-link.md` |
-| **General** | `general-accordion.md`, `general-accordion-nested.md`, `general-tabs.md`, `general-tabs-nested.md`, `general-nav-nested.md`, `general-dropdown.md`, `general-toggle.md`, `general-offcanvas.md`, `general-form.md`, `general-alert.md`, `general-countdown.md`, `general-counter.md`, `general-pricing-tables.md`, `general-progress-bar.md`, `general-pie-chart.md`, `general-team-members.md`, `general-testimonials.md`, `general-social-icons.md`, `general-icon-box.md`, `general-list.md`, `general-map.md`, `general-code.md`, `general-logo.md`, `general-breadcrumbs.md`, `general-back-to-top.md`, `general-rating.md`, `general-animated-typing.md`, `general-divider.md`, `general-template.md`, `general-facebook-page.md`, `general-instagram-feed.md` |
-| **Media** | `media-slider.md`, `media-slider-nested.md`, `media-carousel.md`, `media-image-gallery.md`, `media-audio.md`, `media-svg.md` |
-| **Single Post** | `single-post-title.md`, `single-post-content.md`, `single-post-excerpt.md`, `single-post-meta.md`, `single-post-author.md`, `single-post-taxonomy.md`, `single-post-toc.md`, `single-post-reading-time.md`, `single-post-reading-progress-bar.md`, `single-post-comments.md`, `single-post-sharing.md`, `single-post-navigation.md`, `single-related-posts.md` |
-| **WordPress** | `wordpress-nav-menu.md`, `wordpress-posts.md`, `wordpress-sidebar.md`, `wordpress-search.md`, `wordpress-shortcode.md`, `wordpress-widget.md` |
-| **Query** | `query-pagination.md`, `query-results-summary.md`, `query-filter-system.md`, `query-filter-active-filters.md` |
+### Quy tắc đọc file widget:
+- **Keys không có `_`** → widget-specific settings (Content tab)
+- **Keys có `_`** → shared base settings (Style tab) → xem [shared-styles.md](./shared-styles.md)
+- **Separator keys** (type = `separator`) → không cần set trong JSON, bỏ qua
+- **Info keys** (type = `info`) → không cần set trong JSON, bỏ qua
 
-## Khi nào dùng `_cssCustom` vs `html` element
+---
 
-| Tình huống                                                      | Giải pháp                                                |
-| --------------------------------------------------------------- | -------------------------------------------------------- |
-| CSS phức tạp trên 1 element (gradient, inset shadow, clip-path) | `_cssCustom` trên chính element đó                       |
-| Cần pseudo-element `:before`, `:after`                          | `_cssCustom` với `%root%::before { ... }`                |
-| Hover effect                                                    | `_cssCustom` với `%root%:hover { ... }`                  |
-| Layout không làm được bằng native settings                      | Vẫn dùng native, kết hợp `_cssCustom` cho phần còn thiếu |
-| Phải inject HTML structure lạ (custom markup)                   | `html` element — trường hợp cuối cùng                    |
+## Index Widget theo Danh Mục
+
+### Layout (Khung chứa)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `section` | [layout/layout-section.md](./layout/layout-section.md) | Section ngoài cùng, wrap page |
+| `container` | [layout/layout-container.md](./layout/layout-container.md) | Container flex/grid chính |
+| `block` | [layout/layout-block.md](./layout/layout-block.md) | Block flex đơn giản |
+| `div` | [layout/layout-div.md](./layout/layout-div.md) | Div thuần, không settings riêng |
+
+### Basic (Elements cơ bản)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `heading` | [basic/basic-heading.md](./basic/basic-heading.md) | Tiêu đề H1-H6 |
+| `text-basic` | [basic/basic-text-basic.md](./basic/basic-text-basic.md) | Đoạn văn đơn giản |
+| `text` | [basic/basic-text.md](./basic/basic-text.md) | Rich text với dynamic data |
+| `button` | [basic/basic-button.md](./basic/basic-button.md) | Button/CTA |
+| `image` | [basic/basic-image.md](./basic/basic-image.md) | Ảnh đơn, lightbox, lazy load |
+| `icon` | [basic/basic-icon.md](./basic/basic-icon.md) | Icon từ icon library |
+| `video` | [basic/basic-video.md](./basic/basic-video.md) | Video YouTube/Vimeo/MP4 |
+| `text-link` | [basic/basic-text-link.md](./basic/basic-text-link.md) | Link text inline |
+
+### General (Widgets nâng cao)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `accordion` | [general/general-accordion.md](./general/general-accordion.md) | Accordion bình thường |
+| `accordion-nested` | [general/general-accordion-nested.md](./general/general-accordion-nested.md) | Accordion nestable (recommended) |
+| `tabs` | [general/general-tabs.md](./general/general-tabs.md) | Tabs bình thường |
+| `tabs-nested` | [general/general-tabs-nested.md](./general/general-tabs-nested.md) | Tabs nestable (recommended) |
+| `nav-nested` | [general/general-nav-nested.md](./general/general-nav-nested.md) | Navigation nestable |
+| `dropdown` | [general/general-dropdown.md](./general/general-dropdown.md) | Dropdown menu |
+| `offcanvas` | [general/general-offcanvas.md](./general/general-offcanvas.md) | Off-canvas panel |
+| `toggle` | [general/general-toggle.md](./general/general-toggle.md) | Toggle show/hide |
+| `form` | [general/general-form.md](./general/general-form.md) | Form builder đầy đủ |
+| `alert` | [general/general-alert.md](./general/general-alert.md) | Alert/notice box |
+| `countdown` | [general/general-countdown.md](./general/general-countdown.md) | Đếm ngược thời gian |
+| `counter` | [general/general-counter.md](./general/general-counter.md) | Số đếm animated |
+| `pricing-tables` | [general/general-pricing-tables.md](./general/general-pricing-tables.md) | Bảng giá |
+| `progress-bar` | [general/general-progress-bar.md](./general/general-progress-bar.md) | Thanh tiến trình |
+| `pie-chart` | [general/general-pie-chart.md](./general/general-pie-chart.md) | Biểu đồ tròn |
+| `team-members` | [general/general-team-members.md](./general/general-team-members.md) | Team members grid |
+| `testimonials` | [general/general-testimonials.md](./general/general-testimonials.md) | Testimonials slider |
+| `social-icons` | [general/general-social-icons.md](./general/general-social-icons.md) | Social media icons |
+| `icon-box` | [general/general-icon-box.md](./general/general-icon-box.md) | Icon + title + text |
+| `list` | [general/general-list.md](./general/general-list.md) | Danh sách tùy chỉnh |
+| `map` | [general/general-map.md](./general/general-map.md) | Google Maps |
+| `code` | [general/general-code.md](./general/general-code.md) | Code block syntax highlight |
+| `html` | [general/general-html.md](./general/general-html.md) | Raw HTML block |
+| `logo` | [general/general-logo.md](./general/general-logo.md) | Site logo |
+| `breadcrumbs` | [general/general-breadcrumbs.md](./general/general-breadcrumbs.md) | Đường dẫn breadcrumb |
+| `back-to-top` | [general/general-back-to-top.md](./general/general-back-to-top.md) | Nút về đầu trang |
+| `rating` | [general/general-rating.md](./general/general-rating.md) | Star rating |
+| `animated-typing` | [general/general-animated-typing.md](./general/general-animated-typing.md) | Text typing animation |
+| `divider` | [general/general-divider.md](./general/general-divider.md) | Đường phân cách |
+| `template` | [general/general-template.md](./general/general-template.md) | Nhúng Bricks template khác |
+| `facebook-page` | [general/general-facebook-page.md](./general/general-facebook-page.md) | Facebook Page plugin |
+| `instagram-feed` | [general/general-instagram-feed.md](./general/general-instagram-feed.md) | Instagram feed |
+
+### Media (Ảnh, video, slider)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `slider` | [media/media-slider.md](./media/media-slider.md) | Slider ảnh truyền thống |
+| `slider-nested` | [media/media-slider-nested.md](./media/media-slider-nested.md) | Slider nestable — **dùng cho slider có content phức tạp** |
+| `carousel` | [media/media-carousel.md](./media/media-carousel.md) | Carousel/thumbnail slider |
+| `image-gallery` | [media/media-image-gallery.md](./media/media-image-gallery.md) | Gallery grid, lightbox |
+| `audio` | [media/media-audio.md](./media/media-audio.md) | Audio player |
+| `svg` | [media/media-svg.md](./media/media-svg.md) | SVG inline |
+
+### Query (Lọc & phân trang — Yêu cầu Bricks ≥ 1.10)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `pagination` | [query/query-pagination.md](./query/query-pagination.md) | Phân trang AJAX/standard |
+| `query-results-summary` | [query/query-results-summary.md](./query/query-results-summary.md) | Thống kê kết quả query |
+| `filter-*` (system) | [query/query-filter-system.md](./query/query-filter-system.md) | **Xem file này trước** — hệ thống filter AJAX |
+| `filter-active-filters` | [query/query-filter-active-filters.md](./query/query-filter-active-filters.md) | Hiển thị filters đang active |
+
+> `filter-checkbox`, `filter-radio`, `filter-search`, `filter-select`, `filter-range`, `filter-datepicker`, `filter-submit` → đều documented trong [query-filter-system.md](./query/query-filter-system.md)
+
+### Single Post (Widgets cho bài viết đơn)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `post-title` | [single/single-post-title.md](./single/single-post-title.md) | Tiêu đề bài viết (hỗ trợ prefix/suffix) |
+| `post-content` | [single/single-post-content.md](./single/single-post-content.md) | Nội dung bài viết |
+| `post-excerpt` | [single/single-post-excerpt.md](./single/single-post-excerpt.md) | Excerpt/tóm tắt |
+| `post-meta` | [single/single-post-meta.md](./single/single-post-meta.md) | Meta (date, author, categories...) |
+| `post-author` | [single/single-post-author.md](./single/single-post-author.md) | Author box |
+| `post-taxonomy` | [single/single-post-taxonomy.md](./single/single-post-taxonomy.md) | Tags/categories display |
+| `post-toc` | [single/single-post-toc.md](./single/single-post-toc.md) | Mục lục tự động (Tocbot) |
+| `post-reading-time` | [single/single-post-reading-time.md](./single/single-post-reading-time.md) | Thời gian đọc ước tính |
+| `post-reading-progress-bar` | [single/single-post-reading-progress-bar.md](./single/single-post-reading-progress-bar.md) | Progress bar khi scroll |
+| `post-comments` | [single/single-post-comments.md](./single/single-post-comments.md) | Form comments đầy đủ |
+| `post-sharing` | [single/single-post-sharing.md](./single/single-post-sharing.md) | Social sharing buttons |
+| `post-navigation` | [single/single-post-navigation.md](./single/single-post-navigation.md) | Prev/Next bài viết |
+| `related-posts` | [single/single-related-posts.md](./single/single-related-posts.md) | Bài viết liên quan |
+
+### WordPress (Widgets tích hợp WP)
+| Widget name | File | Mô tả ngắn |
+|-------------|------|------------|
+| `nav-menu` | [wordpress/wordpress-nav-menu.md](./wordpress/wordpress-nav-menu.md) | Navigation menu WP (có mega menu, mobile menu) |
+| `posts` | [wordpress/wordpress-posts.md](./wordpress/wordpress-posts.md) | Posts list/grid với query, filter, pagination |
+| `search` | [wordpress/wordpress-search.md](./wordpress/wordpress-search.md) | Search box (inline hoặc overlay) |
+| `sidebar` | [wordpress/wordpress-sidebar.md](./wordpress/wordpress-sidebar.md) | WordPress sidebar area |
+| `shortcode` | [wordpress/wordpress-shortcode.md](./wordpress/wordpress-shortcode.md) | Render shortcode |
+| `wordpress` | [wordpress/wordpress-widget.md](./wordpress/wordpress-widget.md) | Legacy WP widgets (recent posts, categories...) |
+
+---
+
+## Files Quan Trọng
+
+| File | Mục đích |
+|------|---------|
+| [shared-styles.md](./shared-styles.md) | **Đọc trước tiên** — tất cả `_margin`, `_padding`, `_typography`, `_background`, `_border`, `_cssCustom`... |
+| README.md (file này) | Index và hướng dẫn sử dụng kho widget |
+
+---
+
+## Quy tắc JSON quan trọng
+
+### ❌ Keys cần BỎ QUA khi build JSON
+```
+separator    → không có value, chỉ là UI divider
+info         → thông báo hiển thị trong editor, không có effect
+*Info        → pattern suffix Info (vd: filterQueryIdInfo, submenuStaticInfo)
+*Sep         → pattern suffix Sep (vd: iconSep, buttonSep, formTitleSep)
+*Separator   → pattern suffix Separator (vd: linksSeparator, iconSeparator)
+```
+
+### ✅ Repeater keys — pattern bắt buộc
+```json
+"items": [
+  {"id": "abc123", "key1": "value1", "key2": "value2"},
+  {"id": "def456", "key1": "value1"}
+]
+```
+> `id` trong mỗi item phải là **6 ký tự `[a-z0-9]` duy nhất**.
+
+### ✅ Responsive — Composite key format
+```json
+"_padding": {"top": "60px", "bottom": "60px"},
+"_padding:tablet_portrait": {"top": "40px", "bottom": "40px"},
+"_padding:mobile_portrait": {"top": "24px", "bottom": "24px"}
+```
+
+### ✅ `_cssCustom` — Luôn dùng `#brxe-[id]`
+```json
+"_cssCustom": "#brxe-abc123 { background: linear-gradient(135deg, #007CFC 0%, #1EAFFF 100%); }"
+```
+> ❌ KHÔNG dùng `%root%` khi push qua MCP API — chỉ hoạt động trong editor UI.
