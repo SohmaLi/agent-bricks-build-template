@@ -90,6 +90,15 @@ Style Tab (STYLE):       → File này
 | `_flexBasis` | `flex-basis` | `"auto"`, `"50%"`, `"200px"` |
 | `_order` | `order` | `-1`, `0`, `1` |
 
+> ❌ **TUYỆT ĐỐI KHÔNG dùng `_flexGrow: "1"` kết hợp với `_flexShrink: "0"` cùng 1 element.**
+> Combination này gây ra layout bất ổn: element vừa co giãn tự do (grow) vừa từ chối co lại (shrink) → dễ gây overflow hoặc width vượt quá parent.
+>
+> | Nhu cầu | ✅ Đúng | ❌ Sai |
+> |---------|--------|--------|
+> | Cột tự giãn ra lấp khoảng trống | `_cssCustom: "flex: 1"` hoặc chỉ `_flexGrow: "1"` + bỏ `_flexShrink` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+> | Cột cố định không bị co | `_width: "300px"` + `_flexShrink: "0"` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+> | Cột chiếm phần còn lại | `_cssCustom: "#brxe-[id] { flex: 1 1 0; }"` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+
 ### 1.6 Grid Native Keys
 
 > Dùng khi `_display: "grid"` — tránh dùng `flex-wrap` cho grid nhiều cột (≥ 5 items).
@@ -152,9 +161,9 @@ Các key sau **không có effect** trong settings JSON — chỉ là UI helpers 
 "_typography": {
   "font-family": "Inter",
   "font-weight": "600",
-  "font-size": {"value": 24, "unit": "px"},
-  "line-height": {"value": 1.4, "unit": "em"},
-  "letter-spacing": {"value": -0.02, "unit": "em"},
+  "font-size": "24px",
+  "line-height": "36px",
+  "letter-spacing": "-0.02em",
   "text-align": "left",
   "color": {"hex": "#1a1a2e"},
   "text-transform": "none",
@@ -162,6 +171,10 @@ Các key sau **không có effect** trong settings JSON — chỉ là UI helpers 
   "text-decoration": "none"
 }
 ```
+
+> ⚠️ **QUAN TRỌNG:** `font-size`, `line-height`, `letter-spacing` phải là **plain CSS string** (ví dụ: `"24px"`, `"36px"`, `"-0.02em"`).
+> **KHÔNG dùng** `{"value": 24, "unit": "px"}` — format này KHÔNG render ra CSS trong Bricks API (chỉ lưu được nhưng không output font-size).
+> **Xác nhận từ widget-map-examples.md line 454.**
 
 > Chỉ set các key cần thay đổi — key nào không set sẽ inherit từ cha.
 

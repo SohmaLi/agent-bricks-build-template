@@ -483,7 +483,7 @@ badge-container (position: absolute — để float trên card)
 
 ## Slider-nested — Responsive perPage & gap (verified)
 
-> ⛔ **RULE 10** — chỉ dùng khi được yêu cầu.
+> ⛔ **RULE 9** — Responsive chỉ thêm khi user yêu cầu rõ ràng.
 > **Nguồn:** `template-blog-author-s3-su-kien` — verified hoạt động.
 
 Slider-nested hỗ trợ composite key trực tiếp trên các option của Splide:

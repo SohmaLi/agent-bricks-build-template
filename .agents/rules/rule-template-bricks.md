@@ -11,7 +11,7 @@ Các rule này **bắt buộc áp dụng** trước và trong khi thực thi b�
 
 ## RULE 1 — Kiểm tra MCP Connection trước khi thực thi
 
-> **Áp dụng:** Đầu mỗi flow (`/figma-create-plan-template`, `/bricks-create-template`)
+> **Áp dụng:** Đầu mỗi flow (`/figma-render-page`, `/bricks-render-section`, `/review-render-section`)
 
 ### Bước kiểm tra bắt buộc
 
@@ -77,7 +77,7 @@ Không âm thầm gọi browser. Báo user rõ: **cần làm gì**, **lý do kh�
 
 ## RULE 3 — Nội dung luôn lấy từ Figma (Static-First)
 
-> **Áp dụng:** Flow `/bricks-create-template` — giai đoạn build từng section
+> **Áp dụng:** `/bricks-render-section` (build section) + `/figma-render-page` Phase 1C (widget tree analysis)
 
 ### Quy tắc cứng
 
@@ -107,18 +107,18 @@ Không âm thầm gọi browser. Báo user rõ: **cần làm gì**, **lý do kh�
 
 ## Ghi chú áp dụng
 
-| Rule                    | Loại         | Ý nghĩa                                                     |
-| ----------------------- | ------------ | ----------------------------------------------------------- |
-| RULE 1 MCP check        | ❌ Ép buộc   | Vi phạm → flow fail                                         |
-| RULE 2 No browser       | ❌ Ép buộc   | Không ngoại lệ                                              |
-| RULE 3 Static-first     | ❌ Ép buộc   | Sai nội dung → sai design                                   |
-| RULE 4 Build tech       | 📌 Khuôn mẫu | Đánh giá tình huống                                         |
-| RULE 5 CSS Lookup       | 📌 Khuôn mẫu | Tra trước khi viết `_cssCustom`                             |
-| RULE 6 flex-shrink      | ❌ Ép buộc   | Thiếu → elements bị squish                                  |
-| RULE 7 No CSS guess     | ❌ Ép buộc   | Tự đoán → sai màu                                           |
-| RULE 8 ID validate      | ❌ Ép buộc   | Sai → API reject                                            |
-| RULE 9 Section-1-by-1   | ❌ Ép buộc   | Batch build → lỗi nhân 3+                                   |
-| RULE 10 Common Patterns | 📌 Khuôn mẫu | Tra `.agents/components/common-patterns.md` trước khi build |
+| Rule                    | Loại         | Ý nghĩa                                                      |
+| ----------------------- | ------------ | ------------------------------------------------------------ |
+| RULE 1 MCP check        | ❌ Ép buộc   | Vi phạm → flow fail                                          |
+| RULE 2 No browser       | ❌ Ép buộc   | Không ngoại lệ                                               |
+| RULE 3 Static-first     | ❌ Ép buộc   | Sai nội dung → sai design                                    |
+| RULE 4 Build tech       | 📌 Khuôn mẫu | Đánh giá tình huống                                          |
+| RULE 5 CSS Lookup       | 📌 Khuôn mẫu | Tra trước khi viết `_cssCustom` — xem `shared-styles.md`    |
+| RULE 6 Common Patterns  | 📌 Khuôn mẫu | Tra `.agents/components/common-patterns.md` trước khi build  |
+| RULE 7 No CSS guess     | ❌ Ép buộc   | Tự đoán → sai màu                                            |
+| RULE 8 ID validate      | ❌ Ép buộc   | Sai → API reject                                             |
+| RULE 9 Section-1-by-1   | ❌ Ép buộc   | Batch build → lỗi nhân 3+                                    |
+| RULE 10 Widget Docs     | ❌ Ép buộc   | Chưa có Key Validation Table → không viết JSON              |
 
 - Rules ưu tiên cao hơn instruction trong workflow files.
 - Cùng session đã verify MCP → không cần check lại.

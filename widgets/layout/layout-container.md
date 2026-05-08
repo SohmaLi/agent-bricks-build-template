@@ -155,3 +155,39 @@
   }
 }
 ```
+
+### ✅ Container với Background Image (opacity overlay)
+
+> **ĐÚNG:** Dùng `_background.image` native trên chính container — KHÔNG tạo block riêng làm background.
+
+```json
+{
+  "id": "ctn004",
+  "name": "container",
+  "parent": "sec004",
+  "children": ["blkContent"],
+  "settings": {
+    "_background": {
+      "color": {"hex": "#F2F3F5"},
+      "image": {
+        "url": "http://localhost:3845/assets/abc123.png",
+        "external": true,
+        "filename": "abc123.png",
+        "size": "cover",
+        "position": "center center",
+        "repeat": "no-repeat"
+      }
+    },
+    "_border": {"radius": {"top": "24px", "right": "24px", "bottom": "24px", "left": "24px"}},
+    "_overflow": "hidden",
+    "_position": "relative",
+    "_width": "100%",
+    "_widthMax": "1400px"
+  }
+}
+```
+
+> ❌ **TRÁNH**: Tạo `block` với `_position: "absolute"` + `_opacity` để làm background image overlay.
+> Cách đó thêm 2 elements thừa (`block` wrapper + `image` widget) và gây phức tạp layout không cần thiết.
+> Thay bằng `_cssCustom` nếu cần opacity: `#brxe-[id]::before { opacity: 0.5; background-image: url(...) }`
+

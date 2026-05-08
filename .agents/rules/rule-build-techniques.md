@@ -1,12 +1,12 @@
 ---
 trigger: always_on
 glob:
-description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioning, Slider/Tabs, CSS lookup, flex-shrink
+description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioning, Slider/Tabs, CSS lookup
 ---
 
-# Rules: Build Techniques (RULE 4–6, 10)
+# Rules: Build Techniques (RULE 4–6)
 
-Áp dụng: Flow `/bricks-create-template` — tất cả giai đoạn.
+Áp dụng: Flow `/bricks-render-section` — tất cả giai đoạn build.
 
 ---
 
@@ -21,16 +21,24 @@ description: Kỹ thuật build nâng cao cho Bricks Builder — Image positioni
 | Image cần `object-fit` + `object-position` không? | Dùng `_objectFit` + `_objectPosition` (native)                                               |
 | Ảnh có `mask-image` trên block wrapper?           | `_cssCustom` trên **block wrapper** (không phải `<img>` tag). Xem PATTERN 4                  |
 
-### 4D — Illustration Placeholder (Quy chuẩn gộp ảnh phức tạp)
+### 4D — Illustration Placeholder (Chỉ dùng cho vector/illustration)
 
-Khi gặp Frame có nhiều layer/vector lồng nhau, tôi sẽ không tách nhỏ mà build placeholder để user upload ảnh composite:
+> ⚠️ **Điều kiện bắt buộc:** Chỉ áp dụng khi frame chứa **vector/illustration** phức tạp không thể tách thành individual Bricks widgets.
+
+| ✅ Áp dụng RULE 4D | ❌ KHÔNG áp dụng RULE 4D |
+|---------------------|------------------------|
+| SVG illustration phức tạp (multi-path vector) | Photo collage (real photos có URL) |
+| Animation/Lottie frame | 5 ảnh với absolute position (bức xây được bricks) |
+| Icon decorative group vô số layer | Emoji PNG có URL trực tiếp |
+
+**Photo collage có real photo URLs** (như localhost:3845/assets/) → phải **build đủ từng `image` widget** với `_position: "absolute"`, không dùng RULE 4D.
+
+**Khi RULE 4D hợp lệ:**
 
 | Cấu trúc | Cài đặt Desktop | Cài đặt Mobile |
 | :--- | :--- | :--- |
 | **Block (Wrapper)** | Set cứng `_width` + `_height` (px). Flex center. | `_width: "100%"`, `_height: "auto"`. |
 | **Image (Widget)** | `_width: "100%"`, `_height: "100%"`. | `_objectFit: "contain"`. |
-
-> **Mục tiêu**: Đảm bảo tốc độ build và khả năng tùy biến cao cho người dùng sau này.
 
 > ✔️ `_position` là **Shared CSS Key có trên mọi widget** (từ `base.php`). Dùng trực tiếp trong settings, không cần `_cssCustom`.
 
@@ -62,10 +70,12 @@ Ví dụ section có gradient background:
 {
   "name": "section",
   "settings": {
-    "_cssCustom": "%root% { background: linear-gradient(180deg, rgba(242,243,245,0) 0%, #f2f3f5 50%); }"
+    "_cssCustom": "#brxe-[id] { background: linear-gradient(180deg, rgba(242,243,245,0) 0%, #f2f3f5 50%); }"
   }
 }
 ```
+
+> ⚠️ **MCP API:** Dùng `#brxe-[id]` (không phải `%root%`). `%root%` chỉ đúng trong Bricks Editor UI — sau Ctrl+S editor tự convert về `%root%`, nhưng khi push API nó không render.
 
 Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (reset, animation keyframes, utility classes chung).
 
@@ -124,20 +134,18 @@ Chỉ dùng `set_page_css` cho CSS **global** ảnh hưởng nhiều elements (r
 ### 5A — Phân bổ CSS Custom theo Breakpoint
 `_cssCustom:mobile_portrait`, `_cssCustom:tablet` ... là các key hợp lệ. KHÔNG cần viết `@media` thủ công bên trong nếu chỉ đổi cho 1 breakpoint.
 
----
 
-## RULE 6 — `flex-shrink: 0` cho fixed-size elements
-
-**BẮT BUỘC** cho icon circles, avatar, logo trong flex row.
-
----
-
-## RULE 10 — Common Patterns (Quy trình kiểm tra nhanh)
+## RULE 6 — Common Patterns (Tra cứu trước khi build)
 
 > 📚 **Xem chi tiết các mẫu layout tại**: `.agents/components/common-patterns.md`
 
-### 10A — Tóm tắt các lỗi thường gặp:
-- **Background**: Tránh fixed px, dùng absolute 100%. (Xem 10A)
-- **Centering**: Dùng `left:50% + translateX(-50%)`. (Xem 10C)
-- **Responsive Stacking**: Ưu tiên 991px. (Xem 10E)
-- **Padding 1180px**: Luôn có CSS Custom lề 16px. (Xem 10E)
+### Các lỗi phổ biến cần kiểm tra trước khi build:
+
+| Tình huống | Giải pháp | Pattern |
+|-----------|-----------|--------|
+| Background image trên section/container | Dùng `_background.image` native, không tạo block riêng | PATTERN 1 |
+| Center element vượt rộng parent | `left: 50%` + `transform: translateX(-50%)` | PATTERN 2 |
+| Slider/Tabs/Accordion | Dùng nestable widgets, không giả bằng block CSS | PATTERN 16-17 |
+| Desktop/Mobile layout khác hoàn toàn | 2 block riêng + toggle `_display:none` | PATTERN 15 |
+| Flex row trên mobile bị wrap | `_cssCustom: flex-wrap:nowrap` (xem G2 `build-errors.md`) | — |
+| Photo collage many layers | Build từng `image` widget với `_position: absolute` | RULE 4D ❌ |

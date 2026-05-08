@@ -171,3 +171,31 @@ info         → thông báo hiển thị trong editor, không có effect
 "_cssCustom": "#brxe-abc123 { background: linear-gradient(135deg, #007CFC 0%, #1EAFFF 100%); }"
 ```
 > ❌ KHÔNG dùng `%root%` khi push qua MCP API — chỉ hoạt động trong editor UI.
+
+---
+
+### ❌ Cấm kết hợp `flex-grow: 1` + `flex-shrink: 0` trên cùng 1 element
+
+> Đây là combination **nguy hiểm** — element vừa tự giãn ra (grow) vừa từ chối co lại (shrink) → gây overflow hoặc width vượt parent tùy breakpoint.
+
+| Nhu cầu | ✅ Dùng | ❌ Tránh |
+|---------|--------|---------|
+| Cột tự lấp khoảng trống | `_cssCustom: "#brxe-[id] { flex: 1; }"` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+| Cột cố định, không co | `_width: "300px"` + `_flexShrink: "0"` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+| Cột chiếm phần còn lại | `_cssCustom: "#brxe-[id] { flex: 1 1 0; }"` | `_flexGrow: "1"` + `_flexShrink: "0"` |
+
+> Chi tiết: [shared-styles.md](./shared-styles.md#15-display--flex-chỉ-non-layout-elements)
+
+---
+
+### ✅ Element ID — Quy tắc bắt buộc
+
+```
+Format : 6 ký tự [a-z0-9], duy nhất trong toàn template
+Root   : "parent": 0  ← integer, KHÔNG phải string "0"
+Leaf   : "children": []
+Validate: parent.children ↔ child.parent phải khớp 2 chiều
+```
+
+> ❌ SAI: `"s1outerwrap"` (9 ký tự), `"s1titlg"` (7 ký tự)
+> ✅ ĐÚNG: `"s1ow01"`, `"s1tg01"` (đúng 6 ký tự)
