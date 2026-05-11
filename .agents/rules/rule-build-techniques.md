@@ -55,6 +55,19 @@ Khi Figma thiết kế có **slider** hoặc **tabs**:
 
 **Lý do:** Nếu dùng block thông thường → slider không có JS, click không hoạt động, không có prev/next functionality.
 
+### Widget Hierarchy — BẮT BUỘC
+
+```
+section  (depth 0, parent: 0)
+└─ container  (depth 1, parent: section_id)  ← MAX-WIDTH wrapper, KHÔNG là generic grouping
+   └─ block  (depth 2+)  ← styling/grouping
+      └─ block / heading / text-basic / image / button  (depth 3+, leaf widgets)
+```
+
+> ⛔ **`container` CHỈ xuất hiện ở depth 1** ngay dưới `section`.
+> KHÔNG dùng `container` bên trong `block`, bên trong slide, hay bên trong bất kỳ widget nào khác.
+> → Để nhóm content bên trong block/slide: dùng `block` (không phải `container`).
+
 ### 4C — Section CSS → Ghi vào `_cssCustom` của Widget
 
 Với các section có CSS phức tạp (gradient background, pattern overlay, inset shadow):

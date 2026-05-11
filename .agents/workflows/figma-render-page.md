@@ -93,10 +93,11 @@ Chỉ phân tích các section **nội dung** (bỏ qua Header, Footer → đán
 
 Với mỗi section:
 
-**A. Widget tree (desktop)** — BẮt buộc đầy đủ:
+**A. Widget tree (desktop)** — BẮT buộc đầy đủ:
 - Tên widget: `section`, `container`, `block`, `heading`, `text-basic`, `image`, `button`, `slider-nested`...
 - Ghi kèm settings quan trọng trong ngoặc đơn (flex-direction, gap, width, bg color, border-radius)
-- ⚠️ Con trực tiếp của `section` luôn là `container`, KHÔNG bao giờ là `block`
+- ⚠️ **Hierarchy bắt buộc:** Con trực tiếp của `section` luôn là `container`. KHÔNG bao giờ là `block`.
+- ⚠️ **`container` chỉ ở depth 1** ngay dưới `section`. Bên trong `block` hoặc slide → chỉ dùng `block` và leaf widgets.
 - **Inline mobile flags** — đánh dấu ngay trong tree với:
   - `[DC]` = DIRECTION-CHANGE (flex-direction khác)
   - `[AM]` = ABSENT-MOBILE (không xuất hiện trên mobile)

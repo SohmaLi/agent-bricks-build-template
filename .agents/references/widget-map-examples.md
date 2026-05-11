@@ -193,17 +193,21 @@
 
 ### `slider-nested` — Bắt buộc dùng khi có slider/carousel
 > ⚠️ Tên đúng: `slider-nested` (KHÔNG phải `slider-nestable`)
+> ⚠️ Arrows/pagination default **ON** khi không set key — muốn tắt dùng CSS hide
 > Xem full structure: `widgets/media-slider-nested.md`
 
 ```json
 {
+  "type": "loop",
+  "perPage": 1,
   "autoplay": false,
-  "navigation": true,
-  "pagination": true,
   "speed": 500,
-  "loop": true
+  "_cssCustom": "#brxe-[id] .splide__arrows{display:none!important} #brxe-[id] .splide__pagination{display:none!important}"
 }
 ```
+
+> Keys đúng: `type` (`loop`/`slide`/`fade`), `perPage`, `autoplay`, `arrows`, `pagination`, `speed`
+> Keys SAI: `navigation` (không tồn tại), `loop` riêng lṻ (phải dùng `type:"loop"`)
 
 ### `tabs-nested` — Bắt buộc dùng khi có tabs
 > ⚠️ Tên đúng: `tabs-nested` (KHÔNG phải `tabs-nestable`)

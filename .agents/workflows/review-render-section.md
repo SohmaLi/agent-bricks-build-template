@@ -4,198 +4,157 @@ description: Khi tạo xong section sẽ thực thi kiểm tra template có gi�
 
 # Workflow: `/review-render-section`
 
-> **Mục tiêu:** Sau khi `/bricks-render-section` push xong → so sánh template với Figma → nếu sai thì tự restore & rebuild → khi đạt fidelity thì cập nhật plan và báo cáo.
-
-> ⚠️ **Template đã được gắn vào page từ Phase 2 của `/figma-render-page`** — flow này KHÔNG gắn lại.
+> **Mục tiêu:** Chạy ARI script → chụp ảnh thực tế → so sánh Figma → tự rebuild nếu sai → báo cáo khi pass.
 
 ---
 
-## Input
+## Gates bắt buộc
 
-- Plan file: `.agents/plans/[slug].md` (có Template ID + Node IDs)
-- Section vừa build: S[N]
-- Screenshot từ user (nếu cần visual check)
+| Gate | Quy tắc |
+|---|---|
+| **[G1]** Element count | Figma vs Bricks PHẢI khớp — không khớp → FAIL |
+| **[G3]** Sau retry | PHẢI chạy lại ARI → lấy PNG mới → mới được chấm |
+| **[G6]** ARI mandatory | KHÔNG chấm Visual nếu chưa có PNG từ ARI script |
+| **[G7]** Layout ≠ Images | Images blank = expected. Layout sai = FAIL dù images blank |
 
----
+**Pass threshold:** Cấu trúc 100% · Text 100% · Layout ≥95% · Visual ≥90% · Mobile ≥90%
 
-## Output
-
-- Template đã đạt fidelity với Figma
-- Plan file được cập nhật Status = `done`
-
----
-
-## ⚠️ Quy tắc Review
-
-```
-MAX_RETRIES = 3   — tối đa 3 lần rebuild trước khi leo thang báo user
-PASS_THRESHOLD:
-  - Cấu trúc element tree: 100% khớp
-  - Text content: 100% khớp
-  - Layout (gap/padding/direction): ≥ 95%
-  - Visual (color/font-size): ≥ 90%
-
-GATES BẮT BUỘC (không được bỏ qua):
-  [G1] Element count Figma vs Bricks PHẢI khớp — nếu không khớp → tự động FAIL
-  [G2] RULE 4D KHÔNG phải auto-pass — mọi discrepancy về count đều phải rebuild
-  [G3] Sau mỗi retry → BẮT BUỘC nhờ user Ctrl+S + chụp screenshot → DỪNG chờ
-       KHÔNG tự chấm pass sau retry khi chưa có visual confirm từ user
-  [G4] TYPOGRAPHY CHECK: Kiểm tra font-size/line-height không bị [object Object] (LỖI 9)
-  [G5] MOBILE DIFF CHECK: So đối chiếu 100% các dòng trong Mobile Diff Table của plan.
-```
+**Max retries:** 3 lần rebuild trước khi leo thang báo user.
 
 ---
 
-## BƯỚC 1 — Kiểm tra Runtime Tự động (ARI Mode)
+## BƯỚC 1 — Chạy ARI Script
 
-> 🤖 **ARI (Automated Runtime Inspector):** AI tự động chụp ảnh và trích xuất style.
+### 1A — Chuẩn bị (từ plan file)
 
-1. **Lấy Preview URL:** template_id -> [site_url]/?bricks_preview=[template_id]
-2. **Chạy Automated Inspector:**
+- `page_id` → URL: `http://localhost:8000/?page_id=[page_id]`
+- `root_element_id` → ID section root (vd: `s2sc01`)
+- `section_slug` → tên file output (vd: `S2-Coduyen`)
+
+> ⚠️ Dùng `?page_id=` KHÔNG phải `?bricks_preview=` — template preview không giữ custom element IDs.
+> ⚠️ Nếu section có `_cssCustom` → nhắc user **Ctrl+S trong Bricks Editor** trước khi chạy ARI.
+
+### 1B — Chạy song song
+
 ```bash
-node .agents/scripts/bricks-inspector.js "[preview_url]" "[bricks_id]" "S[N]-[Slug]"
+# Terminal (cwd: bricks_mcp/)
+node .agents/scripts/bricks-inspector.js \
+  "http://localhost:8000/?page_id=[page_id]" \
+  "[root_element_id]" \
+  "[section_slug]"
 ```
-3. **Thu thập kết quả:**
-   - 🖼️ Screenshot: `images/S[N]-[Slug].png`
-   - 📊 Audit JSON: `logs/S[N]-[Slug]-audit.json` -> chứa 100% computed styles thực tế.
+
+```
+# Figma reference (song song khi script đang chạy)
+mcp_figma_get_screenshot(desktop_node_id)
+mcp_figma_get_screenshot(mobile_node_id)
+```
+
+### 1C — Output cần có
+
+```
+.agents/images/[slug]-desktop.png   ← so sánh với Figma desktop
+.agents/images/[slug]-mobile.png    ← so sánh với Figma mobile
+.agents/logs/[slug]-desktop-audit.json
+.agents/logs/[slug]-mobile-audit.json
+```
+
+> Nếu script lỗi: kiểm tra WP site chạy · `.env` có đủ keys · `playwright install chromium`.
 
 ---
 
-## BƯỚC 2 — So sánh & Chấm điểm (Closed-Loop Logic)
+## BƯỚC 2 — So sánh & Chấm điểm
 
-### 2.1 — Deep Logic Audit (Kiểm toán trước visual)
-Trước khi nhìn ảnh, AI phải tự so sánh dữ liệu JSON vừa push vs Figma Ground Truth:
-- **Box Model Audit:** `Bricks(padding) + Bricks(border)` có khớp với `Figma(total spacing)`?
-- **Flex Logic Audit:** Tổng `width` + `gap` của children có vượt quá `parent container width`? -> Phát hiện sớm lỗi rớt dòng.
-- **Computed Offset Audit:** `Line-height` thực tế có đang đẩy text lệch khỏi alignment của Figma?
+### 2A — Visual (PNG so sánh)
 
-### 2.2 — Tạo bảng so sánh Figma vs Bricks
+**[G7]** So layout TRƯỚC — đếm elements, hướng flex, vị trí khối — rồi mới xét màu/images.
+
+```
+Desktop checklist:
+□ Số elements/cột đúng?
+□ Spacing (padding, gap) gần đúng?
+□ Typography (size, weight) đúng?
+□ Colors, border-radius, shadows?
+
+Mobile checklist:
+□ Stack order đúng?
+□ Images nằm trong card (không rơi ra)?
+□ Font size responsive đúng?
+□ Padding mobile?
+```
+
+### 2B — Deep Audit (audit.json)
+
+```
+□ padding, border khớp Figma?
+□ Flex: tổng width children + gap ≤ parent width?
+□ Typography: font-size là số (không phải [object Object])?
+□ Colors: hex/rgb đúng?
+□ Mobile: đọc file mobile-audit.json riêng
+```
+
+### 2C — Bảng so sánh [OUTPUT BẮT BUỘC]
 
 ```
 SO SÁNH FIGMA vs BRICKS — Section [N]: [Tên]
-=============================================
-Hạng mục              | Figma (Plan/Source) | Bricks hiện tại    | Match?
-----------------------|--------------------|---------------------|--------
-[G1] Element count    | [N]                | [M]                 | ✅/❌ ← NẾU ❌ → FAIL NGAY
-Root element type     | section            | [type]              | ✅/❌
-Children structure    | [mô tả]            | [mô tả]             | ✅/❌
-Text [heading]        | "[text]"           | "[text]"            | ✅/❌
-Text [subtext]        | "[text]"           | "[text]"            | ✅/❌
-Padding section       | top:[px] bot:[px]  | top:[px] bot:[px]   | ✅/❌
-Gap main row          | [px]               | [px]                | ✅/❌
-Typography string     | "24px" (string)     | [value]             | ✅/❌ (LỖI 9)
-Overlay Z-index       | background: -1, svg:0, text:2 | [value]  | ✅/❌ (LỖI 10)
-Mobile Diff: Row 1    | [Plan key/val]     | [Bricks setting]    | ✅/❌
-Mobile Diff: Row 2    | [Plan key/val]     | [Bricks setting]    | ✅/❌
-...
-```
-
-> ⛔ **[G1] Element Count Gate:** Nếu count Figma ≠ count Bricks → **FAIL ngay, không cần chấm tiếp.**
-> Không có ngoại lệ RULE 4D tại bước này — RULE 4D chỉ được áp dụng khi user đã confirm trước.
-
-### Tính điểm tổng hợp
-
-```
-Cấu trúc  : [X]/[Y] items khớp → [Z]%
-Text       : [X]/[Y] items khớp → [Z]%
-Layout     : [X]/[Y] items khớp → [Z]%
-Visual     : [X]/[Y] items khớp → [Z]%
+================================================
+Hạng mục           | Figma      | Bricks(ARI) | Match?
+-------------------|------------|-------------|-------
+[G1] Element count | [N]        | [M]         | ✅/❌
+Layout tổng thể    | [mô tả]    | [từ PNG]    | ✅/❌
+Padding section    | [px]       | [audit]     | ✅/❌
+Gap/spacing        | [px]       | [audit]     | ✅/❌
+Typography heading | [px]/[w]   | [audit]     | ✅/❌
+Background color   | #[hex]     | [audit]     | ✅/❌
+Mobile stack order | text→img   | [mobile PNG]| ✅/❌
+[G5] Mobile diff   | [plan key] | [audit mob] | ✅/❌
 ```
 
 ---
 
 ## BƯỚC 3 — Quyết định
 
-### Trường hợp A — PASS (≥ threshold)
+### PASS → BƯỚC 4
 
-```
-✅ PASS: Section [N] đạt fidelity!
-  Cấu trúc: [Z]% | Text: [Z]% | Layout: [Z]% | Visual: [Z]%
-→ Cập nhật plan & báo cáo (BƯỚC 4)
-```
-
-### Trường hợp B — FAIL (< threshold)
-
-```
-❌ FAIL: Phát hiện [N] sai lệch:
-  [1] Text "[field]": Figma = "[A]", Bricks = "[B]"
-  [2] Padding section: Figma = [X]px, Bricks = [Y]px
-  [3] Missing element: "[tên element]" không có trong Bricks
-  ...
-
-→ Auto-rebuild (BƯỚC 3B)
-```
-
-### BƯỚC 3B — Auto-Rebuild (tối đa 3 lần)
+### FAIL → Auto-rebuild (max 3 lần)
 
 ```
 Retry #[N]/3:
-1. Liệt kê TẤT CẢ sai lệch từ bảng so sánh (dựa trên Audit JSON)
-2. Lấy lại exact values từ Figma
-3. Cập nhật JSON Bricks
-4. Push lại: update_content
-5. [G3] AI tự động chạy lại ARI: node .agents/scripts/bricks-inspector.js
-6. Tự động lấy snapshot mới -> Quay lại BƯỚC 2 chấm điểm lại
+1. Liệt kê TẤT CẢ sai lệch từ bảng + audit.json
+2. Lấy exact values từ mcp_figma_get_design_context nếu cần
+3. LUÔN dùng update_content (KHÔNG dùng update partial)
+4. [G3] Chạy lại ARI ngay → lấy PNG mới
+5. Quay BƯỚC 2 chấm lại
 ```
 
 **Sau 3 lần vẫn FAIL:**
+
 ```
 ⚠️ Sau 3 lần rebuild vẫn còn sai lệch:
-Sai lệch còn lại:
-  [1] ...
-  [2] ...
+  [1] ...  [2] ...
 
-Gợi ý:
-  - [A] Chấp nhận mức hiện tại và tiếp tục
-  - [B] Cung cấp screenshot để tôi phân tích thêm
-  - [C] Điều chỉnh thủ công trong Bricks Editor
-
-👉 Bạn muốn làm gì?
+Bạn muốn:
+  [A] Chấp nhận và tiếp tục
+  [B] Chỉnh thủ công trong Bricks Editor
+  [C] Gửi screenshot để phân tích thêm
 ```
 
-> **DỪNG.** Chờ user quyết định. KHÔNG tự ý báo pass khi chưa đạt threshold.
+> DỪNG — chờ user. KHÔNG tự pass khi chưa đạt threshold.
 
 ---
 
-## BƯỚC 4 — Cập nhật Plan file & Báo cáo
-
-### 4A — Cập nhật plan file
+## BƯỚC 4 — Cập nhật Plan & Báo cáo
 
 ```
-.agents/plans/[slug].md → Section [S[N]] → Status: done
+.agents/plans/[slug].md → Section [SN] → Status: done
 ```
-
-### 4B — Báo cáo hoàn thành & DỪNG
 
 ```
 ✅ Review PASS — Section [N]: "[Tên]"
-📊 Fidelity: Cấu trúc [Z]% | Text [Z]% | Layout [Z]% | Visual [Z]%
-🔗 Template: [site_url]/wp-admin/post.php?post=[template_id]&action=bricks
+📊 Cấu trúc [Z]% | Text [Z]% | Layout [Z]% | Visual [Z]% | Mobile [Z]%
+🖼️  Desktop: .agents/images/[slug]-desktop.png
+📱 Mobile:  .agents/images/[slug]-mobile.png
 
-📌 Sections còn lại:
-  ⏳ S[N+1]: [Tên] — status: ok  ← chưa build
-  ✅ S[N-1]: [Tên] — status: done
-
+📌 Sections còn lại: S[N+1] (pending) ...
 ⏸ AI DỪNG — Gọi /bricks-render-section S[N+1] khi sẵn sàng.
 ```
-
----
-
-## Tóm tắt flow
-
-```
-BƯỚC 1: get template summary + get_design_context + get_screenshot [SONG SONG]
-BƯỚC 2: Tạo bảng so sánh Figma vs Bricks → chấm điểm
-BƯỚC 3: PASS → BƯỚC 4 | FAIL → auto-rebuild (max 3 lần)
-         → Sau 3 lần fail: DỪNG, hỏi user
-BƯỚC 4: Cập nhật plan file status → "done" + báo cáo → AI DỪNG
-```
-
----
-
-## Ghi chú quan trọng
-
-- **Template đã gắn sẵn vào page** từ `/figma-render-page` Phase 2 — KHÔNG gắn lại
-- **KHÔNG publish page** cho đến khi TẤT CẢ sections đều `done`
-- **KHÔNG dùng browser_subagent** — nếu cần visual check: nhờ user chụp screenshot gửi vào chat
-- **`_cssCustom` cần Ctrl+S:** Nhắc user mở Bricks Editor → Ctrl+S để render CSS custom

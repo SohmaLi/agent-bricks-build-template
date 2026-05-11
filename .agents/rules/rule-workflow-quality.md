@@ -58,7 +58,46 @@ Validate trước push: `id.length = 6`, `/^[a-z0-9]+$/.test(id)`, không trùng
    section    | _padding               | shared-styles.md    | ✅
    container  | _direction, _rowGap... | layout-container.md | ✅
    ```
-4. **KHÔNG viết JSON** khi chưa có Key Validation Table — tự đoán key là nguồn gốc phần lớn lỗi.
+4. **HARD GATE: PASTE TABLE VÀO CHAT** — không có table = không được bắt đầu viết JSON.
 5. **Key không có trong table** → tra lại widget doc, KHÔNG tự đoán.
 
 > ⛔ Vi phạm RULE 10 → key sai → API push thành công nhưng render sai → phải rebuild.
+
+---
+
+## RULE 11 — API Action Đúng & Đánh giá Visual Đúng
+
+### 11A — `update` vs `update_content` — KHÔNG nhầm
+
+| Khi nào dùng | Action | Hành vi trong DB |
+|---|---|---|
+| Fix 1-2 value đơn giản, cấu trúc không đổi | `update` | Merge-patch, settings cũ **vẫn còn** |
+| Rebuild element / fix cấu trúc / fix checkbox | `update_content` | CLEAR toàn bộ, replace từ đầu |
+
+> ⛔ **KHÔNG dùng `update` để tắt checkbox** (`arrows`, `pagination`, `autoplay`...).
+> Giá trị cũ trong DB vẫn tồn tại dù bạn không set key mới.
+> → Muốn tắt checkbox: `update_content` full rebuild + **bỏ hẳn key** khỏi settings.
+
+### 11B — Checkbox Controls — Default Behavior
+
+| Widget | Key | Default khi không set |
+|---|---|---|
+| `slider-nested` | `arrows` | **ON** — arrows hiện |
+| `slider-nested` | `pagination` | **ON** — dots hiện |
+| `slider-nested` | `autoplay` | OFF — không tự chạy |
+
+> → Muốn **tắt** arrows/pagination: dùng CSS hide qua `_cssCustom` trên slider:
+> `"_cssCustom": "#brxe-[id] .splide__arrows{display:none!important}"`.
+
+### 11C — LAYOUT ≠ IMAGES — HARD STOP khi review
+
+Images blank (localhost:3845 offline) là **EXPECTED** — được phép.
+Layout sai là **LỖI** dù images blank.
+
+| Tình huống | Kết quả |
+|---|---|
+| 3 cards hiện, images blank | Layout ✅, images expected → PASS layout |
+| 1 card hiện thay vì 3 | Layout ❌ → FAIL dù images blank |
+| Nav buttons nằm trong slider thay vì ngoài | Structural ❌ → FAIL |
+
+> ⛔ KHÔNG báo PASS khi layout sai. Phải so sánh layout (đ ếm phần tử, hướng flex, vị trí khối) độc lập với việc images có hiện hay không.

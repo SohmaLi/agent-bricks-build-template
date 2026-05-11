@@ -189,8 +189,9 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 {"id": "blk1",   "name": "block",     "parent": "ctnXXX", "children": [...]}
 ```
 
-> `container` = visual card / inner wrapper. **Không phải** một extra empty div.
-> Container có thể mang toàn bộ visual settings của card (bg, border-radius, overflow).
+> ⚠️ **`container` = max-width section wrapper** (1140px, cần ở depth 1 ngay dưới `section`).
+> **KHÔNG** dùng `container` bên trong `block`, slide, hay bất kỳ widget nào khác.
+> Bên trong block/slide cần nhóm thêm: dùng `block` (không phải `container`).
 
 ---
 
@@ -459,23 +460,36 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 > **Source:** OpenClaw "Tại sao chọn" (ID: 463160) — Verified production pattern.
 > Dùng khi: Slider mỗi slide = 1 feature card có icon/image + title + description.
 
+> ⚠️ **Cấu trúc slide card (RULE 4B Widget Hierarchy)**
+> Slide block = trực tiếp là card visual. KHÔNG tạo extra wrapper block bên trong slide.
+> Muốn nhóm content bên trong slide: dùng `block` (không phải `container`).
+
 ```
-⚠️ KEY RULE: Mỗi slide có 2 levels block wrapper:
-   1. block (slide wrapper) — Bricks structural slide container
-   2. block (card inner) — Visual card container, có thể có bg/padding riêng
-   Thiếu "card inner" → không thể style card độc lập với slide wrapper.
+❌ SAI — Extra wrapper block (dư widget):
+slider-nested
+└── block "slide 1" (slide wrapper, không style)
+    └── block "card inner" (visual card, có bg/padding)  ← DƯ!
+        ├── image
+        └── block → heading + text-basic
+
+✅ ĐÚNG — Style trực tiếp trên slide block:
+slider-nested
+└── block "slide 1" (visual card: display:flex, flex-col, rowGap, bg, padding riêng)
+    ├── image (icon)
+    └── block (text group: flex-col, rowGap)
+        ├── heading (Feature Title)
+        └── text-basic (description)
 ```
 
-**JSON pattern (6 slides):**
+**JSON pattern (6 slides) — slide block = trực tiếp card:**
 ```json
 {"id": "sldrXXX", "name": "slider-nested", "parent": "slwrXXX", "children": ["sl1bXXX", "sl2bXXX", "sl3bXXX", "sl4bXXX", "sl5bXXX", "sl6bXXX"]},
 
-{"id": "sl1bXXX", "name": "block", "parent": "sldrXXX", "children": ["sl1iXXX"]},
-{"id": "sl1iXXX", "name": "block", "parent": "sl1bXXX", "children": ["sl1imgXX", "sl1txtXX"],
+{"id": "sl1bXXX", "name": "block", "parent": "sldrXXX", "children": ["sl1imgXX", "sl1txtXX"],
  "settings": {"_display": "flex", "_direction": "column", "_rowGap": "16px"}},
-{"id": "sl1imgXX", "name": "image", "parent": "sl1iXXX",
+{"id": "sl1imgXX", "name": "image", "parent": "sl1bXXX",
  "settings": {"image": {"id": 0, "url": "http://localhost:3845/assets/[hash].png"}, "_width": "48px", "_height": "48px", "_flexShrink": "0"}},
-{"id": "sl1txtXX", "name": "block", "parent": "sl1iXXX", "children": ["sl1hdgXX", "sl1dscXX"],
+{"id": "sl1txtXX", "name": "block", "parent": "sl1bXXX", "children": ["sl1hdgXX", "sl1dscXX"],
  "settings": {"_display": "flex", "_direction": "column", "_rowGap": "8px"}},
 {"id": "sl1hdgXX", "name": "heading", "parent": "sl1txtXX",
  "settings": {"tag": "h3", "text": "Feature Title", "_typography": {"font-weight": "700"}}},
@@ -484,7 +498,7 @@ KHÔNG phải _rowGap trên [container] (vì bgw là absolute, không chiếm sp
 ```
 
 > **Build tất cả N slides** — không bớt. Đếm chính xác từ Figma.
-> **Depth** từ section: 0(section)→1(container)→2(block)→3(slider)→4(slide)→5(card-inner)→6(image/text-group)→7(heading/text-basic) = **depth 7**
+> **Depth** từ section: 0(section)→1(container)→2(block)→3(slider)→4(slide)→5(text-group)→6(heading/text-basic) = **depth 6**
 
 ---
 

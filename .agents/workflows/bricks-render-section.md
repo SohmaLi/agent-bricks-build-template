@@ -4,232 +4,154 @@ description: Thực thi tạo section theo nodeid được ghi vào plan, tạo 
 
 # Workflow: `/bricks-render-section`
 
-> **Mục tiêu:** Đọc node-id từ plan file → extract exact values từ Figma → build JSON → push vào Bricks template đã tạo sẵn (từ `/figma-render-page`) → tự động kích hoạt `/review-render-section`.
+> **Mục tiêu:** Đọc plan → extract Figma → build JSON → push Bricks template → review tự động.
 
 ---
 
-## Input
+## ⚠️ Rules cốt lõi
 
-- Plan file: `.agents/plans/[slug].md` (đã có Template IDs)
-- Section cần build: do user chỉ định (ví dụ: **"build S1"**, **"build S3"**)
+| Rule | ✅ | ❌ |
+|---|---|---|
+| Nội dung | Copy y chang từ Figma | Tự paraphrase |
+| Widget key | Đọc docs TRƯỚC | Tự nhớ key |
+| Section order | DỪNG sau mỗi section | Build hết 1 lúc |
+| Widget hierarchy | `section→container→block→[...]` | `section→block→[...]` |
+| Browser | KHÔNG dùng `browser_subagent` | Không ngoại lệ |
 
----
-
-## Output
-
-- Bricks template `[slug] - S[N] - [Tên]` được populated đầy đủ elements
-- Tự động kích hoạt `/review-render-section` sau khi push thành công
-
----
-
-## ⚠️ Quy tắc TUYỆT ĐỐI
-
-| Rule             | ✅ Đúng                               | ❌ Sai                         |
-| ---------------- | ------------------------------------- | ------------------------------ |
-| Nội dung         | Copy y chang từ Figma                 | Tự paraphrase, tự đặt text     |
-| Số lượng         | Figma có N cards → build đúng N       | Build ít hơn                   |
-| Dynamic data     | Chỉ khi plan ghi `[DYNAMIC]`          | Tự convert sang `{post_title}` |
-| Widget key       | Đọc từ widget docs TRƯỚC              | Tự nhớ key                     |
-| Section order    | DỪNG sau mỗi section, chờ user        | Build hết tất cả 1 lúc         |
-| Browser          | KHÔNG dùng `browser_subagent`         | Không ngoại lệ                 |
-| Widget hierarchy | `section → container → block → [...]` | `section → block → [...]`      |
-
-> 📚 **Lỗi đã gặp + Pre-push Checklist:** `.agents/references/build-errors.md`
+> 📚 Tham chiếu chi tiết: `.agents/references/build-errors.md` · `.agents/components/common-patterns.md`
 
 ---
 
-## BƯỚC 0 — Đọc Plan File & Kiểm tra Status
+## BƯỚC 0 — Đọc Plan & Kiểm tra Status
 
 ```
-view_file: .agents/plans/[slug].md
+view_file(".agents/plans/[slug].md")
 ```
 
-Lấy thông tin section [SN]: Desktop Node ID, Mobile Node ID, Template ID, Widget tree, Status.
+| Status | Hành động |
+|---|---|
+| `ok` | ✅ Tiếp tục |
+| `pending` | ⛔ Báo user đổi → `ok` rồi mới build |
+| `done` | ⚠️ Hỏi confirm rebuild |
+| `skip` | ⛔ Dừng |
 
-| Status    | Hành động |
-| --------- | --------- |
-| `ok`      | ✅ Tiếp tục build |
-| `skip`    | ⛔ Báo user → DỪNG |
-| `pending` | ⛔ Báo user đổi sang `ok` → DỪNG |
-| `done`    | ⚠️ Hỏi confirm rebuild → chờ |
-
-> ⚠️ **[LỖI 12]** Nếu section detail ghi `pending` nhưng table ghi `ok` → mâu thuẫn → báo user xác nhận trước khi tiếp tục.
-
-Nếu **Template ID chưa có** → báo user chạy `/figma-render-page` trước. DỪNG.
+> ⚠️ Detail `pending` + table `ok` → mâu thuẫn → dừng hỏi user.
+> Chưa có Template ID → báo chạy `/figma-render-page` trước.
 
 ---
 
-## BƯỚC 1 — Đọc Widget Docs [BẮT BUỘC TRƯỚC KHI VIẾT JSON]
+## BƯỚC 1 — Đọc Docs [HARD GATE — RULE 12]
 
-### 1A — Liệt kê widgets từ Widget tree trong plan
+> ⛔ **Action bắt buộc. Bước sau KHÔNG chạy nếu bước này chưa xong.**
 
-### 1B — Tra cứu đường dẫn từ README
-
-```
-view_file: widgets/README.md → tìm widget → lấy path chính xác
-```
-
-### 1C — Đọc widget docs [SONG SONG]
+### ACTION 1.1 — Gọi view_file song song [TẤT CẢ cùng lúc]
 
 ```
-[Song song]
-view_file: widgets/shared-styles.md          ← LUÔN đọc
-view_file: widgets/[category]/[widget].md    ← mỗi widget trong tree
+[Bắt buộc — luôn đọc]
+view_file("widgets/README.md")
+view_file("widgets/shared-styles.md")
+view_file(".agents/references/build-errors.md")
+view_file(".agents/components/common-patterns.md")
+view_file("widgets/layout/layout-section.md")
+view_file("widgets/layout/layout-container.md")
+view_file("widgets/layout/layout-block.md")
+
+[Theo widget tree trong plan — mỗi widget đặc biệt]
+view_file("widgets/[category]/[widget].md")   ← 1 call/widget
 ```
 
-### 1D — Tạo KEY VALIDATION TABLE
+### ACTION 1.2 — Paste KEY VALIDATION TABLE [BLOCKING OUTPUT]
 
 ```
-WIDGET KEY TABLE — Verified từ widget docs
-===========================================
-Widget     | Key cần dùng           | Source file         | ✅/❌
------------|------------------------|---------------------|------
-section    | _padding               | shared-styles.md    | ✅
-container  | _direction, _rowGap... | layout-container.md | ✅
-...        | ...                    | ...                 | ...
+WIDGET KEY TABLE — Section [SN]: [Tên]
+================================================================
+Widget      | Keys cần dùng                  | Source          | ✅
+------------|--------------------------------|-----------------|---
+section     | _padding, _background          | shared-styles   | ✅
+container   | _direction, _rowGap, _widthMax | layout-container| ✅
+block       | _display, _alignItems, _gap    | layout-block    | ✅
+heading     | tag, text, _typography         | basic-heading   | ✅
+[widget N]  | [keys từ doc]                  | [source]        | ✅
 ```
 
-> ⚠️ **KHÔNG viết JSON nếu chưa có bảng này.**
+> ⛔ **DỪNG tại đây — paste table vào chat.**
+> Chưa có table = BƯỚC 2 không được chạy.
+> Thiếu widget nào → tra thêm doc → bổ sung → paste lại.
 
 ---
 
-## BƯỚC 2 — Extract Exact Values từ Figma
+## BƯỚC 2 — Extract Figma
 
-### 2A — Đọc Mobile Diff Table từ Plan [TRƯỚC KHI gọi Figma]
-
-```
-view_file: .agents/plans/[slug].md → section [SN] → Mobile diff table
-```
-
-Pre-map các Bricks keys cần set cho mobile trước khi đọc Figma. Nếu table chưa có → bổ sung sau bước 2B.
-
-### 2B — Gọi Figma [SONG SONG]
+> ⛔ **DEPENDENCY:** Chỉ chạy sau khi KEY VALIDATION TABLE đã paste vào chat.
 
 ```
 [Song song]
 mcp_figma_get_design_context(desktop_node_id)
-mcp_figma_get_design_context(mobile_node_id)   ← luôn gọi để xác nhận Mobile Diff Table
+mcp_figma_get_design_context(mobile_node_id)
 ```
 
-### 2C — Flags bắt buộc khi phát hiện
+**Flags phát hiện khi đọc Figma:**
 
-| Flag                | Điều kiện |
-| ------------------- | --------- |
-| `[G2-RISK]`         | flex-row → kiểm tra `_flexWrap: "nowrap"` |
-| `[ABSENT-MOBILE]`   | Element không có trên mobile → `_display:mobile_portrait: "none"` |
-| `[DIRECTION-CHANGE]`| flex-direction khác desktop vs mobile → `_direction:mobile_portrait` |
-| `[SIZE-CHANGE]`     | width/height/font-size khác → set key:mobile_portrait tương ứng |
-| `[MASK-IMAGE]`      | Ảnh có mask → dùng `_cssCustom` trên wrapper block |
-| `[BG-IMAGE]`        | Background image → dùng `_background.image`, KHÔNG tạo block riêng |
-| `[PLACEHOLDER]`     | ≥3 items cùng nội dung → **DỪNG** + hỏi user A (static) / B (Dynamic) |
-
-### 2D — Mapping Table [BẮT BUỘC cho mỗi element]
-
-Với **mỗi element** trong Figma output, tạo bảng đối chiếu từng class:
-
-```
-MAPPING — [Element Name]
-Tailwind class    | Bricks key       | Value
-------------------|------------------|-------
-flex-col          | _direction       | "column"
-gap-[24px]        | _rowGap          | "24px"
-justify-center    | _justifyContent  | "center"
-...               | ...              | ...
-```
-
-> 📚 Bảng đầy đủ: `.agents/references/tailwind-bricks-map.md`
-> ⚠️ **KHÔNG skip class nào** — `gap`, `justify`, `items`, `self` hay bị bỏ qua nhất.
+| Flag | Điều kiện | Action |
+|---|---|---|
+| `[G2-RISK]` | flex-row cần giữ hàng mobile | `_cssCustom: flex-wrap:nowrap` |
+| `[DIRECTION-CHANGE]` | flex-direction khác desktop/mobile | `_direction:mobile_portrait` |
+| `[ABSENT-MOBILE]` | Ẩn trên mobile | `_display:mobile_portrait: "none"` |
+| `[SIZE-CHANGE]` | Size khác mobile | key`:mobile_portrait` |
+| `[MASK-IMAGE]` | Có mask | `_cssCustom` trên wrapper block |
+| `[BG-IMAGE]` | Background image | `_background.image` — không tạo block riêng |
+| `[PLACEHOLDER]` | ≥3 items cùng nội dung | **DỪNG** hỏi user A/B |
 
 ---
 
-## BƯỚC 3 — Build JSON & Push vào Template
+## BƯỚC 3 — Build JSON & Push
 
-### 3A — Viết JSON (Native Flat Format)
+### 3A — Nguyên tắc viết JSON
 
-**Nguyên tắc:**
-1. Mỗi key **phải có** trong Key Validation Table (Bước 1D)
-2. Không có trong table → tra lại widget doc, **KHÔNG tự đoán**
-3. `_cssCustom` chỉ dùng khi **thực sự không có native key**
-4. `_cssCustom` format: `"#brxe-[id] { ... }"` — **KHÔNG dùng `%root%`**
-5. Responsive: `"_prop:mobile_portrait": "value"` — KHÔNG viết `@media` thủ công (trừ `_cssCustom`)
+1. Mỗi key **phải có trong KEY VALIDATION TABLE**
+2. Key không có trong table → tra widget doc, **KHÔNG tự đoán**
+3. `_cssCustom`: format `"#brxe-[id] { ... }"` — KHÔNG dùng `%root%`
+4. `"parent": 0` là **integer**, KHÔNG phải string `"0"`
+5. Responsive: `"_prop:mobile_portrait": "value"` — không viết `@media` thủ công
 
-**Quy tắc ID:**
-- Format: **6 ký tự `[a-z0-9]`**, duy nhất trong toàn template
-- Root: `"parent": 0` (integer) | Leaf: `"children": []`
-
-**Widget hierarchy:**
-```
-section  (parent: 0)
-└─ container  (parent: section_id)
-   ├─ block
-   └─ block
-      └─ heading / text-basic / image / button
-```
-
-### 3B — Push content vào Template
+### 3B — Push
 
 ```
 mcp_bricks-mcp_content(action: "update_content", post_id: [template_id], elements: [...])
 ```
 
-### 3C — Verify tree structure
+> ⚠️ `update_content` = CLEAR toàn bộ rồi replace. Dùng khi rebuild/fix cấu trúc/fix checkbox.
+> `update` = merge-patch, settings cũ vẫn còn. Chỉ dùng khi fix 1-2 key đơn giản.
+
+### 3C — Pre-push Checklist (tra `build-errors.md` nếu cần detail)
+
+```
+STRUCTURE    □ ID 6 ký tự [a-z0-9] không trùng?
+             □ parent: 0 là integer?
+             □ container chỉ depth 1 dưới section?
+             □ children ↔ parent khớp 2 chiều?
+
+TYPOGRAPHY   □ font-size là string "24px" (không phải {value,unit})?
+             □ color nằm trong _typography.color.hex?
+
+LAYOUT       □ gap → _rowGap/_columnGap đúng?
+             □ container: _width:"100%" + _widthMax?
+
+CSS          □ _cssCustom dùng #brxe-[id]?
+             □ Có _cssCustom → nhắc user Ctrl+S?
+
+MOBILE       □ Tất cả flags [DC][AM][SC] đã set?
+
+SLIDER       □ Slide block = direct card (không extra wrapper)?
+             □ Muốn tắt arrows/pagination → CSS hide, không update partial?
+```
+
+### 3D — Verify
 
 ```
 mcp_bricks-mcp_content(action: "get", post_id: [template_id], view: "summary")
+→ Kiểm tra: tree[0].name = "section", total đúng, không orphan
 ```
-
-Kiểm tra: `tree[0].name = "section"`, `total` đúng, không có orphan element.
-
-### 3D — ✅ PRE-PUSH CHECKLIST
-
-> 📚 Chi tiết từng lỗi: `.agents/references/build-errors.md`
-
-```
-STRUCTURE
-□ ID đúng 6 ký tự [a-z0-9], không trùng?
-□ Root "parent": 0 (integer)?
-□ Hierarchy: section → container → block đúng?
-□ children ↔ parent khớp 2 chiều?
-
-TYPOGRAPHY [LỖI 9]
-□ font-size/weight/line-height là plain string "24px"?
-□ KHÔNG có {value:24, unit:"px"} format?
-□ color nằm trong _typography.color.hex?
-
-LAYOUT
-□ Đã chạy Mapping Table (Bước 2D) cho TỪNG element?
-□ gap → _rowGap / _columnGap đã map?
-□ justify, items, self-stretch đã map?
-□ Container: _width: "100%" + _widthMax?
-
-CSS CUSTOM
-□ _cssCustom dùng #brxe-[id], KHÔNG có %root%?
-□ Absolute + text overlay: SVG z-index:0, text z-index:2? [LỖI 10]
-□ Có _cssCustom → nhắc user Ctrl+S sau push
-
-BACKGROUND
-□ KHÔNG có block riêng làm background image?
-□ _background.image: external:true + size + position?
-
-FLEX
-□ KHÔNG có _flexGrow:"1" + _flexShrink:"0" cùng lúc?
-□ flex:1 → _cssCustom: "#brxe-[id]{flex:1;min-width:0}"?
-□ flex-row giữ hàng mobile → _cssCustom flex-wrap:nowrap?
-
-MOBILE [Đã đọc Mobile Diff Table bước 2A]
-□ [DIRECTION-CHANGE]: _direction:mobile_portrait đã set?
-□ [ABSENT-MOBILE]: _display:mobile_portrait:"none" đã set?
-□ [SIZE-CHANGE]: width/height/font:mobile_portrait đã set?
-□ section padding mobile không duplicate với desktop?
-
-ELEMENT COUNT & TOKEN
-□ Element count ước lượng: nếu >60 → response text compact (≤300 chars)?
-□ Figma element count ≈ Bricks element count?
-□ [PLACEHOLDER] đã flag + chờ user confirm (nếu có)?
-□ Status section detail vs table: không mâu thuẫn?
-```
-
-> ⛔ **KHÔNG PUSH** nếu còn bất kỳ ô chưa tick.
 
 ---
 
@@ -237,51 +159,33 @@ ELEMENT COUNT & TOKEN
 
 ```
 .agents/plans/[slug].md → Section [SN] → Status: done
-→ Tự động kích hoạt /review-render-section
-```
-
-> **Không hỏi user — tự động chạy review ngay sau khi push thành công.**
-
----
-
-## BƯỚC 5 — Sau khi Review Pass: Báo cáo & DỪNG
-
-```
-✅ S[N] "[Tên]" — Build & Review PASS!
-📋 Template ID : [template_id]
-🔗 Edit        : [site_url]/wp-admin/post.php?post=[template_id]&action=bricks
-
-📌 Sections còn lại:
-   S[X]: [Tên] — status: ok   ← chưa build
-
-⏸ AI DỪNG — Gọi /bricks-render-section S[X] khi sẵn sàng tiếp tục.
+→ Tự động chạy /review-render-section
 ```
 
 ---
 
-## Tóm tắt flow
+## BƯỚC 5 — Sau Review Pass: Báo cáo & DỪNG
 
 ```
-B0: Đọc plan → status check → [LỖI 12] cross-check detail vs table
-B1: Liệt kê widgets → đọc docs [song song] → Key Validation Table
-B2: Đọc Mobile Diff Table → get_design_context [song song] → Flags → Mapping Table
-B3: Viết JSON → Pre-push Checklist (8 sections) → Push → Verify
-B4: Cập nhật plan → /review-render-section tự động
-B5: Review pass → Báo cáo → AI DỪNG
+✅ S[N] "[Tên]" — PASS!
+📋 Template ID: [id]
+🔗 Edit: [site_url]/wp-admin/post.php?post=[id]&action=bricks
+
+📌 Sections còn lại: S[X] (ok), S[Y] (pending)...
+⏸ AI DỪNG — Gọi /bricks-render-section S[X] khi sẵn sàng.
 ```
 
 ---
 
-## Key Reference
+## Quick Reference — Keys hay sai
 
-| ❌ Key sai | ✅ Key đúng | Nguồn |
-| --------- | ---------- | ----- |
-| `_borderRadius: "24px"` | `_border: {radius: {top/right/bottom/left: "24px"}}` | shared-styles.md |
-| `_gap: "24px"` | `_columnGap` + `_rowGap` | shared-styles.md |
-| `_flexDirection: "column"` | `_direction: "column"` | layout-container.md |
-| `_paddingTop: "40px"` | `_padding: {top: "40px"}` | shared-styles.md |
-| `image: {url: "..."}` | `image: {id: 0, url: "..."}` | basic-image.md |
-| `"parent": "0"` (string) | `"parent": 0` (integer) | quy tắc chung |
-| `%root%` trong `_cssCustom` | `#brxe-[id]` | shared-styles.md |
-| `_flexGrow:"1"` + `_flexShrink:"0"` | `_cssCustom: "flex:1;min-width:0"` | build-errors.md |
-| `"_typography": {"font-size": {"value":24,"unit":"px"}}` | `"_typography": {"font-size": "24px"}` | build-errors.md #9 |
+| ❌ Sai | ✅ Đúng |
+|---|---|
+| `_borderRadius: "24px"` | `_border: {radius: {top/right/bottom/left: "24px"}}` |
+| `_gap: "24px"` | `_columnGap` + `_rowGap` tách riêng |
+| `_flexDirection: "column"` | `_direction: "column"` |
+| `image: {url: "..."}` | `image: {id: 0, url: "..."}` |
+| `"parent": "0"` (string) | `"parent": 0` (integer) |
+| `%root%` trong `_cssCustom` | `#brxe-[id]` |
+| `_flexGrow:"1"` + `_flexShrink:"0"` | `_cssCustom: "flex:1;min-width:0"` |
+| `"font-size": {value:24, unit:"px"}` | `"font-size": "24px"` |

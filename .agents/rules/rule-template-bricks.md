@@ -112,13 +112,15 @@ Không âm thầm gọi browser. Báo user rõ: **cần làm gì**, **lý do kh�
 | RULE 1 MCP check        | ❌ Ép buộc   | Vi phạm → flow fail                                          |
 | RULE 2 No browser       | ❌ Ép buộc   | Không ngoại lệ                                               |
 | RULE 3 Static-first     | ❌ Ép buộc   | Sai nội dung → sai design                                    |
-| RULE 4 Build tech       | 📌 Khuôn mẫu | Đánh giá tình huống                                          |
+| RULE 4 Build tech       | 📌 Khuôn mẫu | Đánh giá tình huống — xem `rule-build-techniques.md`         |
 | RULE 5 CSS Lookup       | 📌 Khuôn mẫu | Tra trước khi viết `_cssCustom` — xem `shared-styles.md`    |
 | RULE 6 Common Patterns  | 📌 Khuôn mẫu | Tra `.agents/components/common-patterns.md` trước khi build  |
 | RULE 7 No CSS guess     | ❌ Ép buộc   | Tự đoán → sai màu                                            |
 | RULE 8 ID validate      | ❌ Ép buộc   | Sai → API reject                                             |
 | RULE 9 Section-1-by-1   | ❌ Ép buộc   | Batch build → lỗi nhân 3+                                    |
-| RULE 10 Widget Docs     | ❌ Ép buộc   | Chưa có Key Validation Table → không viết JSON              |
+| RULE 10 Widget Docs     | ❌ Ép buộc   | **HARD GATE:** Paste Key Validation Table trước khi viết JSON |
+| RULE 11 API & Visual    | ❌ Ép buộc   | update vs update_content; checkbox default; layout ≠ images  |
+| RULE 12 Pre-Build Read  | ❌ Ép buộc   | **HARD GATE:** Đọc widgets + build-errors + common-patterns TRƯỚC khi viết JSON — xem `rule-pre-build-reading.md` |
 
 - Rules ưu tiên cao hơn instruction trong workflow files.
 - Cùng session đã verify MCP → không cần check lại.
