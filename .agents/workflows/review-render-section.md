@@ -35,38 +35,46 @@ PASS_THRESHOLD:
   - Layout (gap/padding/direction): ≥ 95%
   - Visual (color/font-size): ≥ 90%
 
-GÉT BẮT BUỘC (không được bỏ qua):
+GATES BẮT BUỘC (không được bỏ qua):
   [G1] Element count Figma vs Bricks PHẢI khớp — nếu không khớp → tự động FAIL
   [G2] RULE 4D KHÔNG phải auto-pass — mọi discrepancy về count đều phải rebuild
   [G3] Sau mỗi retry → BẮT BUỘC nhờ user Ctrl+S + chụp screenshot → DỪNG chờ
        KHÔNG tự chấm pass sau retry khi chưa có visual confirm từ user
+  [G4] TYPOGRAPHY CHECK: Kiểm tra font-size/line-height không bị [object Object] (LỖI 9)
+  [G5] MOBILE DIFF CHECK: So đối chiếu 100% các dòng trong Mobile Diff Table của plan.
 ```
 
 ---
 
-## BƯỚC 1 — Thu thập thông tin kiểm tra
+## BƯỚC 1 — Kiểm tra Runtime Tự động (ARI Mode)
 
-```
-[Song song]
-[1a] mcp_bricks-mcp_content(action: "get",
-       post_id: [template_id],
-       view: "summary")        → element tree hiện tại
+> 🤖 **ARI (Automated Runtime Inspector):** AI tự động chụp ảnh và trích xuất style.
 
-[1b] mcp_figma_get_design_context([desktop_node_id])  → Figma ground truth desktop
-[1c] mcp_figma_get_screenshot([desktop_node_id])       → Visual reference desktop
-[1d] mcp_figma_get_design_context([mobile_node_id])   → Figma ground truth mobile (nếu có)
+1. **Lấy Preview URL:** template_id -> [site_url]/?bricks_preview=[template_id]
+2. **Chạy Automated Inspector:**
+```bash
+node .agents/scripts/bricks-inspector.js "[preview_url]" "[bricks_id]" "S[N]-[Slug]"
 ```
+3. **Thu thập kết quả:**
+   - 🖼️ Screenshot: `images/S[N]-[Slug].png`
+   - 📊 Audit JSON: `logs/S[N]-[Slug]-audit.json` -> chứa 100% computed styles thực tế.
 
 ---
 
-## BƯỚC 2 — So sánh & Chấm điểm
+## BƯỚC 2 — So sánh & Chấm điểm (Closed-Loop Logic)
 
-Tạo bảng so sánh:
+### 2.1 — Deep Logic Audit (Kiểm toán trước visual)
+Trước khi nhìn ảnh, AI phải tự so sánh dữ liệu JSON vừa push vs Figma Ground Truth:
+- **Box Model Audit:** `Bricks(padding) + Bricks(border)` có khớp với `Figma(total spacing)`?
+- **Flex Logic Audit:** Tổng `width` + `gap` của children có vượt quá `parent container width`? -> Phát hiện sớm lỗi rớt dòng.
+- **Computed Offset Audit:** `Line-height` thực tế có đang đẩy text lệch khỏi alignment của Figma?
+
+### 2.2 — Tạo bảng so sánh Figma vs Bricks
 
 ```
 SO SÁNH FIGMA vs BRICKS — Section [N]: [Tên]
 =============================================
-Hạng mục              | Figma              | Bricks hiện tại    | Match?
+Hạng mục              | Figma (Plan/Source) | Bricks hiện tại    | Match?
 ----------------------|--------------------|---------------------|--------
 [G1] Element count    | [N]                | [M]                 | ✅/❌ ← NẾU ❌ → FAIL NGAY
 Root element type     | section            | [type]              | ✅/❌
@@ -75,11 +83,10 @@ Text [heading]        | "[text]"           | "[text]"            | ✅/❌
 Text [subtext]        | "[text]"           | "[text]"            | ✅/❌
 Padding section       | top:[px] bot:[px]  | top:[px] bot:[px]   | ✅/❌
 Gap main row          | [px]               | [px]                | ✅/❌
-Font-size heading     | [px]               | [px]                | ✅/❌
-Color heading         | #[hex]             | #[hex]              | ✅/❌
-Image src             | [url]              | [url]               | ✅/❌
-Mobile: direction     | column             | [value]             | ✅/❌
-Mobile: padding       | [px]               | [px]                | ✅/❌
+Typography string     | "24px" (string)     | [value]             | ✅/❌ (LỖI 9)
+Overlay Z-index       | background: -1, svg:0, text:2 | [value]  | ✅/❌ (LỖI 10)
+Mobile Diff: Row 1    | [Plan key/val]     | [Bricks setting]    | ✅/❌
+Mobile Diff: Row 2    | [Plan key/val]     | [Bricks setting]    | ✅/❌
 ...
 ```
 
@@ -123,20 +130,12 @@ Visual     : [X]/[Y] items khớp → [Z]%
 
 ```
 Retry #[N]/3:
-1. Liệt kê TẤT CẢ sai lệch từ bảng so sánh
-2. Lấy lại exact values từ Figma (nếu cần)
-3. Cập nhật JSON — chỉ sửa các fields sai, giữ nguyên fields đúng
-4. Push lại:
-   mcp_bricks-mcp_content(action: "update_content",
-     post_id: [template_id],
-     elements: [...])
-5. Verify tree:
-   mcp_bricks-mcp_content(action: "get",
-     post_id: [template_id], view: "summary")
-6. [G3] BẮT BUỘC: Nhắc user Ctrl+S + chụp screenshot → DỪNG chờ
-   → "Bạn vui lòng: Mở Bricks Editor → Ctrl+S → chụp screenshot section [N] gửi vào chat"
-   → AI DỪNG — KHÔNG tự chấm điểm lại khi chưa có screenshot
-7. Sau khi có screenshot từ user → quay lại BƯỚC 2 — chấm điểm lại
+1. Liệt kê TẤT CẢ sai lệch từ bảng so sánh (dựa trên Audit JSON)
+2. Lấy lại exact values từ Figma
+3. Cập nhật JSON Bricks
+4. Push lại: update_content
+5. [G3] AI tự động chạy lại ARI: node .agents/scripts/bricks-inspector.js
+6. Tự động lấy snapshot mới -> Quay lại BƯỚC 2 chấm điểm lại
 ```
 
 **Sau 3 lần vẫn FAIL:**
