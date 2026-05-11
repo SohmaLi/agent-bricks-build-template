@@ -3,6 +3,8 @@
 > Danh sách lỗi đã xác nhận qua thực tế khi build Bricks sections từ Figma.
 > **Đọc file này trước mỗi lần push JSON.**
 
+**Index nhanh:** [LỖI 1](#lỗi-1) [LỖI 2](#lỗi-2) [LỖI 3](#lỗi-3) [LỖI 4](#lỗi-4) [LỖI 5](#lỗi-5) [LỖI 6](#lỗi-6) [LỖI 7](#lỗi-7) [LỖI 8](#lỗi-8) [LỖI 9](#lỗi-9) [LỖI 10](#lỗi-10) [LỖI 11](#lỗi-11) [LỖI 12](#lỗi-12) [LỖI 13](#lỗi-13)
+
 ---
 
 ## 🚫 LỖI 1 — Dùng block riêng làm background image
@@ -153,35 +155,48 @@ Tick hết trước khi gọi `update_content`. **Không push nếu còn ô tr�
 
 ```
 STRUCTURE
-□ [LỖI 4] Tất cả ID đúng 6 ký tự [a-z0-9], không trùng?
-□ [LỖI 4] Root element: "parent": 0 (integer, KHÔNG phải "0" string)?
-□ Hierarchy: section → container → block → [...] đúng?
-□ children ↔ parent khớp 2 chiều?
+□ [LỖI 4]  Tất cả ID đúng 6 ký tự [a-z0-9], không trùng?
+□ [LỖI 4]  Root element: "parent": 0 (integer, KHÔNG phải "0" string)?
+□          Hierarchy: section → container → block → [...] đúng?
+□          children ↔ parent khớp 2 chiều?
+
+TYPOGRAPHY
+□ [LỖI 9]  font-size, font-weight, line-height đều là plain string ("24px")?
+□ [LỖI 9]  KHÔNG có {value: 24, unit: "px"} format?
+□ [G1]     color nằm trong _typography.color.hex (không phải _color)?
 
 LAYOUT
-□ [LỖI 2] Đã chạy Mapping Table cho TỪNG element (xem tailwind-bricks-map.md)?
-□ [LỖI 2] gap → _rowGap / _columnGap đã map?
-□ [LỖI 2] justify-center → _justifyContent đã có?
-□ [LỖI 2] items-center → _alignItems đã có?
-□ [LỖI 2] self-stretch → _alignSelf đã có?
-□ [LỖI 6] Container: _width: "100%" + _widthMax (không dùng width px cứng)?
+□ [LỖI 2]  Đã chạy Mapping Table cho TỪNG element?
+□ [LỖI 2]  gap → _rowGap / _columnGap đã map?
+□ [LỖI 2]  justify, items, self-stretch đã map?
+□ [LỖI 6]  Container: _width: "100%" + _widthMax?
+
+CSS CUSTOM
+□ [RULE4C] _cssCustom dùng #brxe-[id], KHÔNG có %root%?
+□ [LỖI 10] Absolute element + text overlay: SVG z-index:0, text z-index:2?
+□ [G4]     Có _cssCustom → nhắc user Ctrl+S sau push?
 
 BACKGROUND
-□ [LỖI 1] KHÔNG có block riêng làm background image?
-□ [LỖI 1] Background image → _background.image với external: true?
-
-RESPONSIVE
-□ [LỖI 5] Mobile padding: chỉ trên 1 element duy nhất, không duplicate?
-□ _cssCustom breakpoint: @media (max-width: 478px) đúng?
+□ [LỖI 1]  KHÔNG có block riêng làm background image?
+□ [LỖI 1]  _background.image: có external:true + size + position?
 
 FLEX
-□ [LỖI 3] KHÔNG có "_flexGrow":"1" + "_flexShrink":"0" cùng lúc?
-□ Flex chiếm phần còn lại: _cssCustom: "#brxe-[id] { flex: 1; }"?
+□ [LỖI 3]  KHÔNG có _flexGrow:"1" + _flexShrink:"0" cùng lúc?
+□ [LỖI 3]  flex:1 → dùng _cssCustom: "#brxe-[id]{flex:1;min-width:0}"?
+□ [G2]     flex-row cần giữ hàng mobile → _cssCustom flex-wrap:nowrap?
 
-ELEMENT COUNT
-□ [LỖI 7] Đếm elements trong Figma → số lượng widget trong Bricks phải KHỚP?
-□ [LỖI 7] Nếu dùng RULE 4D placeholder → user đã confirm OK chưa?
-□ [LỖI 7] Photo collage / layered images → KHÔNG dùng RULE 4D, build đủ từng widget?
+RESPONSIVE — MOBILE CHECKLIST
+□           Đã đọc Mobile Diff Table từ plan?
+□           [DIRECTION-CHANGE]: _direction:mobile_portrait đã set?
+□           [ABSENT-MOBILE]: _display:mobile_portrait:"none" cho element ẩn?
+□           [SIZE-CHANGE]: width/height:mobile_portrait đã set?
+□           section padding mobile riêng biệt, không duplicate với desktop?
+
+ELEMENT COUNT & TOKEN
+□ [LỖI 7]  Count Figma elements → Bricks elements PHẢI khớp?
+□ [LỖI 11] Section COMPLEX >60 elements: response text đã compact?
+□ [LỖI 13] Items lặp nội dung ≥3: đã flag [PLACEHOLDER] và chờ user confirm?
+□ [LỖI 12] Status section detail vs table: không mâu thuẫn (hoặc đã confirm)?
 ```
 
 ---
@@ -295,4 +310,111 @@ Editor display quirk khi push qua API.
 Frontend PHP parse object → CSS string đúng. Không cần workaround.
 ```
 
+---
+
+## 🚫 LỖI 9 — Typography font-size dùng sai format → render 15px thay vì 24px
+
+```
+❌ SAI:  "_typography": {"font-size": {"value": 24, "unit": "px"}}
+❌ SAI:  "_typography": {"fontSize": "24px"}
+✅ ĐÚNG: "_typography": {"font-size": "24px"}   ← plain string, không phải object
+```
+
+**Lý do:** Bricks API chỉ parse plain string. Object format → Bricks nhận giá trị `[object Object]` → render fallback 15px.
+
+**Áp dụng cho tất cả typography props:**
+```json
+"_typography": {
+  "font-size": "24px",
+  "font-weight": "600",
+  "line-height": "36px",
+  "color": {"hex": "#282829"},
+  "font-family": "Inter"
+}
+```
+
+> ⚠️ `color` là ngoại lệ duy nhất được dùng object `{"hex": "..."}`. Tất cả props còn lại → plain string.
+
+---
+
+## 🚫 LỖI 10 — Absolute-positioned element với text overlay thiếu z-index
+
+```
+❌ SAI:  SVG (position:absolute) che lên text → text không visible
+✅ ĐÚNG: SVG z-index: 0, text z-index: 2 (hoặc position:relative không cần z-index nếu sau trong DOM)
+```
+
+**Khi nào trigger:** Badge/overlay có SVG background + text label trên cùng 1 container absoluted.
+
+**Fix bắt buộc cho pattern này:**
+```json
+// SVG/background shape:
+{ "_zIndex": "0" }
+
+// Text label phía trên:
+{ "_zIndex": "2", "_position": "relative" }
+```
+
+> ✔️ Phải set NGAY khi build — không chờ review phát hiện.
+
+---
+
+## 🚫 LỖI 11 — Response JSON vượt token limit 16384 với section COMPLEX
+
+```
+❌ SAI:  Viết analysis dài + push JSON >80 elements trong 1 response → exceed token limit
+✅ ĐÚNG: Estimate element count TRƯỚC → nếu >60 elements → rút ngắn analysis text
+```
+
+**Quy tắc cho section COMPLEX (>60 elements):**
+1. Estimate element count = widgets × depth trước khi viết bất kỳ analysis nào
+2. Nếu > 60 elements → analysis text ≤ 300 chars, chỉ giữ KEY DATA
+3. Nếu > 100 elements → cân nhắc đơn giản hóa card structure, merge intermediate blocks
+
+**Estimate nhanh:**
+```
+Element count ≈ (elements/card) × (số card) + structure + pagination
+Ví dụ: 7 × 12 cards + 10 structure + 3 pagination = 97 → COMPLEX → compact mode
+```
+
+---
+
+## 🚫 LỖI 12 — Status mâu thuẫn giữa section detail và plan table
+
+```
+❌ XỬ LÝ SAI: Thấy table ghi "ok" → build luôn, bỏ qua section detail ghi "pending"
+✅ ĐÚNG: Kiểm tra CẢ HAI → nếu mâu thuẫn → flag + hỏi user → DỪNG
+```
+
+**Check trong BƯỚC 0:**
+```
+Section detail: status: pending
+Table: status: ok
+→ Mâu thuẫn! ⚠️ Báo user: "Section SN có status không thống nhất (detail=pending, table=ok). 
+   Bạn muốn tiếp tục build không?"
+→ AI DỪNG chờ confirm
+```
+
+---
+
+## 🚫 LỖI 13 — Không flag PLACEHOLDER khi tất cả items có cùng nội dung
+
+```
+❌ SAI:  Build 12 cards với cùng title/excerpt mà không hỏi user
+✅ ĐÚNG: Phát hiện ≥3 items lặp nội dung → flag [PLACEHOLDER] → hỏi user trước
+```
+
+**Template flag cứng:**
+```
+⚠️ [PLACEHOLDER] Tôi phát hiện [field] giống nhau cho [N] items:
+   "[content]"
+
+Bạn muốn:
+[A] Giữ nguyên static (build đúng như Figma)
+[B] Dùng Dynamic Data (Query Loop) → DỪNG để plan lại
+
+→ AI DỪNG chờ user chọn A hoặc B
+```
+
+---
 

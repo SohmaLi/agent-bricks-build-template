@@ -53,6 +53,8 @@ Lấy thông tin section [SN]: Desktop Node ID, Mobile Node ID, Template ID, Wid
 | `pending` | ⛔ Báo user đổi sang `ok` → DỪNG |
 | `done`    | ⚠️ Hỏi confirm rebuild → chờ |
 
+> ⚠️ **[LỖI 12]** Nếu section detail ghi `pending` nhưng table ghi `ok` → mâu thuẫn → báo user xác nhận trước khi tiếp tục.
+
 Nếu **Template ID chưa có** → báo user chạy `/figma-render-page` trước. DỪNG.
 
 ---
@@ -91,25 +93,37 @@ container  | _direction, _rowGap... | layout-container.md | ✅
 
 ---
 
-## BƯỚC 2 — Extract Exact Values từ Figma [SONG SONG]
+## BƯỚC 2 — Extract Exact Values từ Figma
+
+### 2A — Đọc Mobile Diff Table từ Plan [TRƯỚC KHI gọi Figma]
+
+```
+view_file: .agents/plans/[slug].md → section [SN] → Mobile diff table
+```
+
+Pre-map các Bricks keys cần set cho mobile trước khi đọc Figma. Nếu table chưa có → bổ sung sau bước 2B.
+
+### 2B — Gọi Figma [SONG SONG]
 
 ```
 [Song song]
 mcp_figma_get_design_context(desktop_node_id)
-mcp_figma_get_design_context(mobile_node_id)
+mcp_figma_get_design_context(mobile_node_id)   ← luôn gọi để xác nhận Mobile Diff Table
 ```
 
-### 2A — Flags bắt buộc khi phát hiện
+### 2C — Flags bắt buộc khi phát hiện
 
-| Flag              | Điều kiện |
-| ----------------- | --------- |
-| `[G2-RISK]`       | flex-row → kiểm tra `_flexWrap: "nowrap"` |
-| `[ABSENT-MOBILE]` | Element không có trên mobile → `_display:mobile_portrait: "none"` |
-| `[MASK-IMAGE]`    | Ảnh có mask → dùng `_cssCustom` trên wrapper block |
-| `[BG-IMAGE]`      | Background image → dùng `_background.image`, KHÔNG tạo block riêng |
-| `[PLACEHOLDER]`   | Lorem Ipsum → hỏi user Dynamic Data? |
+| Flag                | Điều kiện |
+| ------------------- | --------- |
+| `[G2-RISK]`         | flex-row → kiểm tra `_flexWrap: "nowrap"` |
+| `[ABSENT-MOBILE]`   | Element không có trên mobile → `_display:mobile_portrait: "none"` |
+| `[DIRECTION-CHANGE]`| flex-direction khác desktop vs mobile → `_direction:mobile_portrait` |
+| `[SIZE-CHANGE]`     | width/height/font-size khác → set key:mobile_portrait tương ứng |
+| `[MASK-IMAGE]`      | Ảnh có mask → dùng `_cssCustom` trên wrapper block |
+| `[BG-IMAGE]`        | Background image → dùng `_background.image`, KHÔNG tạo block riêng |
+| `[PLACEHOLDER]`     | ≥3 items cùng nội dung → **DỪNG** + hỏi user A (static) / B (Dynamic) |
 
-### 2B — Mapping Table [BẮT BUỘC cho mỗi element]
+### 2D — Mapping Table [BẮT BUỘC cho mỗi element]
 
 Với **mỗi element** trong Figma output, tạo bảng đối chiếu từng class:
 
@@ -177,22 +191,42 @@ STRUCTURE
 □ Hierarchy: section → container → block đúng?
 □ children ↔ parent khớp 2 chiều?
 
+TYPOGRAPHY [LỖI 9]
+□ font-size/weight/line-height là plain string "24px"?
+□ KHÔNG có {value:24, unit:"px"} format?
+□ color nằm trong _typography.color.hex?
+
 LAYOUT
-□ Đã chạy Mapping Table (Bước 2B) cho TỪNG element?
+□ Đã chạy Mapping Table (Bước 2D) cho TỪNG element?
 □ gap → _rowGap / _columnGap đã map?
 □ justify, items, self-stretch đã map?
-□ Container: _width: "100%" + _widthMax (không dùng width px cứng)?
+□ Container: _width: "100%" + _widthMax?
+
+CSS CUSTOM
+□ _cssCustom dùng #brxe-[id], KHÔNG có %root%?
+□ Absolute + text overlay: SVG z-index:0, text z-index:2? [LỖI 10]
+□ Có _cssCustom → nhắc user Ctrl+S sau push
 
 BACKGROUND
 □ KHÔNG có block riêng làm background image?
-□ Background image → _background.image với external: true?
-
-RESPONSIVE
-□ Mobile padding: chỉ trên 1 element, không duplicate?
+□ _background.image: external:true + size + position?
 
 FLEX
-□ KHÔNG có "_flexGrow":"1" + "_flexShrink":"0" cùng lúc?
-□ Flex chiếm phần còn lại → _cssCustom: "flex: 1"?
+□ KHÔNG có _flexGrow:"1" + _flexShrink:"0" cùng lúc?
+□ flex:1 → _cssCustom: "#brxe-[id]{flex:1;min-width:0}"?
+□ flex-row giữ hàng mobile → _cssCustom flex-wrap:nowrap?
+
+MOBILE [Đã đọc Mobile Diff Table bước 2A]
+□ [DIRECTION-CHANGE]: _direction:mobile_portrait đã set?
+□ [ABSENT-MOBILE]: _display:mobile_portrait:"none" đã set?
+□ [SIZE-CHANGE]: width/height/font:mobile_portrait đã set?
+□ section padding mobile không duplicate với desktop?
+
+ELEMENT COUNT & TOKEN
+□ Element count ước lượng: nếu >60 → response text compact (≤300 chars)?
+□ Figma element count ≈ Bricks element count?
+□ [PLACEHOLDER] đã flag + chờ user confirm (nếu có)?
+□ Status section detail vs table: không mâu thuẫn?
 ```
 
 > ⛔ **KHÔNG PUSH** nếu còn bất kỳ ô chưa tick.
@@ -228,10 +262,10 @@ FLEX
 ## Tóm tắt flow
 
 ```
-B0: Đọc plan → status check
+B0: Đọc plan → status check → [LỖI 12] cross-check detail vs table
 B1: Liệt kê widgets → đọc docs [song song] → Key Validation Table
-B2: get_design_context [song song] → Flags → Mapping Table từng element
-B3: Viết JSON → Pre-push Checklist → Push → Verify
+B2: Đọc Mobile Diff Table → get_design_context [song song] → Flags → Mapping Table
+B3: Viết JSON → Pre-push Checklist (8 sections) → Push → Verify
 B4: Cập nhật plan → /review-render-section tự động
 B5: Review pass → Báo cáo → AI DỪNG
 ```
@@ -249,4 +283,5 @@ B5: Review pass → Báo cáo → AI DỪNG
 | `image: {url: "..."}` | `image: {id: 0, url: "..."}` | basic-image.md |
 | `"parent": "0"` (string) | `"parent": 0` (integer) | quy tắc chung |
 | `%root%` trong `_cssCustom` | `#brxe-[id]` | shared-styles.md |
-| `_flexGrow:"1"` + `_flexShrink:"0"` | `_cssCustom: "flex: 1"` | build-errors.md |
+| `_flexGrow:"1"` + `_flexShrink:"0"` | `_cssCustom: "flex:1;min-width:0"` | build-errors.md |
+| `"_typography": {"font-size": {"value":24,"unit":"px"}}` | `"_typography": {"font-size": "24px"}` | build-errors.md #9 |

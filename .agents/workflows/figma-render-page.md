@@ -93,22 +93,42 @@ Chỉ phân tích các section **nội dung** (bỏ qua Header, Footer → đán
 
 Với mỗi section:
 
-- **Node Desktop / Mobile:** lấy từ kết quả 1A
-- **Độ phức tạp:** SIMPLE / MEDIUM / COMPLEX
-- **Widget tree:** Dùng **format tree có indent** với **tên Bricks widget thực tế**:
-  - Tên widget: `section`, `container`, `block`, `heading`, `text-basic`, `image`, `button`, `slider-nested`, `tabs-nested`...
-  - Ghi kèm settings quan trọng trong ngoặc đơn
-  - Dùng ký tự `└─`, `├─`, `│` để thể hiện hierarchy
-  - Ghi chú ý nghĩa từng nhánh bằng `← comment`
-  - ⚠️ **Bắt buộc:** Con trực tiếp của `section` **luôn là `container`**, không bao giờ là `block`
-    ```
-    ✅ section → container → block → [widgets]
-    ❌ section → block → ...   (SAI — không được dùng)
-    ```
-- **Số element lặp:** đếm chính xác (card, slide, tab item...)
-- **Slider/Tab:** phát hiện → flag dùng `slider-nested` / `tabs-nested`
-- **Responsive (Mobile diff):** so sánh Desktop vs Mobile node → ghi điểm khác biệt layout
-- **Gotchas:** cảnh báo kỹ thuật nếu có
+**A. Widget tree (desktop)** — BẮt buộc đầy đủ:
+- Tên widget: `section`, `container`, `block`, `heading`, `text-basic`, `image`, `button`, `slider-nested`...
+- Ghi kèm settings quan trọng trong ngoặc đơn (flex-direction, gap, width, bg color, border-radius)
+- ⚠️ Con trực tiếp của `section` luôn là `container`, KHÔNG bao giờ là `block`
+- **Inline mobile flags** — đánh dấu ngay trong tree với:
+  - `[DC]` = DIRECTION-CHANGE (flex-direction khác)
+  - `[AM]` = ABSENT-MOBILE (không xuất hiện trên mobile)
+  - `[SC]` = SIZE-CHANGE (width/height/font khác)
+
+**B. Element count** — Phải có công thức rõ ràng:
+```
+• SIMPLE/MEDIUM  : đếm tổng elements trực tiếp
+• COMPLEX có card: (elements/card × số card) + structure + pagination = TỔNG
+• Nếu TOTAL > 60  : đánh dấu ⚠️ TOKEN-RISK
+```
+
+**C. Image URLs** — Liệt kê TẤT CẢ, không "… (+ N more)":
+- Format: `[Mô tả]: http://localhost:3845/assets/[hash].ext`
+- Với card grid: map cụ thể `Card [N] ([category]): [url]`
+- Bắt buộc lấy từ Figma code `const img... = "[hash]"` → reconstruct URL
+
+**D. Build Flags** — Phát hiện và ghi rõ (có thể nhiều flag cùng lúc):
+| Flag | Điều kiện |
+|------|----------|
+| `[G2-RISK]` | Có block `flex-row` cần giữ hàng trên mobile |
+| `[MASK-IMAGE]` | Có element dùng mask-image CSS |
+| `[PLACEHOLDER]` | ≥3 items có cùng nội dung (title/excerpt giống nhau) |
+| `[TOKEN-RISK]` | Element count > 60 → cần compact response khi build |
+| `[DYNAMIC]` | Section nên dùng Query Loop (user đã yêu cầu) |
+| `[SLIDER]` | Cần `slider-nested` |
+
+**E. Mobile Diff Table** — Bắt buộc có bảng (KHÔNG để trống, KHÔNG viết “1-2 cột”):
+- So sánh desktop vs mobile node làm 1 row/element
+- Ghi cụ thể Bricks key cần set
+
+**F. Gotchas** — CSS phức tạp, quirks Bricks, biết tất cả và ghi rõ
 
 ### 1D — Ghi File Plan (ngay, không cần chờ confirm)
 
@@ -164,23 +184,36 @@ Với mỗi section:
 ### [S1] [Tên Section]
 
 - **Node Desktop:** [node-id]
-- **Node Mobile:** [node-id từ get_metadata — không để trống]
+- **Node Mobile:** [node-id]
 - **Complexity:** SIMPLE / MEDIUM / COMPLEX
-- **Widget tree:**
+- **Build flags:** `[G2-RISK]` `[MASK-IMAGE]` `[TOKEN-RISK]` `[PLACEHOLDER]` *(chỉ liệt kê các flag áp dụng)*
+- **Widget tree:** *(inline mobile flags: `[DC]`=direction-change, `[AM]`=absent-mobile, `[SC]`=size-change)*
 ```
-
 section ([key settings])
-└─ container ([width, flex-direction, gap])
-├─ block ([settings]) ← mô tả vai trò
-│ ├─ heading "[text]"
-│ └─ text-basic "[text]"
-└─ block ([settings]) ← mô tả vai trò
-└─ image ([src])
-
+└─ container ([width, flex-direction, gap]) [DC]
+   ├─ block ([settings]) ← mô tả vai trò
+   │  ├─ heading "[text]" [SC: 36px→24px mobile]
+   │  └─ text-basic "[text]"
+   └─ block ([settings]) [AM] ← ẩn trên mobile
+      └─ image ([src])
 ```
-- **Elements:** [N] | **Depth:** [D]
-- **Images:** [url list]
-- **Mobile diff:** [điểm layout khác desktop]
+- **Element count:** [N structure] + [M cards × K elem/card] = **[TOTAL]** `(TOKEN-RISK nếu >60)`
+- **Images:** *(liệt kê TẤT CẢ URL — không "… (+ N more)")*
+  - Background: `http://localhost:3845/assets/[hash].ext`
+  - Card 1 ([category]): `http://localhost:3845/assets/[hash].ext`
+  - Card 2 ([category]): `http://localhost:3845/assets/[hash].ext`
+  - Icon: `http://localhost:3845/assets/[hash].svg`
+- **Mobile diff table:**
+
+  | Element | Desktop | Mobile | Bricks key |
+  |---------|---------|--------|------------|
+  | section | padding: 40px | py-32 px-16 | `_padding:mobile_portrait` |
+  | [block] | flex-row | column-reverse | `_direction:mobile_portrait` |
+  | [text]  | 36px | 24px | `_typography:mobile_portrait` |
+  | [elem]  | visible | hidden | `_display:mobile_portrait: "none"` |
+
+  > ⚠️ Mọi element có diff phải có 1 row. KHÔNG để trống.
+
 - **Gotchas:** [nếu có]
 - **Template ID:** (Phase 2)
 - **Status:** pending
@@ -307,7 +340,8 @@ PHASE 0 ── [song song] Bricks MCP check + Figma MCP check
 PHASE 1A ── [song song] get_design_context + get_metadata(mobile) + screenshot desktop + screenshot mobile
               └─ parse get_metadata XML → map mobile node ID cho từng section
 PHASE 1B ── Trích xuất Global Design Variables (Colors, Typography, Spacing/Radius, Images)
-PHASE 1C ── Phân tích từng section: [SKIP] Header/Footer, complexity, widget tree (tree format), mobile diff, gotchas
+PHASE 1C ── Phân tích từng section: [SKIP] Header/Footer, widget tree + inline mobile flags [DC/AM/SC],
+            element count (công thức), image URLs (TẤT CẢ), build flags, Mobile Diff Table, gotchas
 PHASE 1D ── Ghi .agents/plans/[slug].md ngay (không chờ confirm) — user tự xem
               ↓ (tự động)
 PHASE 2A ── Tạo WordPress Page (draft) → lưu page_id vào plan
