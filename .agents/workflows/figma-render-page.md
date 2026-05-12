@@ -8,51 +8,10 @@ description: Phân tích link figma tạo file plan, tạo page và template the
 
 ---
 
-## Input
-
-- Figma URL hoặc node-id (ví dụ: `3641-1142`)
-- Tên page slug (ví dụ: `author-profile`)
-- Tên page hiển thị (ví dụ: `Author Profile`)
-
----
-
-## Output
-
-- **Plan file:** `.agents/plans/[slug].md`
-- **WordPress Page** (draft) với N template widgets đã gắn
-- **N Bricks Templates trống** (1 template/section, bỏ qua header/footer)
-
----
-
-## ⚠️ FRESH START — Bắt buộc đầu mỗi lần chạy
-
-- Không dùng lại context, plan file, hay dữ liệu Figma từ session trước
-- Ghi đè file plan cũ nếu cùng slug — không append
-
----
-
-## PHASE 0 — Kiểm tra MCP Connection
-
-> Gọi **song song** — 2 check độc lập, không có dependency, tiết kiệm thời gian.
-
-```
-[song song]
-[0a] mcp_bricks-mcp_get_site_info(action: "info")          → Bricks MCP
-[0b] mcp_figma_get_design_context(node-id: [node_id])      → Figma MCP
-```
-
-| Bricks MCP | Figma MCP |                              Quyết định                              |
-| :--------: | :-------: | :------------------------------------------------------------------: |
-|     ✅     |    ✅     |                         ▶️ Tiếp tục Phase 1                          |
-|     ❌     |  bất kỳ   |     ⛔ Dừng — báo user kiểm tra plugin `mcp-adapter` và WP site      |
-|     ✅     |    ❌     | ⛔ Dừng — báo user kiểm tra Figma Desktop đang mở + `localhost:3845` |
-
----
-
 ## PHASE 1 — Phân tích Figma & Tạo File Plan
 
 ### 1A — Thu thập dữ liệu Figma [SONG SONG]
-
+AI bắt đầu ngay lập tức bằng việc thu thập dữ liệu:
 ```
 [song song — tất cả cùng lúc]
 mcp_figma_get_design_context(desktop_node_id,
@@ -61,7 +20,6 @@ mcp_figma_get_design_context(desktop_node_id,
   clientLanguages: "html,css,javascript,php")
 
 mcp_figma_get_metadata(mobile_node_id)       → lấy section-level child node IDs của mobile
-
 mcp_figma_get_screenshot(desktop_node_id)    → visual reference desktop
 mcp_figma_get_screenshot(mobile_node_id)     → visual reference mobile (nếu có)
 ```
@@ -94,14 +52,11 @@ Chỉ phân tích các section **nội dung** (bỏ qua Header, Footer → đán
 Với mỗi section:
 
 **A. Widget tree (desktop)** — BẮT buộc đầy đủ:
-- Tên widget: `section`, `container`, `block`, `heading`, `text-basic`, `image`, `button`, `slider-nested`...
-- Ghi kèm settings quan trọng trong ngoặc đơn (flex-direction, gap, width, bg color, border-radius)
-- ⚠️ **Hierarchy bắt buộc:** Con trực tiếp của `section` luôn là `container`. KHÔNG bao giờ là `block`.
-- ⚠️ **`container` chỉ ở depth 1** ngay dưới `section`. Bên trong `block` hoặc slide → chỉ dùng `block` và leaf widgets.
-- **Inline mobile flags** — đánh dấu ngay trong tree với:
-  - `[DC]` = DIRECTION-CHANGE (flex-direction khác)
-  - `[AM]` = ABSENT-MOBILE (không xuất hiện trên mobile)
-  - `[SC]` = SIZE-CHANGE (width/height/font khác)
+- Tên widget và settings quan trọng.
+- ⚠️ **Hierarchy bắt buộc**: Tham chiếu [building-logic.md](file:///.agents/references/building-logic.md).
+- Con trực tiếp của `section` luôn là `container`. 
+- `container` chỉ ở depth 1 ngay dưới `section`.
+- Inline mobile flags: `[DC]`, `[AM]`, `[SC]`.
 
 **B. Element count** — Phải có công thức rõ ràng:
 ```
