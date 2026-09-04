@@ -16,6 +16,7 @@
 | Quy tắc thiết kế chung (DOM, naming, cleanup, session) | `todo/rules/general_rules.md` |
 | Shape JSON Bricks 1.12.3 + phase-based build + scripts | `todo/rules/bricks_rules.md` |
 | Ánh xạ Figma Auto Layout → CSS/Bricks | `todo/rules/figma_rules.md` |
+| **Chế độ `prompt`** (không có Figma): mốc nghiệm thu, gate thay G4 | `todo/rules/prompt_mode_rules.md` |
 | Đọc Figma qua MCP (scan→zoom→build) | `skills/figma-skills/SKILL.md` |
 | Element/control keys Bricks (chống hallucination) | `skills/bricks-skills/SKILL.md` + `references/` |
 | Chấm điểm review G4 (rubric ≥98đ) | `skills/bricks-skills/review-skill/rubric.md` |
@@ -54,6 +55,7 @@ PLAN ──⏸️user xác nhận──▶ DO (từng section, 4 phase) ──�
   - Diff bắt buộc ở Phase 3 (desktop) và Phase 4 (mobile).
   - **Sau khi assemble page thật** (không phải từng section riêng): chạy `validate_mobile_overflow.py --page-id <id> --viewport 390` — đo `scrollWidth` thật, **không** chỉ xem screenshot bằng mắt (bài học sự cố 2026-07-22, xem `bricks_rules.md` §21/§23). Áp dụng cho cả chế độ `figma` lẫn `prompt` (chế độ `prompt` không có G4 pixel-diff nên đây là gate mobile khách quan duy nhất).
 - **DONE**: chụp full-page, báo cáo %, cập nhật `infor_todo.md` — **cấm** viết DONE nếu G4 preflight FAIL (chế độ `figma`) hoặc nếu `validate_mobile_overflow.py` FAIL (mọi chế độ).
+- **Chế độ `prompt`**: G4/rubric/diff **không áp dụng** (không có mốc Figma) — mốc nghiệm thu là **checklist trong plan đã được user duyệt**, khoá bất biến sau khi duyệt. Đọc `todo/rules/prompt_mode_rules.md` trước khi PLAN; cấm viết số kiểu "98%"/"similarity" ở chế độ này.
 - **Trước khi công bố/bàn giao trang cho khách thật** (sau DONE): `rehost_assets.py --apply` cho mọi JSON còn URL Figma cache → re-upload JSON → screenshot xác nhận lại. Bước này áp dụng chung mọi môi trường (URL `localhost:3845` không sống ngoài máy build).
 
 ---

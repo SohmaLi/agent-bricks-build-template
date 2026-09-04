@@ -21,6 +21,8 @@ _Chỉ điền mục này khi **Chế độ thiết kế = prompt** (không có 
 ```
 ```
 
+> 📖 **Đọc `todo/rules/prompt_mode_rules.md` trước khi PLAN** — quy trình + mốc nghiệm thu đầy đủ cho chế độ này.
+>
 > 💡 Vì không có Figma làm mốc so khớp pixel, gate review cuối sẽ dựa trên: đúng yêu cầu mô tả ở trên + nhất quán giữa các trang + gate kỹ thuật (JSON hợp lệ, không lỗi cắt chữ/line-clamp, không tràn ngang mobile — chạy `validate_mobile_overflow.py --page-id <id> --viewport 390` trên từng page thật trước khi báo DONE, xem `bricks_rules.md` §21/§23) — không có bước "so khớp pixel" như quy trình Figma.
 
 ---

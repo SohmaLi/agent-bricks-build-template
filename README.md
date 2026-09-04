@@ -21,7 +21,8 @@ skills/
   figma-skills/              Quy tắc đọc & ánh xạ Figma Auto Layout → CSS/Bricks
   figma-bricks/schema/       Schema IR lịch sử (Flow 1B, đã deprecated — giữ tham khảo)
 todo/
-  rules/                    Quy tắc bắt buộc: general_rules.md, bricks_rules.md, figma_rules.md
+  rules/                    Quy tắc bắt buộc: general_rules.md, bricks_rules.md, figma_rules.md,
+                            prompt_mode_rules.md (chế độ prompt — mốc nghiệm thu thay G4)
   scripts/                  Công cụ Python: validate G1-G4, screenshot, diff, rehost asset...
   plans/ bricks-json/ assets/ scratch/   Output phiên làm việc (gitignored, xoá bởi cleanup)
 plugins/bricks-mcp-bridge/   WordPress plugin bridge (MCP server phía site đích)
