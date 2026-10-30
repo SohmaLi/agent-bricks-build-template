@@ -9,6 +9,8 @@ except ImportError:
     print("LỖI: Thư viện 'playwright' chưa được cài đặt.")
     sys.exit(1)
 
+from lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+
 def _find_env_file():
     """Walk up from this script and the cwd to locate the project's .env."""
     candidates = []
@@ -42,7 +44,6 @@ def load_env():
 def capture_screenshot_logged_in(url, output_path, viewport_type):
     print(f"=== BẮT ĐẦU CHỤP ẢNH GIAO DIỆN (ĐÃ ĐĂNG NHẬP) ===")
     env = load_env()
-    wp_url = env.get("WP_URL", "http://localhost:8000")
     wp_user = env.get("WP_USER")
     wp_pass = env.get("WP_PASS")
 
@@ -62,24 +63,16 @@ def capture_screenshot_logged_in(url, output_path, viewport_type):
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(
                 viewport={"width": width, "height": height},
-                user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                **browser_context_kwargs()
             )
             page = context.new_page()
 
             if wp_user and wp_pass:
-                login_url = f"{wp_url}/wp-login.php"
-                print(f"Đang đăng nhập vào WordPress tại: {login_url}")
-                page.goto(login_url, wait_until="networkidle")
-                
-                # Điền thông tin và đăng nhập
-                page.fill("#user_login", wp_user)
-                page.fill("#user_pass", wp_pass)
-                page.click("#wp-submit")
-                page.wait_for_load_state("networkidle")
-                print("Đăng nhập thành công.")
+                wp_login(page)
 
             print(f"Đang tải trang mục tiêu: {url}")
-            page.goto(url, wait_until="networkidle", timeout=30000)
+            goto_settled(page, url)
             page.wait_for_timeout(1500)
             
             # Đảm bảo thư mục lưu tồn tại

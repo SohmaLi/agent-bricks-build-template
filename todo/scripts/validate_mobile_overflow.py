@@ -23,21 +23,17 @@ except ImportError:
     PLAYWRIGHT_OK = False
 
 from scripts.lib.bricks_mcp import _get_config
+from scripts.lib.wp_login import browser_context_kwargs, wp_login, goto_settled
 
 
 def check_overflow(url: str, viewport: int, user: str, password: str, tolerance: int):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(viewport={"width": viewport, "height": 900})
+        ctx = browser.new_context(viewport={"width": viewport, "height": 900}, **browser_context_kwargs())
         page = ctx.new_page()
         if user and password:
-            wp_url = "/".join(url.split("/")[:3])
-            page.goto(f"{wp_url}/wp-login.php", wait_until="networkidle")
-            page.fill("#user_login", user)
-            page.fill("#user_pass", password)
-            page.click("#wp-submit")
-            page.wait_for_load_state("networkidle")
-        page.goto(url, wait_until="networkidle", timeout=30000)
+            wp_login(page)
+        goto_settled(page, url)
         page.wait_for_timeout(1200)
 
         scroll_width = page.evaluate("document.documentElement.scrollWidth")

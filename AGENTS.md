@@ -1,7 +1,8 @@
 # AGENTS.md — Bản đồ hệ thống ANV_mcp
 
 > Hệ thống tự động chuyển **Figma → Bricks Builder** (WordPress). Phiên bản Bricks: **đọc từ `get_site_info` ở đầu phiên** — đừng tin số ghi cứng trong tài liệu.
-> ✅ **2026-07-23 — Site đã lên Bricks 2.3.9, re-verify chính đã XONG** (`bricks_rules.md` §0): mọi trap then chốt (`_gap`, `_borderRadius`, `_minWidth`, `_color`, `objectFit`, `%root%`, default width container/block) hành xử **y hệt 1.12.3** — bộ rules hiện hành dùng nguyên trạng. Khác biệt 2.x duy nhất đã ghi nhận: CSS Bricks nằm trong `@layer bricks` (xem §0 mục 0g). Vẫn sinh JSON shape 1.x; KHÔNG dùng key 2.x-only (`slots`, `styleVariants`) cho tới khi có rule verified.
+> ℹ️ **2026-10-12 — Site đích hiện tại (theo `.env`) chạy Bricks 1.12.3** (production, đã xác nhận bằng `get_site_info`) — đúng phiên bản gốc của bộ rules. Ghi chú 2.x bên dưới chỉ áp dụng nếu site đích lên lại 2.x.
+> ✅ **2026-07-23 — (site cũ) Bricks 2.3.9, re-verify chính đã XONG** (`bricks_rules.md` §0): mọi trap then chốt (`_gap`, `_borderRadius`, `_minWidth`, `_color`, `objectFit`, `%root%`, default width container/block) hành xử **y hệt 1.12.3** — bộ rules hiện hành dùng nguyên trạng. Khác biệt 2.x duy nhất đã ghi nhận: CSS Bricks nằm trong `@layer bricks` (xem §0 mục 0g). Vẫn sinh JSON shape 1.x; KHÔNG dùng key 2.x-only (`slots`, `styleVariants`) cho tới khi có rule verified.
 > Đây là điểm khởi đầu cho mọi phiên làm việc. Đọc file này trước, rồi mở tài liệu chi tiết theo bảng bên dưới.
 
 ---
@@ -29,7 +30,7 @@
 
 ## 2. Quy tắc vàng (BẮT BUỘC)
 
-- **Phiên bản Bricks**: xác nhận bằng `get_site_info` đầu phiên (hiện tại: **2.3.9**, đã re-verify — `bricks_rules.md` §0). Sinh JSON theo shape 1.x (2.x tương thích ngược, mọi trap đã probe giữ nguyên); **chưa dùng** key 2.x-only (`slots`, `styleVariants`, utility classes của Style Manager) vì chưa có rule verified cho chúng. Style bị đè "vô cớ" trên 2.x → nghi `@layer` trước (CSS Bricks nằm trong `@layer bricks`, CSS unlayered ngoài Bricks luôn thắng — §0 mục 0g).
+- **Phiên bản Bricks**: xác nhận bằng `get_site_info` đầu phiên (hiện tại: **1.12.3** — 2026-10-12; trước đó từng chạy 2.3.9, đã re-verify — `bricks_rules.md` §0). Sinh JSON theo shape 1.x (nếu site lên 2.x thì vẫn tương thích ngược, mọi trap đã probe giữ nguyên); **chưa dùng** key 2.x-only (`slots`, `styleVariants`, utility classes của Style Manager) vì chưa có rule verified cho chúng. Style bị đè "vô cớ" trên 2.x → nghi `@layer` trước (CSS Bricks nằm trong `@layer bricks`, CSS unlayered ngoài Bricks luôn thắng — §0 mục 0g).
 - **Element ID** đúng regex `^[a-z0-9]{6}$`, duy nhất; `parent`/`children` ràng buộc 2 chiều.
 - **Đơn vị `px`** là chủ đạo (giữ nguyên từ Figma); tỷ lệ dùng `%`. Giá trị luôn là chuỗi kèm đơn vị.
 - **Ảnh (quy tắc CHUNG mọi môi trường — không phân biệt site local hay remote)**: lúc build dùng URL external Figma cache (`localhost:3845/assets/...`) — KHÔNG dùng WP media ID trần (id không có url không resolve khi ghi JSON trực tiếp). URL Figma cache chỉ sống trên máy build khi Figma Desktop mở, nên **trước khi công bố trang cho khách thật** phải chạy `rehost_assets.py --apply` (chuyển ảnh về WP Media qua bridge `upload_media`) rồi re-upload JSON — G1 sẽ nhắc bằng cảnh báo gộp khi còn URL Figma cache.
@@ -64,6 +65,7 @@ PLAN ──⏸️user xác nhận──▶ DO (từng section, 4 phase) ──�
 
 - **Site đích đọc duy nhất từ `.env` (`WP_URL`)** — hệ thống KHÔNG phân biệt local hay remote: đổi site chỉ cần đổi `.env` (+ `.mcp.json` cho MCP client), mọi script/gate tự theo. Không hardcode URL site trong script/tài liệu.
 - **`.env`** (đã cấu hình): `WP_URL`, `WP_USER`, `WP_PASS`, `BRICKS_MCP_URL`, `BRICKS_MCP_TOKEN`, `FIGMA_ACCESS_TOKEN`, `FIGMA_FILE_KEY` (optional cho script inspect/dump).
+  Site có lớp bảo vệ trước form login (vd. Basic Auth openresty + slug login ẩn): thêm `WP_FIREWALL` (URL trang login, thay `/wp-login.php`), `WP_FIREWALL_USER`, `WP_FIREWALL_PASS` (HTTP Basic Auth). Mọi script Playwright đăng nhập qua `todo/scripts/lib/wp_login.py` (tự đọc 3 biến này, bỏ trống = login thường; báo lỗi nếu không có cookie `wordpress_logged_in_*`).
 - **bricks-mcp**: WordPress plugin `plugins/bricks-mcp-bridge/` (phải Active, **>= 1.3.0** để có tool `upload_media` cho re-host). Client Python: `todo/scripts/lib/bricks_mcp.py`. Token đổi được tại WP Admin → Bricks MCP Bridge (nút regenerate) — sau khi đổi phải cập nhật `.env` + `.mcp.json`.
 - **Figma MCP**: cần Figma Desktop mở **trên máy build** (ảnh export serve tại `localhost:3845` — chỉ máy build thấy được, vì vậy có bước re-host ở mục 3).
 - **Screenshot**: Playwright (trong `.venv`) — headless Chromium, tự login WP theo `WP_URL`/`WP_USER`/`WP_PASS`.
@@ -82,7 +84,7 @@ PLAN ──⏸️user xác nhận──▶ DO (từng section, 4 phase) ──�
 `rehost_assets.py` (2026-07-23, chuyển ảnh Figma cache → WP Media qua bridge `upload_media` — bước bắt buộc trước khi công bố, xem mục 2/3)
 `inspect_figma_nodes.py` · `inspect_figma_children.py` · `dump_figma_spacings.py` (cả 3 nhận `--file-key`/`--node` qua CLI hoặc `FIGMA_FILE_KEY` trong `.env` — không còn hardcode phiên cũ)
 `check_docs_links.py` (quét tài liệu tìm tham chiếu file gãy — chạy sau mỗi lần dọn/đổi tên) · `smoke_test_scripts.py` (mọi script chạy được `--help` không Traceback)
-`generate_random_id.py` · `lib/bricks_mcp.py` · `lib/brix.py` (2026-07-22, helper Python dựng element tree cho pipeline `prompt`-mode — token/màu/font truyền vào từ build script của phiên, xem `upload_section.py` làm ví dụ upload)
+`generate_random_id.py` · `lib/bricks_mcp.py` · `lib/wp_login.py` (đăng nhập WP dùng chung cho script Playwright, hỗ trợ `WP_FIREWALL*`) · `lib/brix.py` (2026-07-22, helper Python dựng element tree cho pipeline `prompt`-mode — token/màu/font truyền vào từ build script của phiên, xem `upload_section.py` làm ví dụ upload)
 
 > **2026-07-14**: `validate_json.py`, `validate_structure.py`, `capture_screenshot.py` đã bị xoá — là bản nháp sớm hơn, trùng chức năng với `validate_template_json.py`/`validate_section_structure.py`/`capture_screenshot_logged_in.py` (bản sau đầy đủ hơn: có `--strict`, biết đọc plan file, có login WP). Nếu thấy tài liệu cũ nào còn nhắc 3 tên này, đó là tham chiếu lỗi thời.
 

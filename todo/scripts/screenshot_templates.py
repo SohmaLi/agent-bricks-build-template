@@ -42,6 +42,7 @@ except ImportError:
     PLAYWRIGHT_OK = False
 
 from scripts.lib.bricks_mcp import _get_config, load_template_mapping
+from scripts.lib.wp_login import browser_context_kwargs, wp_login, goto_settled
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
@@ -77,18 +78,14 @@ def _make_browser_context(playwright, viewport_name: str):
             'Chrome/120.0.0.0 Safari/537.36'
         ),
         device_scale_factor=2 if viewport_name == 'mobile' else 1,
+        **browser_context_kwargs(),
     )
     return browser, context
 
 
 def _login(page: Page, wp_url: str, user: str, password: str):
-    """Đăng nhập WordPress để xem preview page/template."""
-    login_url = f"{wp_url}/wp-login.php"
-    page.goto(login_url, wait_until='networkidle', timeout=20000)
-    page.fill('#user_login', user)
-    page.fill('#user_pass', password)
-    page.click('#wp-submit')
-    page.wait_for_load_state('networkidle')
+    """Đăng nhập WordPress để xem preview page/template (URL login + Basic Auth: lib/wp_login.py)."""
+    wp_login(page)
 
 
 def _capture_url(
@@ -99,7 +96,7 @@ def _capture_url(
     full_page: bool = True
 ):
     """Điều hướng tới URL và chụp ảnh."""
-    page.goto(url, wait_until='networkidle', timeout=30000)
+    goto_settled(page, url)
     # Đợi thêm cho Bricks render CSS/animation/lazyload
     page.wait_for_timeout(wait_ms)
     # Scroll xuống để trigger lazyload

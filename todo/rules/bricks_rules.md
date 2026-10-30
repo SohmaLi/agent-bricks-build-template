@@ -696,3 +696,39 @@ Mục 16 phía trên khẳng định các sub-control gate bằng `required: ['_
 → `column-gap`/`row-gap` có mặt đầy đủ, không cần viết `_cssCustom` thay thế cho layout grid.
 
 **Lưu ý phân biệt với mục 2/0c**: bẫy `_gap` KHÔNG compile (dùng `_columnGap`/`_rowGap` thay) vẫn đúng và không đổi — mục này chỉ xác nhận `_columnGap`/`_rowGap` (đã đúng key) hoạt động trên cả hai giá trị `_display`, không phải chỉ `flex`.
+
+---
+
+## 30. Tabs (Nestable) `tabs-nested` — khung con + 3 bẫy + vá LiteSpeed (xác thực source `tabs-nested.php` + `bricks.min.js`, 2026-10-05, template 9274)
+
+**Khung con bắt buộc** (đúng `get_nestable_children()`; JS tìm theo class nên KHÔNG đổi tên): root `tabs-nested` > `block` class `tab-menu` > N × `div` class `tab-title` (> `text-basic`) ; `block` class `tab-content` > N × `block` class `tab-pane`. Class gắn qua `"_hidden": {"_cssClasses": "tab-title"}` như core (builder nhận diện). `role`/`aria-*` do `enhance_accessibility()` server tự thêm — không tự viết `_attributes`. Hướng root: control `direction` (`"row"`, `"direction:tablet_portrait": "column"`) — compile ra `flex-direction`. Tab mở sẵn: `openTab` (index, mặc định 0) → `data-open-tab`.
+
+**3 bẫy (đều câm — G1/G2/G2.5 PASS):**
+1. **Mọi pane hiện cùng lúc** nếu pane là `block` có `_display:flex` (mặc định của `brix.block`): CSS cấp ID `#brxe-{pane}{display:flex}` đè `.brxe-tabs-nested .tab-pane{display:none}` của core. Ẩn lại bằng selector mạnh hơn: `#brxe-{sec} .tab-pane{display:none}` + `#brxe-{sec} .tab-pane.brx-open{display:flex}`.
+2. **`tab-title` (element `div`) bị core ép `width:auto`** (`.brxe-tabs-nested .tab-title{width:auto}`) — menu dọc sẽ co theo chữ. Cần `width:100%` tường minh khi muốn tab full chiều ngang.
+3. **`brx-open` CHỈ do JS gắn** (server không render class này) → nếu `bricks.min.js` bị LiteSpeed hoãn (§26a) thì lúc tải trang KHÔNG pane nào hiện và cú click đầu có thể mất.
+
+**Vá LiteSpeed (đã test bằng giả lập: chặn `bricks.min.js` → click → nạp lại + bắn `DOMContentLoaded` giả):**
+- CSS trạng thái mặc định khi chưa có `brx-open`: `.vps-feat:not(:has(.tab-pane.brx-open)) .tab-pane:first-child{display:flex}` (tương tự cho `.tab-title:first-child` để tô active).
+- Script lưới an toàn trong `customScriptsBodyFooter` (`data-no-optimize="1" data-no-defer="1"`, §26c): click uỷ quyền trên `.tab-title` → đổi `brx-open`/`aria-selected`/`tabindex` y hệt `bricksTabsFn` (idempotent khi cả hai cùng chạy) **và ghi `data-open-tab` = index vừa chọn** — vì `bricksTabsFn` khi init chỉ `add('brx-open')` cho index `data-open-tab` mà không gỡ ở tab khác ⇒ thiếu bước này sẽ thành 2 pane mở cùng lúc.
+- Test logged-in KHÔNG phản ánh LiteSpeed (admin không bị hoãn JS: `typeof bricksTabsFn` = `object` ngay khi tải) — phải giả lập như trên hoặc test bằng khách trên page đã publish.
+
+---
+
+## 31. Ẩn `<br>` theo breakpoint → 2 từ DÍNH LIỀN nếu viết `A<br>B` (sự cố 2026-10-07, template 9319)
+
+Heading desktop xuống dòng cố định bằng `<br>`, tablet/mobile ẩn đi bằng `_cssCustom:tablet_portrait: "#brxe-{id} br{display:none}"` để chữ tự chảy. Viết `"VIỆT NAM<br>TỐC"` thì khi `<br>` bị ẩn **không còn ký tự trắng nào** giữa 2 từ → hiển thị `NAMTỐC`. Mọi gate (G1/G2/G2.5/G4 preflight/mobile overflow) đều PASS, diff pixel gần như không đổi — chỉ lộ khi đọc chữ trên screenshot.
+
+**Quy tắc**: luôn viết `A <br>B` (có dấu cách trước `<br>`). Khi `<br>` hiện, dấu cách cuối dòng bị trình duyệt nuốt (desktop không đổi); khi ẩn, nó thành khoảng trắng giữa 2 từ.
+
+🔒 **Đã có gate**: `validate_template_json.py` → `check_hidden_br_word_gap()` báo lỗi cứng khi element có `_cssCustom*` ẩn `br` mà `text` chứa `\S<br>\S`.
+
+## 32. `_cssId` (ID tuỳ chỉnh, vd anchor) ĐỔI id render → `#brxe-{id}` trong `_cssCustom` chết im lặng (sự cố 2026-10-12, LDP Grow Smarter)
+
+Đặt `_cssId: "dang-ky"` cho section để làm anchor cho CTA → Bricks render `id="dang-ky"` **thay cho** `id="brxe-{id}"` (`Helpers::get_element_attribute_id`, helpers.php ~1984). CSS Bricks tự sinh (padding, background control…) đi theo ID mới nên vẫn đúng, nhưng `_cssCustom` đã thay `%root%` → `#brxe-{id}` (§13) thì **không khớp phần tử nào** → toàn bộ khối CSS tuỳ biến (ở đây: ảnh nền section) bị bỏ qua. G1/G2/G2.5/G4 preflight đều PASS; chỉ lộ khi so ảnh (nền trơn).
+
+**Quy tắc**: element có `_cssId` → thay `%root%` bằng `#<_cssId>`. Helper build (`gs.css()` phiên này) tự chọn selector theo `_cssId`.
+
+🔒 **Đã có gate**: `validate_template_json.py` → `check_css_id_vs_root_selector()` báo lỗi cứng khi element có `_cssId` mà `_cssCustom*` còn dùng `#brxe-{id}`.
+
+Bẫy kèm theo (cùng phiên): field `type: hidden` của element `form` render 1 `<div>` rỗng **không class** làm con trực tiếp của `<form>` — nếu form dùng `display:flex;row-gap` thì div rỗng vẫn ăn thêm 1 khoảng gap. Ẩn bằng `#form > div:not([class]){display:none}`.

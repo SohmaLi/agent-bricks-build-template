@@ -21,6 +21,8 @@ except ImportError:
     print("LỖI: cần 'playwright' (đã có trong .venv của project).")
     sys.exit(1)
 
+from lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+
 
 def load_env():
     import os
@@ -56,21 +58,17 @@ def main():
     env = load_env()
     wp_user = env.get("WP_USER")
     wp_pass = env.get("WP_PASS")
-    wp_url = env.get("WP_URL", "http://localhost:8000")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": args.viewport_width, "height": 900})
+        context = browser.new_context(viewport={"width": args.viewport_width, "height": 900},
+                                      **browser_context_kwargs())
         page = context.new_page()
 
         if wp_user and wp_pass:
-            page.goto(f"{wp_url}/wp-login.php", wait_until="networkidle")
-            page.fill("#user_login", wp_user)
-            page.fill("#user_pass", wp_pass)
-            page.click("#wp-submit")
-            page.wait_for_load_state("networkidle")
+            wp_login(page)
 
-        page.goto(args.url, wait_until="networkidle", timeout=30000)
+        goto_settled(page, args.url)
         page.wait_for_timeout(1200)
 
         results = page.evaluate("""() => {

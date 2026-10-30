@@ -141,6 +141,63 @@ def check_css_custom_root(elements: list):
                 )
 
 
+_BR_HIDE_RE = re.compile(r'br\s*\{[^}]*display\s*:\s*none', re.IGNORECASE)
+_BR_GLUED_RE = re.compile(r'\S<br\s*/?>\S', re.IGNORECASE)
+
+
+def check_css_id_vs_root_selector(elements: list):
+    """Element có `_cssId` (CSS ID tuỳ chỉnh, vd anchor `#dang-ky`) được Bricks render
+    `id="<_cssId>"` THAY CHO `id="brxe-<id>"` (Helpers::get_element_attribute_id) — CSS do
+    Bricks tự sinh đi theo ID mới, nhưng `_cssCustom` đã thay `%root%` → `#brxe-<id>` thì
+    không còn khớp phần tử nào → toàn bộ khối CSS tuỳ biến bị bỏ qua trong im lặng.
+
+    Lỗi câm thật phiên 2026-10-12 (LDP Grow Smarter, section đăng ký `#dang-ky`): mất ảnh nền
+    section, G1/G2/G2.5/G4 preflight đều PASS. Cách sửa: với element có `_cssId`, thay
+    `%root%` bằng `#<_cssId>` (bricks_rules.md §32).
+    """
+    for el in elements:
+        el_id = el.get('id', '')
+        settings = el.get('settings', {}) or {}
+        css_id = (settings.get('_cssId') or '').strip()
+        if not css_id:
+            continue
+        for key, value in settings.items():
+            if key.startswith('_cssCustom') and isinstance(value, str) and f'#brxe-{el_id}' in value:
+                err(
+                    f"Element '{el_id}' có `_cssId: {css_id}` nhưng '{key}' dùng selector "
+                    f"`#brxe-{el_id}` — Bricks render id=\"{css_id}\" nên selector này không khớp, "
+                    f"CSS bị bỏ qua im lặng. Dùng `#{css_id}` (bricks_rules.md §32)."
+                )
+
+
+def check_hidden_br_word_gap(elements: list):
+    """Ẩn `<br>` theo breakpoint (`_cssCustom:<bp>` có `br{display:none}`) mà text
+    viết dính `A<br>B` (không có khoảng trắng hai bên) → ở breakpoint đó 2 từ dính
+    liền thành `AB`. `<br>` bị `display:none` không sinh khoảng trắng nào.
+
+    Lỗi câm: G1/G2/G2.5/G4 preflight và mobile-overflow đều PASS, diff pixel cũng
+    gần như không nhích — chỉ lộ khi đọc chữ trên screenshot. Dính thật phiên
+    2026-10-07 (template 9319: "VIỆT NAM<br>TỐC" → tablet/mobile "NAMTỐC").
+
+    Cách sửa: viết `A <br>B` — khoảng trắng trước `<br>` bị trình duyệt nuốt khi
+    `<br>` hiện (không đổi layout desktop) và thành dấu cách khi `<br>` bị ẩn.
+    """
+    for el in elements:
+        settings = el.get('settings', {}) or {}
+        hides_br = any(
+            k.startswith('_cssCustom') and isinstance(v, str) and _BR_HIDE_RE.search(v)
+            for k, v in settings.items()
+        )
+        text = settings.get('text')
+        if hides_br and isinstance(text, str) and _BR_GLUED_RE.search(text):
+            err(
+                f"Element '{el.get('id', '')}': text có `<br>` dính liền 2 từ "
+                f"({_BR_GLUED_RE.search(text).group(0)!r}) trong khi `_cssCustom` ẩn `br` "
+                f"theo breakpoint → 2 từ sẽ dính nhau khi `<br>` bị ẩn. "
+                f"Thêm dấu cách trước `<br>` (vd `A <br>B`)."
+            )
+
+
 def validate_elements(elements: list, global_classes: list, strict: bool = False):
     """Core validation cho mảng elements."""
     id_set = {}  # id -> index
@@ -257,6 +314,8 @@ def validate_elements(elements: list, global_classes: list, strict: bool = False
     # Pass 4c: Ảnh phải có URL external (Figma cache), không chỉ dựa vào WP media id
     check_image_urls(elements)
     check_css_custom_root(elements)
+    check_hidden_br_word_gap(elements)
+    check_css_id_vs_root_selector(elements)
 
     # Pass 5: Root elements check
     root_elements = [el for el in elements if el.get('parent') == '0']
