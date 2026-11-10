@@ -42,6 +42,13 @@ _Chỉ điền mục này khi **Chế độ thiết kế = prompt** (không có 
 > 💡 **Khi Cleanup = yes**: Đọc và thực hiện theo `skills/bricks-skills/CLEANUP.md`
 > — Xóa các file output phiên cũ, giữ lại công cụ/kiến thức, sau đó reset file này.
 
+> ⏱️ **Giữ phiên nhanh (user tự gõ — AI không chạy được 2 lệnh này)**:
+>
+> 1. **Trước khi đặt `Do`**: gõ `/clear` để bắt đầu với context sạch (hội thoại cũ không liên quan làm mọi lượt sau chậm hơn — phiên 2026-11-06 mang theo 88k token thừa).
+> 2. **Khi AI xin xác nhận plan**: kiểm tra plan, gõ `/compact` rồi trả lời `Tiếp tục`. Số liệu Figma đã nằm trong file plan nên không mất gì.
+>
+> Ngoài 2 điểm này **không** `/compact` (nhất là giữa vòng sửa lỗi G4).
+
 ---
 
 ## 📝 GHI CHÚ THÊM CỦA NGƯỜI DÙNG

@@ -23,18 +23,13 @@ except ImportError:
     PLAYWRIGHT_OK = False
 
 from scripts.lib.bricks_mcp import _get_config
-from scripts.lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+from scripts.lib.wp_login import new_wp_page, goto_settled
 
 
-def check_overflow(url: str, viewport: int, user: str, password: str, tolerance: int):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(viewport={"width": viewport, "height": 900}, **browser_context_kwargs())
-        page = ctx.new_page()
-        if user and password:
-            wp_login(page)
+def check_overflow(browser, url: str, viewport: int, tolerance: int):
+    page = new_wp_page(browser, viewport, 900)   # login dùng lại phiên đã lưu (lib/wp_login.py)
+    try:
         goto_settled(page, url)
-        page.wait_for_timeout(1200)
 
         scroll_width = page.evaluate("document.documentElement.scrollWidth")
         offenders = page.evaluate(
@@ -58,8 +53,9 @@ def check_overflow(url: str, viewport: int, user: str, password: str, tolerance:
             }""",
             viewport,
         )
-        browser.close()
         return scroll_width, offenders
+    finally:
+        page.context.close()
 
 
 def main():
@@ -82,14 +78,21 @@ def main():
 
     wp_url = _get_config("WP_URL", "http://localhost:8000").rstrip("/")
     url = args.url or f"{wp_url}/?page_id={args.page_id}"
-    user, password = _get_config("WP_USER"), _get_config("WP_PASS")
     viewports = args.viewport or [390]
 
     print(f"\n{'='*60}\n  Gate — Mobile Overflow Check (scrollWidth thật)\n  URL: {url}\n{'='*60}")
 
     fail = False
-    for vw in viewports:
-        scroll_width, offenders = check_overflow(url, vw, user, password, args.tolerance)
+    results = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)   # 1 browser cho mọi viewport
+        try:
+            for vw in viewports:
+                results.append((vw, *check_overflow(browser, url, vw, args.tolerance)))
+        finally:
+            browser.close()
+
+    for vw, scroll_width, offenders in results:
         delta = scroll_width - vw
         status = "✅ PASS" if delta <= args.tolerance else "❌ FAIL"
         if delta > args.tolerance:

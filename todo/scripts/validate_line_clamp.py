@@ -21,7 +21,7 @@ except ImportError:
     print("LỖI: cần 'playwright' (đã có trong .venv của project).")
     sys.exit(1)
 
-from lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+from lib.wp_login import browser_context_kwargs, prepare_context, wp_login, goto_settled
 
 
 def load_env():
@@ -63,13 +63,13 @@ def main():
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": args.viewport_width, "height": 900},
                                       **browser_context_kwargs())
+        prepare_context(context)
         page = context.new_page()
 
         if wp_user and wp_pass:
             wp_login(page)
 
-        goto_settled(page, args.url)
-        page.wait_for_timeout(1200)
+        goto_settled(page, args.url)   # tự chờ font + ảnh hiển thị (lib/wp_login.py)
 
         results = page.evaluate("""() => {
             const out = [];

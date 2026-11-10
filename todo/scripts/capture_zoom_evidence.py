@@ -41,7 +41,7 @@ except ImportError:
     print("LỖI: Thư viện 'playwright' chưa được cài đặt.")
     sys.exit(1)
 
-from lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+from lib.wp_login import browser_context_kwargs, prepare_context, wp_login, goto_settled
 
 
 def _find_env_file():
@@ -110,14 +110,14 @@ def capture_zoom_evidence(url, out_dir, viewport_type, elements):
             ),
             **browser_context_kwargs(),
         )
+        prepare_context(context)
         page = context.new_page()
 
         if wp_user and wp_pass:
             wp_login(page)
 
         print(f"Đang tải trang mục tiêu: {url}")
-        goto_settled(page, url)
-        page.wait_for_timeout(1500)
+        goto_settled(page, url)   # tự chờ font + ảnh hiển thị (lib/wp_login.py)
 
         for brxe_id, label in elements:
             selector = f"#brxe-{brxe_id}"

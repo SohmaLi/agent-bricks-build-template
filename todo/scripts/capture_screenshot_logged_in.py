@@ -9,7 +9,7 @@ except ImportError:
     print("LỖI: Thư viện 'playwright' chưa được cài đặt.")
     sys.exit(1)
 
-from lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+from lib.wp_login import browser_context_kwargs, prepare_context, wp_login, goto_settled
 
 def _find_env_file():
     """Walk up from this script and the cwd to locate the project's .env."""
@@ -66,14 +66,14 @@ def capture_screenshot_logged_in(url, output_path, viewport_type):
                 user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 **browser_context_kwargs()
             )
+            prepare_context(context)
             page = context.new_page()
 
             if wp_user and wp_pass:
                 wp_login(page)
 
             print(f"Đang tải trang mục tiêu: {url}")
-            goto_settled(page, url)
-            page.wait_for_timeout(1500)
+            goto_settled(page, url)   # tự chờ font + ảnh hiển thị (lib/wp_login.py)
             
             # Đảm bảo thư mục lưu tồn tại
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)

@@ -49,6 +49,10 @@ PLAN ──⏸️user xác nhận──▶ DO (từng section, 4 phase) ──�
 ```
 
 - **PLAN**: đọc `infor_todo.md` → quét Figma (`get_metadata`) → viết `todo/plans/<page>.md` → tạo page & template.
+- **Quản lý context (2026-11-09)** — chỉ dọn ở 2 điểm an toàn, do user gõ lệnh (xem lời nhắc ⏱️ trong `infor_todo.md`):
+  1. `/clear` trước khi user đặt `Do`.
+  2. `/compact` sau khi user duyệt plan. **Điều kiện trước khi xin duyệt**: plan phải có bảng token theo từng breakpoint (kích thước, padding/gap, font, màu), cấu trúc element, node ID Figma của từng phần. Khi xin xác nhận, nhắc user: "kiểm tra plan → gõ `/compact` → trả lời `Tiếp tục`". Vào DO thì **đọc lại file plan trước**; cần nhìn ảnh Figma thì gọi lại `get_screenshot` cho đúng node cần dùng.
+  - **Không làm**: không đề nghị `/compact` giữa vòng sửa lỗi G4; không bỏ bước đọc rules/skill để tiết kiệm context. Phát hiện mới giữa phiên ghi ngay vào delta log của plan, phòng khi Claude Code tự compact.
 - **DO** (mỗi section): trước khi build, đọc sâu Figma section bằng `get_design_context` + `get_variable_defs` (ghi số liệu thẳng vào plan/JSON — **không** qua bước `spec.json` trung gian, xem mục 5); build theo 4 phase **Skeleton → Content → Styling → Responsive**, qua các gate:
   - **G1** `validate_template_json.py` → **Upload** `set_template_content` (sync_css) → **G2** `validate_css_compiled.py`
   - **G2.5** `validate_section_structure.py` → **G3** `screenshot_templates.py` → **G4** so Figma theo `rubric.md` (≥98%)
@@ -69,6 +73,18 @@ PLAN ──⏸️user xác nhận──▶ DO (từng section, 4 phase) ──�
 - **bricks-mcp**: WordPress plugin `plugins/bricks-mcp-bridge/` (phải Active, **>= 1.3.0** để có tool `upload_media` cho re-host). Client Python: `todo/scripts/lib/bricks_mcp.py`. Token đổi được tại WP Admin → Bricks MCP Bridge (nút regenerate) — sau khi đổi phải cập nhật `.env` + `.mcp.json`.
 - **Figma MCP**: cần Figma Desktop mở **trên máy build** (ảnh export serve tại `localhost:3845` — chỉ máy build thấy được, vì vậy có bước re-host ở mục 3).
 - **Screenshot**: Playwright (trong `.venv`) — headless Chromium, tự login WP theo `WP_URL`/`WP_USER`/`WP_PASS`.
+  Phiên login được lưu ở `scratch/.wp_session/` (6h) và dùng lại giữa các script; `goto_settled()` tự hậu kiểm `body.logged-in` trên trang đích và login lại nếu mất phiên (2026-11-09).
+- **Script Playwright tạm tự viết trong phiên** (probe DOM, chụp popup có tương tác...) — BẮT BUỘC theo mẫu dưới. Phiên 2026-11-06 (2 popup, 54 phút) mất ~20 phút chỉ vì script tạm mở Chromium + login lại cho **từng viewport** và `wait_for_timeout(2500)` cố định:
+  ```python
+  from lib.wp_login import new_wp_page, goto_settled, settle
+  browser = p.chromium.launch()                      # 1 browser cho MỌI viewport/URL
+  for vp, (w, h) in VIEWPORTS.items():
+      page = new_wp_page(browser, w, h)              # context + chặn tracker + login dùng lại phiên
+      goto_settled(page, url)                        # load + font + ảnh hiển thị — KHÔNG thêm wait_for_timeout
+      ...; settle(page)                              # sau click/mở popup: settle() thay cho sleep
+      page.context.close()
+  ```
+  Gộp nhiều phép đo (bbox, computed style, screenshot) vào **một** lần tải trang thay vì mỗi probe một script; mỗi lần tải trang có login tốn ~3–4s TTFB phía server (không có page cache khi đã login).
 - **Chạy script từ thư mục `todo/`** (không phải gốc project).
 
 ---
