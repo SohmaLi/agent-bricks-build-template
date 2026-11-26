@@ -42,7 +42,7 @@ except ImportError:
     PLAYWRIGHT_OK = False
 
 from scripts.lib.bricks_mcp import _get_config, load_template_mapping
-from scripts.lib.wp_login import browser_context_kwargs, wp_login, goto_settled
+from scripts.lib.wp_login import new_wp_page, goto_settled, settle
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
@@ -62,48 +62,36 @@ def _get_wp_url() -> str:
     return _get_config('WP_URL', 'http://localhost:8000').rstrip('/')
 
 
-def _get_credentials() -> tuple:
-    return _get_config('WP_USER'), _get_config('WP_PASS')
+USER_AGENT = (
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+    'AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/120.0.0.0 Safari/537.36'
+)
 
 
-def _make_browser_context(playwright, viewport_name: str):
-    """Tạo browser context với viewport chuẩn."""
+def _new_page(browser, viewport_name: str):
+    """Page đã login (dùng lại phiên lưu sẵn) trên browser dùng chung — xem lib/wp_login.py."""
     vp = VIEWPORTS.get(viewport_name, VIEWPORTS['desktop'])
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context(
-        viewport={'width': vp['width'], 'height': vp['height']},
-        user_agent=(
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/120.0.0.0 Safari/537.36'
-        ),
-        device_scale_factor=2 if viewport_name == 'mobile' else 1,
-        **browser_context_kwargs(),
-    )
-    return browser, context
-
-
-def _login(page: Page, wp_url: str, user: str, password: str):
-    """Đăng nhập WordPress để xem preview page/template (URL login + Basic Auth: lib/wp_login.py)."""
-    wp_login(page)
+    return new_wp_page(browser, vp['width'], vp['height'],
+                       dpr=2 if viewport_name == 'mobile' else 1, user_agent=USER_AGENT)
 
 
 def _capture_url(
     page: Page,
     url: str,
     output_path: Path,
-    wait_ms: int = 2000,
+    wait_ms: int = 0,
     full_page: bool = True
 ):
-    """Điều hướng tới URL và chụp ảnh."""
+    """Điều hướng tới URL và chụp ảnh (chờ font + ảnh hiển thị, không sleep cố định)."""
     goto_settled(page, url)
-    # Đợi thêm cho Bricks render CSS/animation/lazyload
-    page.wait_for_timeout(wait_ms)
-    # Scroll xuống để trigger lazyload
+    # Scroll xuống để trigger lazyload/animation-on-scroll, rồi chờ ảnh mới hiện ra
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-    page.wait_for_timeout(500)
+    settle(page, buffer_ms=0)
     page.evaluate("window.scrollTo(0, 0)")
-    page.wait_for_timeout(300)
+    settle(page)
+    if wait_ms:
+        page.wait_for_timeout(wait_ms)   # chỉ khi user truyền --wait (animation dài)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(output_path), full_page=full_page)
@@ -113,14 +101,13 @@ def _capture_url(
 # ── Screenshot Modes ─────────────────────────────────────────────────────────
 
 def screenshot_section(
+    browser,
     section_key: str,
     template_id: int,
     output_dir: Path,
-    wp_url: str,
-    user: str,
-    password: str,
     viewports: list = None,
     template_url: str = None,
+    wait_ms: int = 0,
 ):
     """Chụp 1 section template.
 
@@ -143,34 +130,31 @@ def screenshot_section(
     print(f"\n  📸 {section_key} (Template {template_id})")
 
     results = {}
-    with sync_playwright() as p:
-        for vp_name in viewports:
-            browser, context = _make_browser_context(p, vp_name)
-            page = context.new_page()
-            try:
-                if user and password:
-                    _login(page, wp_url, user, password)
-
-                output_path = output_dir / f"{section_key}-{vp_name}.png"
-                print(f"    [{vp_name}] {VIEWPORTS[vp_name]['width']}px → {output_path.name}")
-                _capture_url(page, preview_url, output_path)
-                results[vp_name] = str(output_path)
-            except Exception as e:
-                print(f"    ❌ [{vp_name}] Lỗi: {e}", file=sys.stderr)
-                results[vp_name] = None
-            finally:
-                browser.close()
+    for vp_name in viewports:
+        page = None
+        try:
+            page = _new_page(browser, vp_name)
+            output_path = output_dir / f"{section_key}-{vp_name}.png"
+            print(f"    [{vp_name}] {VIEWPORTS[vp_name]['width']}px → {output_path.name}")
+            _capture_url(page, preview_url, output_path, wait_ms=wait_ms)
+            results[vp_name] = str(output_path)
+        except Exception as e:
+            print(f"    ❌ [{vp_name}] Lỗi: {e}", file=sys.stderr)
+            results[vp_name] = None
+        finally:
+            if page:
+                page.context.close()
 
     return results
 
 
 def screenshot_full_page(
+    browser,
     page_id: int,
     output_dir: Path,
     wp_url: str,
-    user: str,
-    password: str,
-    viewports: list = None
+    viewports: list = None,
+    wait_ms: int = 0,
 ):
     """Chụp toàn trang WordPress (full-page scroll)."""
     viewports = viewports or ['desktop', 'mobile']
@@ -180,23 +164,20 @@ def screenshot_full_page(
     print(f"     URL: {page_url}")
 
     results = {}
-    with sync_playwright() as p:
-        for vp_name in viewports:
-            browser, context = _make_browser_context(p, vp_name)
-            page = context.new_page()
-            try:
-                if user and password:
-                    _login(page, wp_url, user, password)
-
-                output_path = output_dir / f"full-{vp_name}.png"
-                print(f"    [{vp_name}] {VIEWPORTS[vp_name]['width']}px → {output_path.name}")
-                _capture_url(page, page_url, output_path, wait_ms=3000)
-                results[vp_name] = str(output_path)
-            except Exception as e:
-                print(f"    ❌ [{vp_name}] Lỗi: {e}", file=sys.stderr)
-                results[vp_name] = None
-            finally:
-                browser.close()
+    for vp_name in viewports:
+        page = None
+        try:
+            page = _new_page(browser, vp_name)
+            output_path = output_dir / f"full-{vp_name}.png"
+            print(f"    [{vp_name}] {VIEWPORTS[vp_name]['width']}px → {output_path.name}")
+            _capture_url(page, page_url, output_path, wait_ms=wait_ms)
+            results[vp_name] = str(output_path)
+        except Exception as e:
+            print(f"    ❌ [{vp_name}] Lỗi: {e}", file=sys.stderr)
+            results[vp_name] = None
+        finally:
+            if page:
+                page.context.close()
 
     return results
 
@@ -229,8 +210,9 @@ def main():
                         help='Viewports cần chụp (mặc định: desktop mobile)')
     parser.add_argument('--mapping', default=str(MAPPING_PATH),
                         help='Path tới template_mapping.json')
-    parser.add_argument('--wait', type=int, default=2000,
-                        help='Thời gian chờ sau khi load (ms, mặc định: 2000)')
+    parser.add_argument('--wait', type=int, default=0,
+                        help='Chờ THÊM sau khi trang đã ổn định (ms, mặc định 0 — script đã tự chờ '
+                             'font + ảnh hiển thị; chỉ tăng khi có animation dài)')
 
     args = parser.parse_args()
 
@@ -241,7 +223,6 @@ def main():
 
     output_dir = Path(args.output_dir)
     wp_url = _get_wp_url()
-    user, password = _get_credentials()
 
     print(f"\n{'='*55}")
     print(f"  Screenshot Templates")
@@ -252,72 +233,77 @@ def main():
 
     all_results = {}
     start_time = time.time()
-
-    # ─── Chụp sections ───
-    if args.all_sections or args.section:
-        try:
-            mapping = load_template_mapping(args.mapping)
-        except FileNotFoundError:
-            print(f"❌ template_mapping.json không tìm thấy: {args.mapping}")
-            print("   Tạo file mapping trong bước PLAN (schema: xem MAPPING-FIGMA-FLOW.md §3):")
-            print('   { "<section_key>": {"template_id": <ID>, "url": "<WP_URL>/?page_id=<page tạm>"},')
-            print('     "page": {"page_id": <ID trang thật>} }')
-            sys.exit(1)
-
-        # Lọc sections (bỏ key 'page')
-        sections = {k: v for k, v in mapping.items() if k != 'page'}
-
-        if args.section:
-            if args.section not in sections:
-                print(f"❌ Section '{args.section}' không có trong mapping. "
-                      f"Available: {list(sections.keys())}")
-                sys.exit(1)
-            sections = {args.section: sections[args.section]}
-
-        print(f"\n[Sections] Chụp {len(sections)} section(s)...")
-        for key, info in sections.items():
-            tmpl_id = info.get('template_id')
-            if not tmpl_id:
-                print(f"  ⚠️  {key}: template_id không có trong mapping, bỏ qua")
-                continue
-
-            results = screenshot_section(
-                section_key=key,
-                template_id=tmpl_id,
-                output_dir=output_dir,
-                wp_url=wp_url,
-                user=user,
-                password=password,
-                viewports=args.viewports,
-                template_url=info.get('url'),
-            )
-            all_results[key] = results
-
-    # ─── Chụp full page ───
-    if args.full_page:
-        # Lấy page_id từ args hoặc mapping
-        page_id = args.page_id
-        if not page_id:
+    pw = sync_playwright().start()
+    browser = pw.chromium.launch(headless=True)   # 1 browser cho mọi section × viewport
+    try:
+        # ─── Chụp sections ───
+        if args.all_sections or args.section:
             try:
                 mapping = load_template_mapping(args.mapping)
-                page_id = mapping.get('page', {}).get('page_id')
             except FileNotFoundError:
-                pass
+                print(f"❌ template_mapping.json không tìm thấy: {args.mapping}")
+                print("   Tạo file mapping trong bước PLAN (schema: xem MAPPING-FIGMA-FLOW.md §3):")
+                print('   { "<section_key>": {"template_id": <ID>, "url": "<WP_URL>/?page_id=<page tạm>"},')
+                print('     "page": {"page_id": <ID trang thật>} }')
+                sys.exit(1)
 
-        if not page_id:
-            print("❌ Cần truyền --page-id hoặc có page_id trong template_mapping.json")
-            sys.exit(1)
+            # Lọc sections (bỏ key 'page')
+            sections = {k: v for k, v in mapping.items() if k != 'page'}
 
-        print(f"\n[Full Page] Chụp trang ID={page_id}...")
-        full_results = screenshot_full_page(
-            page_id=page_id,
-            output_dir=output_dir,
-            wp_url=wp_url,
-            user=user,
-            password=password,
-            viewports=args.viewports,
-        )
-        all_results['_full_page'] = full_results
+            if args.section:
+                if args.section not in sections:
+                    print(f"❌ Section '{args.section}' không có trong mapping. "
+                          f"Available: {list(sections.keys())}")
+                    sys.exit(1)
+                sections = {args.section: sections[args.section]}
+
+            print(f"\n[Sections] Chụp {len(sections)} section(s)...")
+            for key, info in sections.items():
+                tmpl_id = info.get('template_id')
+                if not tmpl_id:
+                    print(f"  ⚠️  {key}: template_id không có trong mapping, bỏ qua")
+                    continue
+
+                results = screenshot_section(
+                    browser,
+                    section_key=key,
+                    template_id=tmpl_id,
+                    output_dir=output_dir,
+                    viewports=args.viewports,
+                    template_url=info.get('url'),
+                    wait_ms=args.wait,
+                )
+                all_results[key] = results
+
+        # ─── Chụp full page ───
+        if args.full_page:
+            # Lấy page_id từ args hoặc mapping
+            page_id = args.page_id
+            if not page_id:
+                try:
+                    mapping = load_template_mapping(args.mapping)
+                    page_id = mapping.get('page', {}).get('page_id')
+                except FileNotFoundError:
+                    pass
+
+            if not page_id:
+                print("❌ Cần truyền --page-id hoặc có page_id trong template_mapping.json")
+                sys.exit(1)
+
+            print(f"\n[Full Page] Chụp trang ID={page_id}...")
+            full_results = screenshot_full_page(
+                browser,
+                page_id=page_id,
+                output_dir=output_dir,
+                wp_url=wp_url,
+                viewports=args.viewports,
+                wait_ms=args.wait,
+            )
+            all_results['_full_page'] = full_results
+    finally:
+        browser.close()
+        pw.stop()
+
 
     # ─── Summary ───
     elapsed = time.time() - start_time

@@ -12,18 +12,18 @@ Tài liệu này chứa các quy tắc kỹ thuật bắt buộc phải tuân th
 
 **Kết quả re-verify (2026-07-23, site đã lên Bricks 2.3.9 — probe template id 68 "ANV 2.x probe — safe to delete", CSS compile đọc thật từ `post-68.min.css`):**
 
-| # | Mục cần re-verify | Kết quả | Trạng thái |
-|---|---|---|---|
-| 0a | Bridge hoạt động trên 2.3.9 | `get_site_info`/`create_template`/`set_template_content`/`generate_css_file` đều OK — entry point `\Bricks\Assets_Files::generate_post_css_file` vẫn tồn tại y nguyên | ✅ 2026-07-23 |
-| 0b | §21 `.brxe-container{width:1100px}` + §18 `.brxe-block{width:100%}` | **GIỮ NGUYÊN cả hai** (grep cả `frontend.min.css` lẫn `frontend-light-layer.min.css` đang được site load) — rule §18/§21 tiếp tục bắt buộc | ✅ 2026-07-23 |
-| 0c | `_gap` trên nestable | **VẪN KHÔNG compile** (probe `_gap:17px` không ra CSS; `_columnGap:19px`/`_rowGap:23px` ra đúng) — trap G1 GIỮ NGUYÊN mức error | ✅ 2026-07-23 |
-| 0d | Shapes `_borderRadius`/`_minWidth`/`_objectFit`/`_gradient`/`_color` | Probe thực nghiệm: `_borderRadius` ❌ (dùng `_border.radius` ✅) · `_minWidth` ❌ (dùng `_widthMin` ✅) · `objectFit` không gạch ❌ (`_objectFit` ✅) · `_gradient` ✅ compile · `_color` ❌ (dùng `_typography.color` ✅) — **mọi trap §15 giữ nguyên trên 2.3.9** | ✅ 2026-07-23 (empirical) |
-| 0e | `%root%` phía server | **VẪN KHÔNG được thay** — chuỗi `%root%` nguyên văn nằm trong CSS compile ra → tiếp tục tự replace `#brxe-{id}` khi sinh JSON (§13) | ✅ 2026-07-23 (empirical) |
-| 0f | Element `code` (signature) + workaround `customScripts*` page settings | Chưa test — probe khi build page đầu tiên trên 2.x (workaround page settings là đường chính, element `code` vẫn tránh dùng) | ☐ |
-| 0g | Thứ tự cascade §22 | **PHÁT HIỆN MỚI 2.x**: toàn bộ CSS Bricks giờ nằm trong **`@layer bricks`** (post-CSS bọc `@layer bricks{...}`; theme load `frontend-light-layer.min.css` với sub-layers `bricks.reset, bricks.gutenberg, bricks.icons`). Hệ quả: CSS **unlayered** từ plugin/nguồn ngoài sẽ THẮNG mọi CSS Bricks bất kể specificity (kể cả `#brxe-`) — site hiện tại không load bundle unlayered nào nên chưa ảnh hưởng, nhưng khi thấy style "bị đè vô cớ" hãy nghi layer trước. Thứ tự bucket đầy đủ bên trong layer: cần source (chưa chặn việc build) | 🟡 partial |
-| 0h | §14 preview template + §16 `_display: contents` | Chưa re-verify — workaround page tạm (§14) không phụ thuộc chi tiết source, tiếp tục dùng; `display:contents` probe khi gặp carousel-dual đầu tiên | ☐ |
-| 0i | Clipboard `version` + key 2.x-only | Bridge bỏ qua field `version` khi upload (đã xác nhận qua source plugin) — giữ hoặc đổi "2.3.9" đều được; khi paste tay trong builder dùng "2.3.9". `slots`/`styleVariants`/utility classes: **vẫn chưa dùng** cho tới khi có rule verified | ✅ 2026-07-23 |
-| 0j | Re-audit `references/*` | Làm dần khi build thật — các trap chính đã probe ở 0c/0d nên rủi ro còn lại thấp | ☐ ongoing |
+| #  | Mục cần re-verify                                                            | Kết quả                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Trạng thái              |
+| -- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 0a | Bridge hoạt động trên 2.3.9                                                | `get_site_info`/`create_template`/`set_template_content`/`generate_css_file` đều OK — entry point `\Bricks\Assets_Files::generate_post_css_file` vẫn tồn tại y nguyên                                                                                                                                                                                                                                                                                                                                                                                                                                     | ✅ 2026-07-23             |
+| 0b | §21 `.brxe-container{width:1100px}` + §18 `.brxe-block{width:100%}`      | **GIỮ NGUYÊN cả hai** (grep cả `frontend.min.css` lẫn `frontend-light-layer.min.css` đang được site load) — rule §18/§21 tiếp tục bắt buộc                                                                                                                                                                                                                                                                                                                                                                                                                                                       | ✅ 2026-07-23             |
+| 0c | `_gap` trên nestable                                                        | **VẪN KHÔNG compile** (probe `_gap:17px` không ra CSS; `_columnGap:19px`/`_rowGap:23px` ra đúng) — trap G1 GIỮ NGUYÊN mức error                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | ✅ 2026-07-23             |
+| 0d | Shapes `_borderRadius`/`_minWidth`/`_objectFit`/`_gradient`/`_color` | Probe thực nghiệm: `_borderRadius` ❌ (dùng `_border.radius` ✅) · `_minWidth` ❌ (dùng `_widthMin` ✅) · `objectFit` không gạch ❌ (`_objectFit` ✅) · `_gradient` ✅ compile · `_color` ❌ (dùng `_typography.color` ✅) — **mọi trap §15 giữ nguyên trên 2.3.9**                                                                                                                                                                                                                                                                                                               | ✅ 2026-07-23 (empirical) |
+| 0e | `%root%` phía server                                                        | **VẪN KHÔNG được thay** — chuỗi `%root%` nguyên văn nằm trong CSS compile ra → tiếp tục tự replace `#brxe-{id}` khi sinh JSON (§13)                                                                                                                                                                                                                                                                                                                                                                                                                                                               | ✅ 2026-07-23 (empirical) |
+| 0f | Element `code` (signature) + workaround `customScripts*` page settings     | Chưa test — probe khi build page đầu tiên trên 2.x (workaround page settings là đường chính, element `code` vẫn tránh dùng)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ☐                        |
+| 0g | Thứ tự cascade §22                                                          | **PHÁT HIỆN MỚI 2.x**: toàn bộ CSS Bricks giờ nằm trong **`@layer bricks`** (post-CSS bọc `@layer bricks{...}`; theme load `frontend-light-layer.min.css` với sub-layers `bricks.reset, bricks.gutenberg, bricks.icons`). Hệ quả: CSS **unlayered** từ plugin/nguồn ngoài sẽ THẮNG mọi CSS Bricks bất kể specificity (kể cả `#brxe-`) — site hiện tại không load bundle unlayered nào nên chưa ảnh hưởng, nhưng khi thấy style "bị đè vô cớ" hãy nghi layer trước. Thứ tự bucket đầy đủ bên trong layer: cần source (chưa chặn việc build) | 🟡 partial                |
+| 0h | §14 preview template + §16 `_display: contents`                            | Chưa re-verify — workaround page tạm (§14) không phụ thuộc chi tiết source, tiếp tục dùng; `display:contents` probe khi gặp carousel-dual đầu tiên                                                                                                                                                                                                                                                                                                                                                                                                                                                        | ☐                        |
+| 0i | Clipboard `version` + key 2.x-only                                           | Bridge bỏ qua field `version` khi upload (đã xác nhận qua source plugin) — giữ hoặc đổi "2.3.9" đều được; khi paste tay trong builder dùng "2.3.9". `slots`/`styleVariants`/utility classes: **vẫn chưa dùng** cho tới khi có rule verified                                                                                                                                                                                                                                                                                                                                               | ✅ 2026-07-23             |
+| 0j | Re-audit `references/*`                                                      | Làm dần khi build thật — các trap chính đã probe ở 0c/0d nên rủi ro còn lại thấp                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | ☐ ongoing                |
 
 **Kết luận sau probe**: bộ rules hiện hành (shape 1.x) **dùng được nguyên trạng trên 2.3.9** — mọi trap then chốt hành xử y hệt. 3 mục còn lại (0f/0h/0j) không chặn build, xử lý khi chạm tới trong phiên thực tế. Nguồn source 2.x (nếu cần grep sâu thêm): thư mục theme local `vietnix.vn/wp-content/themes/bricks` vẫn là 1.12.3, KHÔNG đại diện cho site.
 
@@ -51,9 +51,11 @@ Mỗi phần tử (node) trong mảng `content` của Bricks phải có cấu tr
 
 - **Đơn vị kích thước**: Sử dụng **`px` làm đơn vị chủ đạo** cho tất cả các thông số kích thước, khoảng cách (ví dụ: `"24px"`, `"16px"`, `"120px"`), ngoại trừ các trường hợp tỷ lệ phần trăm (ví dụ: `"100%"`, `"50%"`). Luôn truyền giá trị kèm đơn vị dạng chuỗi (không dùng số trần như `24`).
 - **Màu sắc (Colors)**:
+
   - Nếu dùng Hex/RGBA trực tiếp: `{"hex": "#1a73e8"}` hoặc `{"hex": "rgba(26, 115, 232, 1)"}`.
   - Nếu dùng biến CSS toàn cục: `{"raw": "var(--color-primary)"}`.
 - **Typography (Kiểu chữ)**: Khai báo bằng các thuộc tính CSS chuẩn làm key viết trong dấu gạch ngang (không dùng camelCase):
+
   ```json
   "_typography": {
     "font-family": "Inter",
@@ -63,6 +65,7 @@ Mỗi phần tử (node) trong mảng `content` của Bricks phải có cấu tr
   }
   ```
 - **Bóng đổ (Box Shadow)**: Các thông số kích thước của bóng đổ phải nằm trong đối tượng `values`:
+
   ```json
   "_boxShadow": {
     "values": {
@@ -75,6 +78,7 @@ Mỗi phần tử (node) trong mảng `content` của Bricks phải có cấu tr
   }
   ```
 - **⚠️ Gap (KHOẢNG CÁCH FLEX/GRID) — KHÔNG dùng `_gap` cho container**: Bricks 1.12.3 **không compile** `_gap` cho các element dạng container (`block`, `container`, `div`, grid) — CSS sẽ bị bỏ silently, khiến các item dính nhau (0px). Chỉ riêng element `button` mới nhận `_gap`. Bắt buộc dùng các key riêng:
+
   - Flex/grid ngang: `_columnGap` → `column-gap`
   - Flex/grid dọc: `_rowGap` → `row-gap`
   - Grid shorthand: `_gridGap`
@@ -222,20 +226,20 @@ Các scripts trong `todo/scripts/` — chạy từ thư mục `todo/`:
 
 ### Build & Validate (Flow DO)
 
-| Script                                | Lệnh                                                                                                                                                                                            | Khi nào                                                                                                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Validate JSON**               | `python3 scripts/validate_template_json.py bricks-json/sec100.json`                                                                                                                            | Sau mỗi Phase                                                                                                                 |
-| **Validate structure**          | `python3 scripts/validate_section_structure.py sec100 plans/<slug>.md bricks-json/sec100.json`                                                                                                 | Sau Phase 1                                                                                                                                           |
-| **Zoom evidence (per-element)** | `python3 scripts/capture_zoom_evidence.py --url <page_url> --viewport desktop --out-dir scratch/g3/zoom --element <brxe_id>:<label> [--element ...]`                                           | Trước G4 preflight — chạy 1 lần cho desktop, 1 lần cho mobile, chọn element theo checklist Z1-Z5 (`review-skill/rubric.md`)                  |
-| **Diff khách quan (khuyến nghị)** | `python3 scripts/diff_screenshots.py --figma scratch/g3/figma-sec100-desktop.png --wp scratch/g3/sec100-desktop.png --out-dir scratch/g3/diff --label sec100-desktop` | Trước G4 preflight — tín hiệu % pixel lệch + heatmap bổ trợ rubric, không hard-block (2026-07-20) |
-| **G4 preflight (hard gate)**    | `python3 scripts/validate_g4_preflight.py bricks-json/sec100.json --template-id <ID> --desktop scratch/g3/sec100-desktop.png --mobile scratch/g3/sec100-mobile.png --zoom-dir scratch/g3/zoom --diff-report-desktop scratch/g3/diff/sec100-desktop-report.json` | **BẮT BUỘC trước khi ghi G4 PASS/DONE** — FAIL nếu thiếu `--zoom-dir`/evidence. Xem mục 17 và `review-skill/rubric.md` §HARD GATE |
-| **Run all gates**               | `python3 scripts/review_gates.py sec100 plans/<slug>.md bricks-json/sec100.json`                                                                                                               | Kiểm tra tổng hợp                                                                                                                                  |
-| **Screenshot**                  | `python3 scripts/screenshot_templates.py --all-sections --full-page`                                                                                                                           | Cuối mỗi Phase                                                                                                                                      |
-| **Mobile overflow (hard gate)** | `python3 scripts/validate_mobile_overflow.py --page-id <page_id> --viewport 390`                                                                                                                | **BẮT BUỘC trên trang thật** sau khi assemble page, trước DONE — đo `scrollWidth` thay vì nhìn mắt. Xem mục 21, 23 |
-| **Inspect Figma node**          | `python3 scripts/inspect_figma_nodes.py --file-key <key> --node <node_id>`                                                                                                                     | Đọc Figma (file-key có thể đặt `FIGMA_FILE_KEY` trong `.env`)                                                                                     |
-| **Dump spacings**               | `python3 scripts/dump_figma_spacings.py --file-key <key> --node sec100=<node_id>`                                                                                                              | Đọc spacing Figma                                                                                                                                   |
-| **Re-host assets (trước công bố)** | `python3 scripts/rehost_assets.py bricks-json/<sec>.json --apply`                                                                                                                           | Chuyển ảnh Figma cache → WP Media, thay URL trong JSON (xem mục 11) — sau đó re-upload JSON                                                        |
-| **Gen random ID**               | `python3 scripts/generate_random_id.py`                                                                                                                                                        | Sinh ID ngẫu nhiên cho element                                                                                                                     |
+| Script                                       | Lệnh                                                                                                                                                                                                                                                             | Khi nào                                                                                                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Validate JSON**                      | `python3 scripts/validate_template_json.py bricks-json/sec100.json`                                                                                                                                                                                             | Sau mỗi Phase                                                                                                                                        |
+| **Validate structure**                 | `python3 scripts/validate_section_structure.py sec100 plans/<slug>.md bricks-json/sec100.json`                                                                                                                                                                  | Sau Phase 1                                                                                                                                           |
+| **Zoom evidence (per-element)**        | `python3 scripts/capture_zoom_evidence.py --url <page_url> --viewport desktop --out-dir scratch/g3/zoom --element <brxe_id>:<label> [--element ...]`                                                                                                            | Trước G4 preflight — chạy 1 lần cho desktop, 1 lần cho mobile, chọn element theo checklist Z1-Z5 (`review-skill/rubric.md`)                  |
+| **Diff khách quan (khuyến nghị)**   | `python3 scripts/diff_screenshots.py --figma scratch/g3/figma-sec100-desktop.png --wp scratch/g3/sec100-desktop.png --out-dir scratch/g3/diff --label sec100-desktop`                                                                                           | Trước G4 preflight — tín hiệu % pixel lệch + heatmap bổ trợ rubric, không hard-block (2026-07-20)                                            |
+| **G4 preflight (hard gate)**           | `python3 scripts/validate_g4_preflight.py bricks-json/sec100.json --template-id <ID> --desktop scratch/g3/sec100-desktop.png --mobile scratch/g3/sec100-mobile.png --zoom-dir scratch/g3/zoom --diff-report-desktop scratch/g3/diff/sec100-desktop-report.json` | **BẮT BUỘC trước khi ghi G4 PASS/DONE** — FAIL nếu thiếu `--zoom-dir`/evidence. Xem mục 17 và `review-skill/rubric.md` §HARD GATE |
+| **Run all gates**                      | `python3 scripts/review_gates.py sec100 plans/<slug>.md bricks-json/sec100.json`                                                                                                                                                                                | Kiểm tra tổng hợp                                                                                                                                  |
+| **Screenshot**                         | `python3 scripts/screenshot_templates.py --all-sections --full-page`                                                                                                                                                                                            | Cuối mỗi Phase                                                                                                                                      |
+| **Mobile overflow (hard gate)**        | `python3 scripts/validate_mobile_overflow.py --page-id <page_id> --viewport 390`                                                                                                                                                                                | **BẮT BUỘC trên trang thật** sau khi assemble page, trước DONE — đo `scrollWidth` thay vì nhìn mắt. Xem mục 21, 23                |
+| **Inspect Figma node**                 | `python3 scripts/inspect_figma_nodes.py --file-key <key> --node <node_id>`                                                                                                                                                                                      | Đọc Figma (file-key có thể đặt `FIGMA_FILE_KEY` trong `.env`)                                                                               |
+| **Dump spacings**                      | `python3 scripts/dump_figma_spacings.py --file-key <key> --node sec100=<node_id>`                                                                                                                                                                               | Đọc spacing Figma                                                                                                                                   |
+| **Re-host assets (trước công bố)** | `python3 scripts/rehost_assets.py bricks-json/<sec>.json --apply`                                                                                                                                                                                               | Chuyển ảnh Figma cache → WP Media, thay URL trong JSON (xem mục 11) — sau đó re-upload JSON                                                    |
+| **Gen random ID**                      | `python3 scripts/generate_random_id.py`                                                                                                                                                                                                                         | Sinh ID ngẫu nhiên cho element                                                                                                                      |
 
 **Upload lên Bricks** — dùng `bricks-mcp` tool (không dùng script):
 
@@ -268,6 +272,7 @@ from scripts.lib.bricks_mcp import get_site_info, set_template_content, SECTION_
   python3 scripts/rehost_assets.py bricks-json/<sec>.json --apply   # tải từ Figma cache → upload WP Media (bridge upload_media, plugin >= 1.3.0) → thay URL trong JSON
   # sau đó re-upload JSON (upload_section.py / set_template_content) + screenshot xác nhận lại
   ```
+
   G1 (`validate_template_json.py`) in cảnh báo gộp khi JSON còn URL Figma cache để bước này không bị quên.
 - **KHÔNG dùng WP media `id` trần (không có `url`)** trong JSON — id không resolve khi ghi trực tiếp qua `set_template_content`. Sau khi re-host, JSON dùng URL của chính site (kèm `id` nếu có) là hợp lệ.
 
@@ -388,6 +393,7 @@ python3 scripts/validate_section_structure.py bricks-json/sec100.json
 
 - **❌ `objectFit` SAI, đúng phải là `_objectFit`** (có dấu gạch dưới, `includes/elements/image.php:149-160`) → CSS `object-fit`. Tương tự `_objectPosition` (không phải `objectPosition`) cho `object-position` (image.php:162-173, giá trị text thường như `"center top"`, không phải object). **Bất kỳ script nào đã dùng `"objectFit": "cover"` (thiếu gạch dưới) trên element `image` đều bị Bricks bỏ qua silently** — object-fit sẽ không áp dụng, ảnh có thể bị stretch/méo thay vì crop đúng như Figma.
 - **❌ `_borderRadius` (top-level) SAI — không tồn tại control này.** Bo góc là sub-key `radius` nằm TRONG control `_border` (base.php:1316-1326), không phải key riêng. Cấu trúc đúng:
+
   ```json
   "_border": {
     "radius": { "top": "20px", "right": "20px", "bottom": "20px", "left": "20px" },
@@ -399,6 +405,7 @@ python3 scripts/validate_section_structure.py bricks-json/sec100.json
 
   Nếu chỉ cần bo góc (không cần border), vẫn phải bọc trong `_border: {radius: {...}}` — dùng key `_borderRadius` độc lập sẽ bị Bricks bỏ qua hoàn toàn, không báo lỗi.
 - **`_background` chỉ xử lý color/image/attachment/blendMode/repeat/position/size — KHÔNG có gradient.** Gradient là control riêng `_gradient` (base.php:1303-1312, CSS property `background-image`), là sibling key ngang hàng với `_background`, không phải nested bên trong. (Việc dùng `_cssCustom` để viết raw `background: radial-gradient(...)` như đã làm trong session này vẫn hoạt động đúng và là lựa chọn hợp lệ, nhưng nếu muốn dùng đúng control native của Bricks thì phải là `settings["_gradient"]`, không phải nhét gradient vào `_background.color`).
+
   - `_background.color`: `{"hex": "#rrggbb"}` (đúng như đã dùng).
   - `_background.image`: `{"url": "...", "id": ..., "size": "full"}`; `_background.size`: `"cover"|"contain"|"custom"` (nếu `"custom"` thì thêm `_background.custom`); `_background.position`: `"center center"` hoặc `"custom"` + `positionX`/`positionY`. Mặc định `size` là `cover` nếu có `image.url` mà không set `size`.
 - **`image` element** (nguồn ảnh chính): key `"image"` đúng như đã dùng — `{"id": 123, "url": "...", "size": "full"}` (WP media) hoặc `{"external": true, "url": "...", "size": "full"}` (URL ngoài, ví dụ Figma asset `localhost:3845`).
@@ -499,16 +506,20 @@ Trình duyệt render `<img src="....svg">` bình thường, không có giới h
 **Sự cố**: Build 4 trang (16-17 section) đều dùng pattern `section > container > ...`, mỗi `container` chỉ set `_widthMax` (vd `"1100px"`) để giới hạn bề rộng nội dung, KHÔNG set `_width`. Kết quả: **toàn bộ trang bị tràn ngang nghiêm trọng trên mobile** (viewport 390px nhưng nội dung render ở ~1100-1140px, `document.scrollWidth` ≈ 1164px) — full-page screenshot mobile bị giãn ngang gấp ~3 lần, do Playwright vẫn chụp đúng nhưng nội dung thực sự tràn khỏi khung hình.
 
 **Nguyên nhân xác nhận qua compiled CSS core** (`assets/css/frontend.min.css`):
+
 ```css
 .brxe-container{align-items:flex-start;display:flex;flex-direction:column;margin-left:auto;margin-right:auto;width:1100px}
 @media (max-width:767px){.brxe-container{flex-wrap:wrap}} /* chỉ đổi flex-wrap, KHÔNG đổi width */
 ```
+
 `.brxe-container` có default **`width: 1100px` cố định** (không phải `100%` như `.brxe-block`, xem mục 18) và **không có bất kỳ media query nào ghi đè width** ở breakpoint hẹp hơn. Nếu JSON chỉ set `_widthMax` (compile ra `max-width`), giá trị `max-width` chỉ có tác dụng CAP khi `width` tính toán lớn hơn nó — nhưng vì `width` đã là con số cố định 1100px (không phải `auto`/`100%`), kết quả cuối luôn là `min(1100px, widthMax)` ở **MỌI breakpoint, kể cả 390px** — container hoàn toàn không phản hồi viewport.
 
 **Quy tắc bắt buộc**: mọi element `container` PHẢI có `"_width": "100%"` tường minh (không dựa vào mặc định core), dùng `_widthMax` chỉ để giới hạn bề rộng tối đa trên màn hình lớn:
+
 ```json
 { "_width": "100%", "_widthMax": "1100px", "_display": "flex", "_direction": "column", "_rowGap": "40px" }
 ```
+
 Đây là bẫy ngược lại với mục 18 (`block`/`div` mặc định `width:100%` nên KHÔNG cần set, còn `container` mặc định `width:1100px` nên BẮT BUỘC phải set `_width:100%`) — hai element dễ nhầm lẫn vì cùng họ layout nhưng default width ngược nhau hoàn toàn.
 
 **Cách phát hiện chủ động**: đo `document.documentElement.scrollWidth` so với viewport width qua Playwright ngay sau khi build — nếu `scrollWidth` > viewport đáng kể (không phải do 1 phần tử lẻ tràn mà do hàng loạt `container`), gần như chắc chắn là lỗi này. Kiểm tra nhanh: `getBoundingClientRect().width` của node `.brxe-container` — nếu ra đúng giá trị `_widthMax` (hoặc 1100px mặc định) bất kể viewport, xác nhận lỗi.
@@ -583,11 +594,13 @@ Nếu dùng helper `brix.py`'s `B.set_css(eid, template)` — hàm này CHỈ gh
 **Sự cố**: build xong desktop đẹp, sang mobile thì **mọi hàng ngang bị tách 2 dòng**: icon check nằm một dòng, text tính năng rớt xuống dòng dưới; nút "Nhận tư vấn" và ảnh avatar (đáng lẽ cạnh nhau) xếp chồng. JSON hợp lệ, G1/G2/G2.5 đều PASS, `validate_mobile_overflow` cũng PASS (không tràn ngang — chỉ cao thêm), nên **không gate nào bắt được**; chỉ nhìn screenshot mobile mới lộ.
 
 **Nguyên nhân xác nhận qua compiled CSS core** (`assets/css/frontend.min.css`):
+
 ```css
 @media (max-width:767px){.brxe-section{flex-wrap:wrap}}
 @media (max-width:767px){.brxe-container{flex-wrap:wrap}}
 @media (max-width:767px){.brxe-block{flex-wrap:wrap}}
 ```
+
 Đây **không phải mặc định trình duyệt** (`flex-wrap` mặc định của CSS là `nowrap`) mà là rule do chính Bricks core thêm vào dưới 767px. Với `_direction: row` + con có `_flexGrow:1`, chỉ cần flex-basis nội dung vượt chỗ trống là con nhảy xuống dòng mới — `_widthMin: 0px` KHÔNG cứu được vì `wrap` quyết định trước khi shrink.
 
 **Quy tắc bắt buộc**: mọi `block` có `_direction: "row"` mà các con phải nằm cùng một dòng (icon + label, nút + ảnh, tiêu đề + badge, giá + đơn vị) PHẢI khai báo `_flexWrap: "nowrap"` **tường minh**:
@@ -655,6 +668,7 @@ Thẻ `<link rel="stylesheet" href="fonts.googleapis.com/...">` bị gỡ sạch
 Chữ gradient dựng bằng `background:linear-gradient(...)` + `background-clip:text` + `-webkit-text-fill-color:transparent`: phần gradient bị clip nằm ở **lớp background**, tức **DƯỚI** `text-shadow`. Nên bóng (nhất là bóng tối `rgba(0,0,0,.25)`) phủ lên chính mặt chữ, làm chữ xỉn hẳn — đo được vùng title lệch **29%** so Figma, nhìn ra màu xanh rêu thay vì trắng-xanh. Figma vẽ bóng nằm dưới chữ.
 
 **Sửa**: bỏ `text-shadow`, dùng `filter: drop-shadow(...)` — filter áp lên kết quả đã render (gồm cả chữ đã clip) và đặt bóng phía sau:
+
 ```css
 #brxe-{id}{
   background:linear-gradient(180deg,#fafcfd 0%,#71dffa 100%);
@@ -663,6 +677,7 @@ Chữ gradient dựng bằng `background:linear-gradient(...)` + `background-cli
   filter:drop-shadow(0 4px 4px rgba(0,0,0,.25)) drop-shadow(.5px 0 0 #05a9dc);
 }
 ```
+
 Sau khi sửa: vùng title từ 29% lệch còn 12.5%, similarity toàn desktop 95.98% → 97.1%.
 
 > Mẹo phụ: texture ảnh dùng làm nền chữ gradient thường **không cần tải về làm asset** — lấy mẫu màu theo trục dọc của ảnh rồi dựng lại bằng `linear-gradient` CSS. Ở phiên này ảnh texture 483×38 đo được `#f9fbfd → #4dd7f9`; cộng lớp phủ trắng 20% của Figma (`c×0.8 + 51`) ra `#fafcfd → #71dffa`, khớp mắt thường, bớt 1 request.
@@ -690,9 +705,11 @@ Mục 16 phía trên khẳng định các sub-control gate bằng `required: ['_
 **Xác nhận qua source** (`includes/assets.php:1567-1568`): việc match `required` chỉ xảy ra khi control đó nằm trong mảng `css` của **chính control key đang xét** — `_columnGap`/`_rowGap` không tự khai `required` bên trong định nghĩa `css` của chúng (chỉ khai ở cấp control ngoài, cấp này **không** được vòng lặp sinh CSS kiểm tra). Kết quả: 2 control này compile ra `column-gap`/`row-gap` bất kể `_display` là `flex` hay `grid`.
 
 **Probe thực nghiệm** (grep `post-9216.min.css` sau khi upload `_display:"grid", _columnGap:"12px", _rowGap:"14px"`):
+
 ```css
 #brxe-uaxhn5{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:12px;row-gap:14px;width:100%}
 ```
+
 → `column-gap`/`row-gap` có mặt đầy đủ, không cần viết `_cssCustom` thay thế cho layout grid.
 
 **Lưu ý phân biệt với mục 2/0c**: bẫy `_gap` KHÔNG compile (dùng `_columnGap`/`_rowGap` thay) vẫn đúng và không đổi — mục này chỉ xác nhận `_columnGap`/`_rowGap` (đã đúng key) hoạt động trên cả hai giá trị `_display`, không phải chỉ `flex`.
@@ -704,11 +721,13 @@ Mục 16 phía trên khẳng định các sub-control gate bằng `required: ['_
 **Khung con bắt buộc** (đúng `get_nestable_children()`; JS tìm theo class nên KHÔNG đổi tên): root `tabs-nested` > `block` class `tab-menu` > N × `div` class `tab-title` (> `text-basic`) ; `block` class `tab-content` > N × `block` class `tab-pane`. Class gắn qua `"_hidden": {"_cssClasses": "tab-title"}` như core (builder nhận diện). `role`/`aria-*` do `enhance_accessibility()` server tự thêm — không tự viết `_attributes`. Hướng root: control `direction` (`"row"`, `"direction:tablet_portrait": "column"`) — compile ra `flex-direction`. Tab mở sẵn: `openTab` (index, mặc định 0) → `data-open-tab`.
 
 **3 bẫy (đều câm — G1/G2/G2.5 PASS):**
+
 1. **Mọi pane hiện cùng lúc** nếu pane là `block` có `_display:flex` (mặc định của `brix.block`): CSS cấp ID `#brxe-{pane}{display:flex}` đè `.brxe-tabs-nested .tab-pane{display:none}` của core. Ẩn lại bằng selector mạnh hơn: `#brxe-{sec} .tab-pane{display:none}` + `#brxe-{sec} .tab-pane.brx-open{display:flex}`.
 2. **`tab-title` (element `div`) bị core ép `width:auto`** (`.brxe-tabs-nested .tab-title{width:auto}`) — menu dọc sẽ co theo chữ. Cần `width:100%` tường minh khi muốn tab full chiều ngang.
 3. **`brx-open` CHỈ do JS gắn** (server không render class này) → nếu `bricks.min.js` bị LiteSpeed hoãn (§26a) thì lúc tải trang KHÔNG pane nào hiện và cú click đầu có thể mất.
 
 **Vá LiteSpeed (đã test bằng giả lập: chặn `bricks.min.js` → click → nạp lại + bắn `DOMContentLoaded` giả):**
+
 - CSS trạng thái mặc định khi chưa có `brx-open`: `.vps-feat:not(:has(.tab-pane.brx-open)) .tab-pane:first-child{display:flex}` (tương tự cho `.tab-title:first-child` để tô active).
 - Script lưới an toàn trong `customScriptsBodyFooter` (`data-no-optimize="1" data-no-defer="1"`, §26c): click uỷ quyền trên `.tab-title` → đổi `brx-open`/`aria-selected`/`tabindex` y hệt `bricksTabsFn` (idempotent khi cả hai cùng chạy) **và ghi `data-open-tab` = index vừa chọn** — vì `bricksTabsFn` khi init chỉ `add('brx-open')` cho index `data-open-tab` mà không gỡ ở tab khác ⇒ thiếu bước này sẽ thành 2 pane mở cùng lúc.
 - Test logged-in KHÔNG phản ánh LiteSpeed (admin không bị hoãn JS: `typeof bricksTabsFn` = `object` ngay khi tải) — phải giả lập như trên hoặc test bằng khách trên page đã publish.
@@ -732,3 +751,12 @@ Heading desktop xuống dòng cố định bằng `<br>`, tablet/mobile ẩn đi
 🔒 **Đã có gate**: `validate_template_json.py` → `check_css_id_vs_root_selector()` báo lỗi cứng khi element có `_cssId` mà `_cssCustom*` còn dùng `#brxe-{id}`.
 
 Bẫy kèm theo (cùng phiên): field `type: hidden` của element `form` render 1 `<div>` rỗng **không class** làm con trực tiếp của `<form>` — nếu form dùng `display:flex;row-gap` thì div rỗng vẫn ăn thêm 1 khoảng gap. Ẩn bằng `#form > div:not([class]){display:none}`.
+
+## 33. Popup template dựng qua bridge — render, script, mở/đóng (xác thực source 1.12.3, 2026-11-06, template 491097/491098 trên stag)
+
+1. **Popup chỉ render khi template conditions khớp.** `Popups::render_popups()` (`popups.php:878`) lấy `Database::$active_templates['popup']`; ngoại lệ duy nhất là khi xem chính URL của template popup (preview: `popups.php:881-886`). Bridge chỉ ghi `_bricks_page_settings`, **không** ghi `_bricks_template_settings` (conditions + popup settings), nên popup dựng qua bridge chưa hiện ở trang nào cho tới khi user set conditions trong Bricks UI. G3/G4 chụp qua permalink của template (`/template/<slug>/`, đăng nhập).
+2. **Thiết lập khung popup không cần template settings**: style `.brxe-popup-<id> .brx-popup-content{width;max-width;padding:0;background:transparent}` và `.brxe-popup-<id> .brx-popup-backdrop{…}` trong `_cssCustom` của element gốc (pattern popup 489478). `.brx-popup-content` mang class `brxe-container` nên phải set width tường minh (§21).
+3. **`customScriptsBodyFooter` của popup có xuất ra trang**: popup active được đưa vào `Assets::$page_settings_post_ids` (`assets.php:496`) → script đi theo popup như template section (§26c).
+4. **Đừng mở popup bằng `bricksOpenPopup` khi site có LiteSpeed (§26a)**: `bricks.min.js` bị hoãn tới lần tương tác đầu nên popup "tự hiện khi tải trang" không hiện. Tự mở/đóng bằng class: bỏ/thêm `hide` trên `.brx-popup[data-popup-id]`, tự toggle `body.no-scroll`, tự xử lý ESC/backdrop. Handler ESC/backdrop của Bricks chỉ gắn khi nhận sự kiện `bricks/popup/open` (tức chỉ khi mở qua `bricksOpenPopup`), nên không đá nhau với listener tự viết.
+5. **Không khoá cuộn trang mà không cần setting `popupBodyScroll`**: Bricks đọc `data-popup-body-scroll` **lúc mở** (`t.dataset.popupBodyScroll||document.body.classList.add("no-scroll")`) và lúc đóng đếm `.brx-popup:not(.hide):not([data-popup-body-scroll])` → gắn thuộc tính này bằng JS trước khi mở là đủ.
+6. Bẫy CSS gặp cùng phiên: `<button>` dựng bằng `block` + `customTag:"button"` vẫn là `.brxe-block` → `flex-direction:column`; toggle/knob cần `flex-direction:row` tường minh. Theme style stag đặt `letter-spacing:.5px` cho nút → reset `letter-spacing:0` khi Figma là 0. Stroke "inside" của Figma → dùng `box-shadow: inset 0 0 0 1px` thay `border` để không cộng thêm kích thước.
